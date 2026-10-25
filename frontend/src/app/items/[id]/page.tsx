@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlignLeft, ArrowLeft, BookOpen, ExternalLink, MessageSquareText, Quote, RotateCw, Trash2, X } from "lucide-react";
+import { AlignLeft, ArrowLeft, BookOpen, ExternalLink, Layers, Loader2, MessageSquareText, Plus, Quote, RotateCw, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useId, useMemo, useRef, useState } from "react";
@@ -83,6 +83,7 @@ function ItemView() {
               <MessageSquareText /> Ask about this document
             </Link>
           )}
+          {data.status === "ready" && <QuizButton item={data} />}
           {sourceHref(data, data.id) && (
             <a href={sourceHref(data, data.id)!} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>
               <ExternalLink />
@@ -112,6 +113,7 @@ function ItemView() {
               <div className={cn("space-y-10", sawProcessing.current && "animate-develop")}>
                 <p className="max-w-[65ch] font-heading text-xl leading-relaxed text-pretty">{data.summary}</p>
                 <ItemNote item={data} />
+                <Flashcards item={data} />
                 {data.details ? <Details details={data.details} /> : <NoDetails item={data} />}
               </div>
             )}
@@ -122,6 +124,93 @@ function ItemView() {
         </Tabs>
       )}
     </article>
+  );
+}
+
+/** "Quiz me": makes flashcards the first time, then opens a quiz on this item's cards. */
+function QuizButton({ item }: { item: Item }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const cards = useQuery({ queryKey: ["cards", item.id], queryFn: () => api.itemCards(item.id) });
+  const make = useMutation({
+    mutationFn: () => api.generateCards(item.id),
+    onSuccess: (made) => {
+      queryClient.setQueryData(["cards", item.id], made);
+      queryClient.invalidateQueries({ queryKey: ["review-stats"] });
+      queryClient.removeQueries({ queryKey: ["review-queue"] });
+      router.push(`/review?item=${item.id}`);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const has = (cards.data?.length ?? 0) > 0;
+  return (
+    <Button
+      variant="outline"
+      disabled={make.isPending || cards.isPending}
+      onClick={() => {
+        if (has) {
+          queryClient.removeQueries({ queryKey: ["review-queue"] });
+          router.push(`/review?item=${item.id}`);
+        } else make.mutate();
+      }}
+    >
+      {make.isPending ? <Loader2 className="animate-spin" /> : <Layers />}
+      {make.isPending ? "Writing questions…" : "Quiz me"}
+    </Button>
+  );
+}
+
+/** This item's flashcards: see them, delete ones that aren't useful, or make more. */
+function Flashcards({ item }: { item: Item }) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const cards = useQuery({ queryKey: ["cards", item.id], queryFn: () => api.itemCards(item.id) });
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["cards", item.id] });
+    queryClient.invalidateQueries({ queryKey: ["review-stats"] });
+    queryClient.removeQueries({ queryKey: ["review-queue"] });
+  };
+  const more = useMutation({ mutationFn: () => api.generateCards(item.id), onSuccess: refresh, onError: (err) => toast.error(err.message) });
+  const remove = useMutation({ mutationFn: (id: number) => api.deleteCard(id), onSuccess: refresh, onError: (err) => toast.error(err.message) });
+  if (!cards.data?.length) return null;
+
+  return (
+    <section aria-labelledby="cards-title" className="max-w-[68ch] space-y-3">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 id="cards-title" className="font-heading text-2xl font-medium">
+          Flashcards <span className="text-base text-muted-foreground tabular-nums">{cards.data.length}</span>
+        </h2>
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+            {open ? "Hide" : "Show"}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => more.mutate()} disabled={more.isPending}>
+            {more.isPending ? <Loader2 className="animate-spin" /> : <Plus />} Make more
+          </Button>
+        </div>
+      </div>
+      {open && (
+        <ul className="animate-enter divide-y rounded-xl border bg-card">
+          {cards.data.map((card) => (
+            <li key={card.id} className="group flex gap-3 p-4 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{card.question}</p>
+                <p className="mt-1 text-muted-foreground">{card.answer}</p>
+              </div>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                className="text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+                onClick={() => remove.mutate(card.id)}
+                aria-label="Delete this card"
+              >
+                <Trash2 />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

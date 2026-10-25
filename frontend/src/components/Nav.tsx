@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Library, LogOut, MessageSquareText, Moon, Plus, Search, Sun } from "lucide-react";
+import { Layers, Library, LogOut, MessageSquareText, Moon, Plus, Search, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/", label: "Library", icon: Library },
   { href: "/ask", label: "Ask", icon: MessageSquareText },
+  { href: "/review", label: "Review", icon: Layers },
   { href: "/add", label: "Add", icon: Plus },
 ];
 
@@ -28,6 +29,7 @@ export function Nav() {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const authPage = pathname === "/login" || pathname === "/signup";
+  const stats = useQuery({ queryKey: ["review-stats"], queryFn: api.reviewStats, enabled: !authPage, refetchInterval: 60_000 });
   const isActive = (href: string) => (href === "/" ? pathname === "/" || pathname.startsWith("/items") : pathname.startsWith(href));
 
   return (
@@ -51,6 +53,11 @@ export function Nav() {
           >
             <Icon className="size-4" aria-hidden />
             <span className="hidden sm:inline">{label}</span>
+            {href === "/review" && !!stats.data?.due && (
+              <span className="min-w-4 rounded-full bg-brand px-1 text-center text-[11px] leading-4 font-semibold text-brand-foreground tabular-nums" aria-label={`${stats.data.due} cards due`}>
+                {stats.data.due > 99 ? "99+" : stats.data.due}
+              </span>
+            )}
           </Link>
         ))}
         {!authPage && (

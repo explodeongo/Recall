@@ -111,6 +111,35 @@ export interface SearchResults {
   tags: string[];
 }
 
+export type Grade = "again" | "hard" | "good" | "easy";
+
+export interface Card {
+  id: number;
+  item_id: number;
+  question: string;
+  answer: string;
+  start_char: number | null;
+  end_char: number | null;
+  due_at: string;
+  interval_days: number;
+  reps: number;
+  lapses: number;
+}
+
+export interface DueCard extends Card {
+  item_title: string;
+  /** When the card would come back for each grade, e.g. { again: "10m", good: "1d" }. */
+  next: Record<Grade, string>;
+}
+
+export interface ReviewStats {
+  due: number;
+  total: number;
+  reviewed_today: number;
+  streak_days: number;
+  next_due_at: string | null;
+}
+
 export interface HighlightWithItem extends Highlight {
   item_title: string;
 }
@@ -217,6 +246,13 @@ export const api = {
   chunk: (id: number) => request<Chunk>(`/chunks/${id}`),
   content: (id: number) => request<{ pages: Page[] }>(`/items/${id}/content`),
   setNote: (id: number, note: string) => request<Item>(`/items/${id}/note`, json("PUT", { note })),
+  generateCards: (itemId: number) => request<Card[]>(`/items/${itemId}/cards`, { method: "POST" }),
+  itemCards: (itemId: number) => request<Card[]>(`/items/${itemId}/cards`),
+  dueCards: (itemId?: number) => request<DueCard[]>(itemId ? `/review?item_id=${itemId}` : "/review"),
+  reviewCard: (id: number, grade: Grade) => request<Card>(`/cards/${id}/review`, json("POST", { grade })),
+  reviewStats: () => request<ReviewStats>(`/review/stats?tz_offset=${-new Date().getTimezoneOffset()}`),
+  editCard: (id: number, question: string, answer: string) => request<Card>(`/cards/${id}`, json("PATCH", { question, answer })),
+  deleteCard: (id: number) => request<void>(`/cards/${id}`, { method: "DELETE" }),
   search: (q: string) => request<SearchResults>(`/search?q=${encodeURIComponent(q)}`),
   highlights: (itemId: number) => request<Highlight[]>(`/items/${itemId}/highlights`),
   allHighlights: () => request<HighlightWithItem[]>("/highlights"),
