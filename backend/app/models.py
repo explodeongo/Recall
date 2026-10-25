@@ -91,6 +91,9 @@ class Item(Base):
     summary: Mapped[str | None] = mapped_column(Text)
     # The page-long summary: {"overview": str, "key_points": [str], "sections": [{heading, body}]}
     details: Mapped[dict | None] = mapped_column(JSONB)
+    # The cleaned full text for the reader: [{"page": int | None, "text": str}], paragraphs
+    # separated by blank lines. Joined with blank lines, it's the text chunk offsets refer to.
+    content: Mapped[list | None] = mapped_column(JSONB)
     # Set when the user edits the tags by hand, so reprocessing keeps their choice.
     tags_edited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     status: Mapped[ItemStatus] = mapped_column(
@@ -114,6 +117,9 @@ class Chunk(Base):
     chunk_text: Mapped[str] = mapped_column(Text)
     # PDF page the chunk starts on, so citations can jump to it. Null for web articles.
     page: Mapped[int | None] = mapped_column(Integer)
+    # Where the chunk sits in the item's joined content, so the reader can highlight it.
+    start_char: Mapped[int | None] = mapped_column(Integer)
+    end_char: Mapped[int | None] = mapped_column(Integer)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM))
     # Filled by the database from chunk_text; used for the keyword half of hybrid search.
     tsv: Mapped[str | None] = mapped_column(

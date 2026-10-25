@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Source } from "@/lib/api";
+import { passageHref, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const CITATION = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
@@ -97,7 +97,7 @@ function Citation({ source, n }: { source: Source | undefined; n: number }) {
       <TooltipTrigger
         render={
           <Link
-            href={`/items/${source.item_id}?chunk=${source.chunk_id}`}
+            href={passageHref(source)}
             className="mx-0.5 inline-grid h-[1.15rem] animate-pop min-w-[1.15rem] -translate-y-0.5 place-items-center rounded-md bg-brand-soft px-1 align-middle font-sans text-[11px] font-semibold text-brand tabular-nums no-underline transition-colors duration-150 hover:bg-brand hover:text-brand-foreground"
             aria-label={`Source ${n}: ${source.title}${source.page ? `, page ${source.page}` : ""}`}
           />

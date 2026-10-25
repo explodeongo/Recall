@@ -13,7 +13,7 @@ from app.config import get_settings
 from app.deps import CurrentUser, SessionDep
 from app.models import Item, ItemStatus, SourceType, Tag, item_tags
 from app.pipeline import get_or_create_tags
-from app.schemas import ItemOut, TagsIn
+from app.schemas import ContentOut, ItemOut, TagsIn
 from app.services import jobs
 from app.services.enrich import clean_tag
 
@@ -73,6 +73,18 @@ def list_items(session: SessionDep, user: CurrentUser, tag: str | None = None) -
 def get_item(item_id: int, session: SessionDep, user: CurrentUser) -> Item:
     """One item's summary, tags, status and source (FR-7)."""
     return _get_or_404(session, item_id, user.id)
+
+
+@router.get("/{item_id}/content", response_model=ContentOut)
+def get_item_content(item_id: int, session: SessionDep, user: CurrentUser) -> ContentOut:
+    """The cleaned full text, for reading inside Recall. Items saved before the reader existed
+    have none until they're processed again."""
+    item = _get_or_404(session, item_id, user.id)
+    if item.content is None:
+        raise HTTPException(
+            404, "This item's text isn't stored yet. Process it again to read it here."
+        )
+    return ContentOut(pages=item.content)
 
 
 @router.get("/{item_id}/file", response_class=FileResponse)

@@ -92,3 +92,13 @@ def test_deleting_the_item_keeps_its_chat(client, library):
 
 def test_chat_for_missing_item_is_rejected(client):
     assert client.post("/chats", json={"item_id": 9999}).status_code == 404
+
+
+def test_saved_sources_keep_their_position_in_the_text(client, library, fake_llm):
+    fake_llm.answer = "A starter is wild yeast [1]."
+    chat_id = client.post("/chats", json={}).json()["id"]
+    _ask(client, chat_id, "what is a sourdough starter?")
+    source = client.get(f"/chats/{chat_id}").json()["messages"][1]["sources"][0]
+    content = client.get(f"/items/{source['item_id']}/content").json()["pages"]
+    joined = "\n\n".join(p["text"] for p in content)
+    assert joined[source["start_char"] : source["end_char"]] == source["text"]

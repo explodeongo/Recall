@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useId, useState } from "react";
 import { SourceIcon } from "@/components/ItemBits";
 import { Skeleton } from "@/components/ui/skeleton";
-import { sourceHref, type Source } from "@/lib/api";
+import { passageHref, sourceHref, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export function Thinking({ searching }: { searching: boolean }) {
@@ -92,7 +92,7 @@ export function SourceCard({ source, index = 0, animate = true }: { source: Sour
       <div className="flex items-center gap-2 text-sm">
         <span className="grid size-5 shrink-0 place-items-center rounded-md bg-brand-soft text-xs font-semibold text-brand tabular-nums">{source.n}</span>
         <SourceIcon type={source.source_type} className="size-3.5" />
-        <Link href={`/items/${source.item_id}?chunk=${source.chunk_id}`} className="min-w-0 truncate font-medium after:absolute after:inset-0">
+        <Link href={passageHref(source)} className="min-w-0 truncate font-medium after:absolute after:inset-0">
           {source.title}
         </Link>
         {source.page && <span className="shrink-0 text-muted-foreground">p. {source.page}</span>}

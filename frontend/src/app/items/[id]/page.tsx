@@ -1,10 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, MessageSquareText, Quote, RotateCw, Trash2, X } from "lucide-react";
+import { AlignLeft, ArrowLeft, BookOpen, ExternalLink, MessageSquareText, Quote, RotateCw, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useId, useRef, useState } from "react";
+import { Suspense, useId, useMemo, useRef, useState } from "react";
+import { type Mark, Reader, joinPages } from "@/components/Reader";
 import { toast } from "sonner";
 import { SourceIcon, StatusBadge, sourceLabel, timeAgo } from "@/components/ItemBits";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, isBusy, sourceHref, type Item, type ItemDetails } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +35,13 @@ export default function ItemPage() {
 
 function ItemView() {
   const id = Number(useParams<{ id: string }>().id);
-  const chunkId = Number(useSearchParams().get("chunk")) || null;
+  const params = useSearchParams();
+  const chunkId = Number(params.get("chunk")) || null;
+  const from = params.get("from") === null ? null : Number(params.get("from"));
+  const to = params.get("to") === null ? null : Number(params.get("to"));
+  const range = from !== null && to !== null && Number.isFinite(from) && to > from ? { from, to } : null;
+  // A citation opens the document itself, scrolled to the passage; otherwise the summary.
+  const [view, setView] = useState<"summary" | "read">(range || chunkId || params.get("view") === "read" ? "read" : "summary");
   const item = useQuery({
     queryKey: ["item", id],
     queryFn: () => api.item(id),
@@ -82,16 +90,31 @@ function ItemView() {
         {data.status !== "queued" && data.status !== "processing" && <TagEditor item={data} />}
       </header>
 
-      {chunkId && <CitedPassage chunkId={chunkId} item={data} />}
-
       {isBusy(data.status) && <Processing status={data.status} />}
       {data.status === "failed" && <Failed item={data} />}
 
-      {data.summary && (
-        <div className={cn("space-y-10", sawProcessing.current && "animate-develop")}>
-          <p className="max-w-[65ch] font-heading text-xl leading-relaxed text-pretty">{data.summary}</p>
-          {data.details ? <Details details={data.details} /> : data.status === "ready" && <NoDetails item={data} />}
-        </div>
+      {data.status === "ready" && (
+        <Tabs value={view} onValueChange={(v) => setView(v as "summary" | "read")} className="gap-8">
+          <TabsList>
+            <TabsTrigger value="summary">
+              <AlignLeft /> Summary
+            </TabsTrigger>
+            <TabsTrigger value="read">
+              <BookOpen /> Read
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="summary">
+            {data.summary && (
+              <div className={cn("space-y-10", sawProcessing.current && "animate-develop")}>
+                <p className="max-w-[65ch] font-heading text-xl leading-relaxed text-pretty">{data.summary}</p>
+                {data.details ? <Details details={data.details} /> : <NoDetails item={data} />}
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="read">
+            <DocumentText item={data} chunkId={range ? null : chunkId} range={range} />
+          </TabsContent>
+        </Tabs>
       )}
     </article>
   );
@@ -154,7 +177,15 @@ function Details({ details }: { details: ItemDetails }) {
 }
 
 /** Items saved before full summaries existed can get one by being read again. */
-function NoDetails({ item }: { item: Item }) {
+function NoDetails({
+  item,
+  reason = "This item was saved before Recall wrote full summaries.",
+  action = "Write a full summary",
+}: {
+  item: Item;
+  reason?: string;
+  action?: string;
+}) {
   const queryClient = useQueryClient();
   const redo = useMutation({
     mutationFn: () => api.reprocess(item.id),
@@ -166,9 +197,9 @@ function NoDetails({ item }: { item: Item }) {
   });
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-      <span className="flex-1">This item was saved before Recall wrote full summaries.</span>
+      <span className="flex-1">{reason}</span>
       <Button variant="outline" size="sm" onClick={() => redo.mutate()} disabled={redo.isPending}>
-        <RotateCw className={redo.isPending ? "animate-spin" : ""} /> Write a full summary
+        <RotateCw className={redo.isPending ? "animate-spin" : ""} /> {action}
       </Button>
     </div>
   );
@@ -249,6 +280,59 @@ function TagEditor({ item }: { item: Item }) {
           {allTags.data?.filter((t) => !names.includes(t.name)).map((t) => <option key={t.id} value={t.name} />)}
         </datalist>
       </form>
+    </div>
+  );
+}
+
+/** The full text inside Recall, with the cited passage (if any) highlighted and in view. */
+function DocumentText({ item, chunkId, range }: { item: Item; chunkId: number | null; range: { from: number; to: number } | null }) {
+  const content = useQuery({ queryKey: ["content", item.id], queryFn: () => api.content(item.id), retry: false });
+  const chunk = useQuery({ queryKey: ["chunk", chunkId], queryFn: () => api.chunk(chunkId!), enabled: chunkId !== null });
+
+  const marks = useMemo<Mark[]>(() => {
+    if (content.data && range) {
+      const length = joinPages(content.data.pages).length;
+      if (range.to <= length) return [{ id: "cited", start: range.from, end: range.to, kind: "cited", title: "The passage your answer cited" }];
+      return [];
+    }
+    if (!content.data || !chunk.data || chunk.data.item_id !== item.id) return [];
+    let start = chunk.data.start_char;
+    // Older chunks have no stored position; find the passage in the text instead.
+    if (start === null) {
+      const found = joinPages(content.data.pages).indexOf(chunk.data.chunk_text);
+      start = found === -1 ? null : found;
+    }
+    if (start === null) return [];
+    return [{ id: `chunk-${chunk.data.id}`, start, end: start + chunk.data.chunk_text.length, kind: "cited", title: "The passage your answer cited" }];
+  }, [content.data, chunk.data, item.id, range]);
+
+  if (content.isPending) {
+    return (
+      <div className="max-w-[68ch] space-y-3" aria-busy="true" aria-label="Loading the document">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-11/12" />
+        <Skeleton className="h-4 w-4/5" />
+      </div>
+    );
+  }
+  if (content.isError) {
+    return (
+      <div className="space-y-6">
+        {chunkId && <CitedPassage chunkId={chunkId} item={item} />}
+        <NoDetails item={item} reason="This item was saved before Recall kept the full text to read here." action="Process it again" />
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-6">
+      {marks.length > 0 && (
+        <p className="flex max-w-[68ch] items-center gap-2 text-sm text-muted-foreground">
+          <Quote className="size-4 shrink-0 text-brand" aria-hidden />
+          The passage your answer cited is highlighted below
+          {chunk.data?.page ? `, on page ${chunk.data.page}` : ""}.
+        </p>
+      )}
+      <Reader pages={content.data.pages} marks={marks} focus={marks[0]?.id} />
     </div>
   );
 }

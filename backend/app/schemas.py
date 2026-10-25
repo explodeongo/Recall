@@ -49,6 +49,20 @@ class ChunkOut(BaseModel):
     chunk_index: int
     chunk_text: str
     page: int | None
+    start_char: int | None
+    end_char: int | None
+
+
+class PageOut(BaseModel):
+    page: int | None
+    text: str
+
+
+class ContentOut(BaseModel):
+    """The item's full text, split into pages; offsets count across pages joined by a blank
+    line."""
+
+    pages: list[PageOut]
 
 
 class AskIn(BaseModel):
@@ -69,6 +83,8 @@ class SourceOut(BaseModel):
     source: str
     page: int | None
     text: str
+    start_char: int | None = None
+    end_char: int | None = None
 
 
 class AskOut(BaseModel):

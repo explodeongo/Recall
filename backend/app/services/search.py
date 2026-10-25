@@ -36,6 +36,10 @@ class Passage:
     page: int | None
     text: str
     score: float
+    # Position in the item's full text. Unlike chunk ids, it survives reprocessing, so saved
+    # answers can still point at the passage.
+    start_char: int | None = None
+    end_char: int | None = None
 
 
 @dataclass(frozen=True)
@@ -160,6 +164,8 @@ def _load(session: Session, fused: list[tuple[int, float]]) -> list[Passage]:
                 page=chunk.page,
                 text=chunk.chunk_text,
                 score=score,
+                start_char=chunk.start_char,
+                end_char=chunk.end_char,
             )
         )
     return passages

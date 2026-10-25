@@ -156,3 +156,21 @@ def test_people_only_see_their_own_library(client, anon_client, session, user):
     item = other.post("/items", data={"url": "https://example.com/p"}).json()
     other.put(f"/items/{item['id']}/tags", json={"tags": ["databases"]})
     assert [t["item_count"] for t in client.get("/tags").json() if t["name"] == "databases"] == [2]
+
+
+def test_item_content_for_the_reader(client, session, user):
+    item = Item(
+        user_id=user.id,
+        title="t",
+        source_type=SourceType.url,
+        source="https://x",
+        content=[{"page": None, "text": "First paragraph.\n\nSecond."}],
+    )
+    session.add(item)
+    session.commit()
+    assert client.get(f"/items/{item.id}/content").json() == {
+        "pages": [{"page": None, "text": "First paragraph.\n\nSecond."}]
+    }
+    _seed(session, user)
+    no_text = client.get("/items", params={"tag": "ml"}).json()[0]["id"]
+    assert client.get(f"/items/{no_text}/content").status_code == 404

@@ -169,3 +169,29 @@ def test_long_documents_are_sampled_from_start_middle_and_end():
     middle = [int(n) for n in re.findall(r"Paragraph (\d+)\.", sample) if 100 < int(n) < 300]
     assert middle  # excerpts from the middle third, not only the two ends
     assert sample_text("short", 8000) == "short"
+
+
+def test_full_text_and_chunk_positions_are_stored(session, monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "chunk_tokens", 20)
+    monkeypatch.setattr(get_settings(), "chunk_overlap", 5)
+    item = _item(session)
+    process_item(session, item, embedder=HashingEmbedder(), llm=None, source=StubSource(DOC))
+    assert [p["page"] for p in item.content] == [1, 2]
+    joined = "\n\n".join(p["text"] for p in item.content)
+    chunks = session.query(Chunk).filter_by(item_id=item.id).order_by(Chunk.chunk_index).all()
+    assert len(chunks) > 1
+    for c in chunks:
+        assert joined[c.start_char : c.end_char] == c.chunk_text
+
+
+def test_locate_chunks_handles_overlap_and_misses():
+    from app.pipeline import locate_chunks
+
+    text = "one two three. four five six. seven eight."
+    assert locate_chunks(text, ["one two three.", "three. four five six.", "nowhere"]) == [
+        0,
+        8,
+        None,
+    ]

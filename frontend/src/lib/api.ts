@@ -47,6 +47,13 @@ export interface Chunk {
   chunk_index: number;
   chunk_text: string;
   page: number | null;
+  start_char: number | null;
+  end_char: number | null;
+}
+
+export interface Page {
+  page: number | null;
+  text: string;
 }
 
 /** One numbered passage given to the model; answers cite it as [n]. */
@@ -59,6 +66,17 @@ export interface Source {
   source: string;
   page: number | null;
   text: string;
+  start_char?: number | null;
+  end_char?: number | null;
+}
+
+/** Where a citation opens: the item's reader, at the passage. The character range survives the
+ *  item being processed again; the chunk id is the fallback for answers saved before ranges. */
+export function passageHref(source: Pick<Source, "item_id" | "chunk_id" | "start_char" | "end_char">) {
+  if (source.start_char != null && source.end_char != null) {
+    return `/items/${source.item_id}?from=${source.start_char}&to=${source.end_char}`;
+  }
+  return `/items/${source.item_id}?chunk=${source.chunk_id}`;
 }
 
 export interface Timings {
@@ -146,6 +164,7 @@ export const api = {
   item: (id: number) => request<Item>(`/items/${id}`),
   tags: () => request<TagWithCount[]>("/tags"),
   chunk: (id: number) => request<Chunk>(`/chunks/${id}`),
+  content: (id: number) => request<{ pages: Page[] }>(`/items/${id}/content`),
   saveUrl: (url: string) => {
     const form = new FormData();
     form.append("url", url);
