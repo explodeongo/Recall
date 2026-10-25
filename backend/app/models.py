@@ -8,6 +8,7 @@ from sqlalchemy import (
     Computed,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -97,6 +98,9 @@ class Item(Base):
     # The cleaned full text for the reader: [{"page": int | None, "text": str}], paragraphs
     # separated by blank lines. Joined with blank lines, it's the text chunk offsets refer to.
     content: Mapped[list | None] = mapped_column(JSONB)
+    # What the item is about (title, summary, tags) as one vector, so search can find a
+    # document by its topic even when its text never uses the searched words.
+    summary_embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM))
     # The reader's own free-form note on the item.
     note: Mapped[str | None] = mapped_column(Text)
     # Set when the user edits the tags by hand, so reprocessing keeps their choice.
@@ -232,3 +236,39 @@ class Highlight(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     item: Mapped[Item] = relationship(back_populates="highlights")
+
+
+class Card(Base):
+    """A flashcard made from an item, scheduled with spaced repetition (services/review.py)."""
+
+    __tablename__ = "cards"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"), index=True)
+    question: Mapped[str] = mapped_column(Text)
+    answer: Mapped[str] = mapped_column(Text)
+    # The passage the card was made from, in the item's full text.
+    start_char: Mapped[int | None] = mapped_column(Integer)
+    end_char: Mapped[int | None] = mapped_column(Integer)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    interval_days: Mapped[float] = mapped_column(Float, default=0.0, server_default="0")
+    ease: Mapped[float] = mapped_column(Float, default=2.5, server_default="2.5")
+    reps: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    lapses: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    item: Mapped[Item] = relationship()
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    card_id: Mapped[int] = mapped_column(ForeignKey("cards.id", ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    grade: Mapped[str] = mapped_column(String(8))
+    reviewed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

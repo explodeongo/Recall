@@ -27,7 +27,23 @@ export interface Item {
   error: string | null;
   created_at: string;
   tags: Tag[];
+  /** Only on search results: where the search matched inside the document. */
+  match?: SearchMatch | null;
 }
+
+export interface SearchMatch {
+  /** "text": the words occur in `snippet`; "related": close in topic (snippet is the summary). */
+  kind: "text" | "related";
+  /** Matched words are wrapped in MARK_START ... MARK_END. */
+  snippet: string;
+  page: number | null;
+  chunk_id: number | null;
+  start_char: number | null;
+  end_char: number | null;
+}
+
+export const MARK_START = "\u2063[[";
+export const MARK_END = "]]\u2063";
 
 /** The page-long summary written when an item is processed. */
 export interface ItemDetails {

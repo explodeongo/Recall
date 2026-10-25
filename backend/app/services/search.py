@@ -130,6 +130,17 @@ def _vector_search(
     return sorted(((row.id, float(row.similarity)) for row in rows), key=lambda r: -r[1])
 
 
+def similar_chunks(
+    session: Session, vector: list[float], limit: int, user_id: int
+) -> list[tuple[Chunk, float]]:
+    """The chunks closest in meaning to `vector` in one person's library, with similarity."""
+    hits = _vector_search(session, vector, limit, _Scope(user_id=user_id))
+    by_id = {
+        c.id: c for c in session.scalars(select(Chunk).where(Chunk.id.in_([h[0] for h in hits])))
+    }
+    return [(by_id[chunk_id], similarity) for chunk_id, similarity in hits if chunk_id in by_id]
+
+
 def _keyword_search(
     session: Session, query: str, limit: int, scope: _Scope = _EVERYTHING
 ) -> list[int]:

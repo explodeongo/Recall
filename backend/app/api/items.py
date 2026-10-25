@@ -6,16 +6,17 @@ from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, 
 from fastapi.responses import FileResponse
 from pydantic import HttpUrl, TypeAdapter, ValidationError
 from sqlalchemy import delete as sa_delete
-from sqlalchemy import func, or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
-from app.deps import CurrentUser, SessionDep
-from app.models import Chunk, Item, ItemStatus, SourceType, Tag, item_tags
+from app.deps import CurrentUser, EmbedderDep, SessionDep
+from app.models import Item, ItemStatus, SourceType, Tag, item_tags
 from app.pipeline import get_or_create_tags
 from app.schemas import ContentOut, ItemOut, TagsIn
 from app.services import jobs
 from app.services.enrich import clean_tag
+from app.services.library_search import search_items
 from app.sources.files import EXTENSIONS as FILE_EXTENSIONS
 from app.sources.youtube import video_id
 
@@ -76,32 +77,22 @@ def create_item(
 
 @router.get("", response_model=list[ItemOut])
 def list_items(
-    session: SessionDep, user: CurrentUser, tag: str | None = None, q: str | None = None
+    session: SessionDep,
+    user: CurrentUser,
+    embedder: EmbedderDep,
+    tag: str | None = None,
+    q: str | None = None,
 ) -> list[Item]:
-    """List items, newest first (FR-6). `tag` filters by tag; `q` searches titles, summaries,
-    notes, tags and the documents' full text (Postgres full-text search, no LLM)."""
+    """List items, newest first (FR-6), or search them. `tag` filters by tag (no LLM). `q`
+    matches each word anywhere: titles, tags, summaries, notes and full text, best first, with
+    the matching passage; documents close in meaning follow as "related"
+    (services/library_search.py)."""
+    if q and q.strip():
+        return search_items(session, user.id, q, tag=tag, embedder=embedder)
     query = select(Item).where(Item.user_id == user.id).options(selectinload(Item.tags))
     if tag:
         query = query.where(Item.tags.any(Tag.name == tag.lower()))
-    words = (q or "").strip()
-    if not words:
-        return list(session.scalars(query.order_by(Item.created_at.desc())))
-
-    like = f"%{words}%"
-    tsquery = func.websearch_to_tsquery("english", words)
-    in_text = select(Chunk.id).where(Chunk.item_id == Item.id, Chunk.tsv.op("@@")(tsquery)).exists()
-    title_hit = Item.title.ilike(like)
-    query = query.where(
-        or_(
-            title_hit,
-            Item.summary.ilike(like),
-            Item.note.ilike(like),
-            Item.tags.any(Tag.name.ilike(like)),
-            in_text,
-        )
-    )
-    # Title matches first, then everything else, newest first within each.
-    return list(session.scalars(query.order_by(title_hit.desc(), Item.created_at.desc())))
+    return list(session.scalars(query.order_by(Item.created_at.desc())))
 
 
 @router.get("/{item_id}", response_model=ItemOut)

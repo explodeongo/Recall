@@ -42,12 +42,26 @@ class FakeLLM:
         self.answer = answer
         self.error = error
         self.rewrite = rewrite  # reply to a follow-up rewrite request
+        self.cards = [
+            {
+                "question": "What do hash indexes make fast?",
+                "answer": "Exact-match lookups.",
+                "quote": "exact-match lookups are very fast",
+            },
+            {
+                "question": "Why can a B-tree serve range scans?",
+                "answer": "It keeps keys sorted.",
+                "quote": "A B-tree keeps keys sorted",
+            },
+        ]
         self.prompts: list[str] = []
 
     def generate(self, prompt, *, system=None, json_schema=None):
         self.prompts.append(prompt)
         if self.error:
             raise self.error
+        if "flashcards" in prompt and json_schema:
+            return json.dumps({"cards": self.cards})
         if "Follow-up question:" in prompt:
             return self.rewrite or prompt.split("Follow-up question: ", 1)[1].split("\n", 1)[0]
         return json.dumps(self.entry) if json_schema else self.answer

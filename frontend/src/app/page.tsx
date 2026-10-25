@@ -9,7 +9,7 @@ import { AddSources } from "@/components/AddSources";
 import { SourceIcon, StatusBadge, TagLink, sourceLabel, timeAgo } from "@/components/ItemBits";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api, isBusy, type Item } from "@/lib/api";
+import { MARK_END, MARK_START, api, isBusy, passageHref, type Item } from "@/lib/api";
 
 export default function LibraryPage() {
   return (
@@ -92,7 +92,8 @@ function Library() {
           <div className="rounded-xl border border-dashed p-6 text-center">
             <p className="font-medium">No documents match “{q}”{tag ? ` in #${tag}` : ""}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Search looks at titles, summaries, your notes and the full text. Ask can also find things phrased differently.
+              Search looks for each word in titles, tags, summaries, your notes and the full text. Ask can also find things
+              phrased differently.
             </p>
             <Link href={`/ask?q=${encodeURIComponent(q)}`} className={buttonVariants({ variant: "outline", className: "mt-4" })}>
               <Sparkles /> Ask Recall instead
@@ -117,6 +118,45 @@ function Library() {
   );
 }
 
+/** Where a search matched: the passage with the words marked, linking to that spot. */
+function MatchSnippet({ item }: { item: Item }) {
+  const match = item.match!;
+  const parts = match.snippet.split(MARK_START).flatMap((piece, i) => {
+    if (i === 0) return [{ text: piece, hit: false }];
+    const [hit, rest = ""] = piece.split(MARK_END);
+    return [
+      { text: hit, hit: true },
+      { text: rest, hit: false },
+    ];
+  });
+  const href =
+    match.kind === "text" && match.chunk_id !== null
+      ? passageHref({ item_id: item.id, chunk_id: match.chunk_id, start_char: match.start_char, end_char: match.end_char })
+      : `/items/${item.id}`;
+  return (
+    <Link href={href} className="relative z-10 mt-2 line-clamp-3 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted">
+      {match.kind === "related" ? (
+        <span className="mr-1.5 inline-flex items-center gap-1 rounded-full bg-brand-soft px-1.5 text-[11px] font-medium text-brand">
+          <Sparkles className="size-3" aria-hidden /> Related
+        </span>
+      ) : (
+        match.page !== null && <span className="mr-1.5 text-xs tabular-nums">p. {match.page} ·</span>
+      )}
+      <span>
+        {parts.map((p, i) =>
+          p.hit ? (
+            <mark key={i} className="rounded-sm bg-amber-200/70 px-0.5 text-foreground dark:bg-amber-400/25">
+              {p.text}
+            </mark>
+          ) : (
+            <span key={i}>{p.text}</span>
+          ),
+        )}
+      </span>
+    </Link>
+  );
+}
+
 function ItemRow({ item, activeTag }: { item: Item; activeTag?: string }) {
   return (
     <li className="group relative px-4 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-muted/40 sm:px-5">
@@ -132,7 +172,11 @@ function ItemRow({ item, activeTag }: { item: Item; activeTag?: string }) {
           <p className="mt-0.5 text-xs text-muted-foreground">
             {sourceLabel(item)} · {timeAgo(item.created_at)}
           </p>
-          {item.summary && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{item.summary}</p>}
+          {item.match ? (
+            <MatchSnippet item={item} />
+          ) : (
+            item.summary && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{item.summary}</p>
+          )}
           {item.status === "failed" && item.error && <p className="mt-2 line-clamp-2 text-sm text-destructive">{item.error}</p>}
           {item.tags.length > 0 && (
             // Above the row's full-size link, so the tags stay clickable.

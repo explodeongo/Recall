@@ -92,7 +92,29 @@ def process_item(
         item.details = enrichment.details
         if not item.tags_edited:  # tags the user chose by hand survive reprocessing
             item.tags = get_or_create_tags(session, enrichment.tags, item.user_id)
+        item.summary_embedding = embedder.embed_documents([about_text(item)])[0]
     session.flush()
+
+
+def about_text(item: Item) -> str:
+    """What an item is about, for its summary embedding."""
+    tags = ", ".join(t.name for t in item.tags)
+    return f"{item.title}. {item.summary or ''} Topics: {tags}".strip()
+
+
+def backfill_summary_embeddings(session: Session, embedder: Embedder) -> int:
+    """Embed the summaries of items processed before summary embeddings existed."""
+    items = list(
+        session.scalars(
+            select(Item).where(Item.summary.is_not(None), Item.summary_embedding.is_(None))
+        )
+    )
+    if items:
+        vectors = embedder.embed_documents([about_text(i) for i in items])
+        for item, vector in zip(items, vectors, strict=True):
+            item.summary_embedding = vector
+        session.commit()
+    return len(items)
 
 
 def locate_chunks(full_text: str, chunks: list[str]) -> list[int | None]:

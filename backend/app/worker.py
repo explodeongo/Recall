@@ -59,6 +59,9 @@ def main(poll_seconds: float = 1.0) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     log.info("loading embedding model")
     embedder = get_embedder()
+    with SessionLocal() as session:
+        if filled := pipeline.backfill_summary_embeddings(session, embedder):
+            log.info("embedded the summaries of %s older items", filled)
     log.info("worker started")
     while True:
         if not run_once(embedder):

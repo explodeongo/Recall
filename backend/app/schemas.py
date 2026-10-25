@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from app.models import ItemStatus, SourceType
+from app.services.review import Grade
 from app.services.search import SearchMode
 
 
@@ -15,6 +16,20 @@ class TagOut(BaseModel):
 
 class TagWithCount(TagOut):
     item_count: int
+
+
+class MatchOut(BaseModel):
+    """Where a search matched inside a document. In `snippet`, matched words are wrapped in
+    U+2063 [[ ... ]] U+2063 (see services/library_search.py)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    kind: str
+    snippet: str
+    page: int | None
+    chunk_id: int | None
+    start_char: int | None
+    end_char: int | None
 
 
 class ItemOut(BaseModel):
@@ -32,6 +47,8 @@ class ItemOut(BaseModel):
     error: str | None
     created_at: datetime
     tags: list[TagOut]
+    # Only on search results: where in the document the search matched.
+    match: MatchOut | None = None
 
 
 class TagsIn(BaseModel):
@@ -229,3 +246,41 @@ class SearchOut(BaseModel):
     highlights: list[SearchHighlight]
     chats: list[SearchChat]
     tags: list[str]
+
+
+class CardOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    item_id: int
+    question: str
+    answer: str
+    start_char: int | None
+    end_char: int | None
+    due_at: datetime
+    interval_days: float
+    reps: int
+    lapses: int
+
+
+class DueCard(CardOut):
+    item_title: str
+    # How long until the card comes back for each grade: {"again": "10m", "good": "1d", ...}
+    next: dict[str, str]
+
+
+class CardEdit(BaseModel):
+    question: str | None = Field(default=None, min_length=1, max_length=2000)
+    answer: str | None = Field(default=None, min_length=1, max_length=4000)
+
+
+class GradeIn(BaseModel):
+    grade: Grade
+
+
+class ReviewStats(BaseModel):
+    due: int
+    total: int
+    reviewed_today: int
+    streak_days: int
+    next_due_at: datetime | None

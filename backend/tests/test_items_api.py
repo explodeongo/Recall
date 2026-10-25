@@ -202,9 +202,49 @@ def test_library_search(client, library, session):
     titles = lambda **params: [i["title"] for i in client.get("/items", params=params).json()]  # noqa: E731
     assert titles(q="sourdough") == ["Sourdough baking"]  # title
     assert titles(q="self-attention") == ["Transformers"]  # only in the text
-    assert titles(q="range scans") == ["Database indexing"]
-    assert titles(q="nothing like this") == []
+    found = client.get("/items", params={"q": "range scans"}).json()
+    assert found[0]["title"] == "Database indexing" and found[0]["match"]["kind"] == "text"
+    assert all(i["match"]["kind"] == "related" for i in found[1:])  # close in meaning only
+    assert titles(q="zzzz qqqq") == []
     assert titles(q="   ") == titles()  # blank means no filter
+
+
+def test_search_matches_each_word_anywhere_and_ranks_by_how_many(client, session, user):
+    """The bug that started this: "Aryan resume" must find "Aryan Narang Resume", although the
+    words aren't next to each other and a résumé's text never says "resume"."""
+    resume = Item(
+        user_id=user.id,
+        title="Aryan Narang Resume",
+        source_type=SourceType.pdf,
+        source="unused",
+    )
+    other = Item(
+        user_id=user.id,
+        title="Notes on Aryan's projects",
+        source_type=SourceType.url,
+        source="https://x",
+    )
+    session.add_all([resume, other])
+    session.commit()
+    from app.models import Chunk
+
+    session.add(
+        Chunk(
+            item_id=resume.id,
+            chunk_index=0,
+            chunk_text="Education: NIT Karnataka. "
+            "Built Recall, a knowledge base with hybrid retrieval.",
+        )
+    )
+    session.commit()
+
+    titles = lambda q: [i["title"] for i in client.get("/items", params={"q": q}).json()]  # noqa: E731
+    assert titles("Aryan resume")[0] == "Aryan Narang Resume"  # both words, first
+    assert "Notes on Aryan's projects" in titles("Aryan resume")  # one word, after
+    assert titles("karnat") == ["Aryan Narang Resume"]  # prefix of a word in the text
+    hit = client.get("/items", params={"q": "hybrid retrieval"}).json()[0]
+    assert hit["match"]["kind"] == "text"
+    assert "\u2063[[hybrid]]\u2063" in hit["match"]["snippet"]
 
 
 def test_library_search_combines_with_tags(client, session, user):

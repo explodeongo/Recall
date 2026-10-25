@@ -5,6 +5,7 @@ from app.config import get_settings
 from app.deps import CurrentUser, EmbedderDep, SessionDep
 from app.models import Chat, ChatMessage, Highlight, Item, Tag
 from app.schemas import SearchOut
+from app.services.library_search import search_items
 from app.services.search import search
 
 router = APIRouter(tags=["search"])
@@ -20,12 +21,7 @@ def quick_search(
     """Everything that matches, for the ⌘K box: documents by title, passages by meaning and
     keywords (hybrid search, no LLM), highlights and notes, chats and tags."""
     like = f"%{q.strip()}%"
-    items = session.scalars(
-        select(Item)
-        .where(Item.user_id == user.id, Item.title.ilike(like))
-        .order_by(Item.created_at.desc())
-        .limit(5)
-    ).all()
+    items = search_items(session, user.id, q, embedder=embedder, limit=5)
 
     passages = []
     if len(q.strip()) >= 3:

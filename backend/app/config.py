@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     # "hybrid", "vector", "keyword", or "rerank" (hybrid, then a cross-encoder re-scores the
     # top rerank_pool passages). See eval/results.md for how they compare.
     search_mode: str = "hybrid"
+    # Library search adds documents whose topic (summary embedding) is at least this close to
+    # the query, as "related". Measured on real queries: "my CV" vs a résumé 0.60, unrelated
+    # documents under 0.55.
+    related_min_similarity: float = 0.57
     rerank_model: str = "jinaai/jina-reranker-v1-turbo-en"
     rerank_pool: int = 20
 
