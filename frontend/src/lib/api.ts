@@ -19,10 +19,19 @@ export interface Item {
   source_type: SourceType;
   source: string;
   summary: string | null;
+  details: ItemDetails | null;
+  tags_edited: boolean;
   status: ItemStatus;
   error: string | null;
   created_at: string;
   tags: Tag[];
+}
+
+/** The page-long summary written when an item is processed. */
+export interface ItemDetails {
+  overview: string;
+  key_points: string[];
+  sections: { heading: string; body: string }[];
 }
 
 export interface Chunk {
@@ -56,6 +65,40 @@ export interface AskDone {
   not_found: boolean;
   cited: number[];
   timings: Timings;
+}
+
+export interface ChatSummary {
+  id: number;
+  title: string;
+  item_id: number | null;
+  item_title: string | null;
+  message_count: number;
+  updated_at: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  sources: Source[] | null;
+  cited: number[] | null;
+  not_found: boolean;
+  search_query: string | null;
+  created_at: string;
+}
+
+export interface Chat {
+  id: number;
+  title: string;
+  item_id: number | null;
+  created_at: string;
+  updated_at: string;
+  messages: ChatMessage[];
+}
+
+export interface MessageDone extends AskDone {
+  message_ids: [number, number];
+  title: string;
 }
 
 export class ApiError extends Error {
@@ -102,7 +145,18 @@ export const api = {
   },
   reprocess: (id: number) => request<Item>(`/items/${id}/reprocess`, { method: "POST" }),
   remove: (id: number) => request<void>(`/items/${id}`, { method: "DELETE" }),
+  setTags: (id: number, tags: string[]) => request<Item>(`/items/${id}/tags`, json("PUT", { tags })),
+
+  chats: () => request<ChatSummary[]>("/chats"),
+  chat: (id: number) => request<Chat>(`/chats/${id}`),
+  createChat: (itemId?: number) => request<Chat>("/chats", json("POST", { item_id: itemId ?? null })),
+  renameChat: (id: number, title: string) => request<Chat>(`/chats/${id}`, json("PATCH", { title })),
+  deleteChat: (id: number) => request<void>(`/chats/${id}`, { method: "DELETE" }),
 };
+
+function json(method: string, body: unknown): RequestInit {
+  return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+}
 
 export const fileUrl = (itemId: number, page?: number | null) =>
   `${API_URL}/items/${itemId}/file${page ? `#page=${page}` : ""}`;
@@ -116,23 +170,24 @@ export function sourceHref(item: { source_type: SourceType; source: string }, it
 
 export const isBusy = (status: ItemStatus) => status === "queued" || status === "processing";
 
-export interface AskHandlers {
+export interface StreamHandlers<Done> {
+  onQuery?: (query: string) => void;
   onSources: (sources: Source[]) => void;
   onDelta: (text: string) => void;
-  onDone: (done: AskDone) => void;
+  onDone: (done: Done) => void;
   onError: (message: string) => void;
 }
 
-/** POST /ask/stream and parse its Server-Sent Events (EventSource can't send a POST body). */
-export async function askStream(question: string, handlers: AskHandlers, signal?: AbortSignal) {
+/** Ask the next question in a saved chat; the answer streams back as Server-Sent Events. */
+export function sendChatMessage(chatId: number, question: string, handlers: StreamHandlers<MessageDone>, signal?: AbortSignal) {
+  return postStream(`/chats/${chatId}/messages`, { question }, handlers, signal);
+}
+
+/** POST and parse Server-Sent Events (EventSource can't send a POST body). */
+async function postStream<Done>(path: string, body: unknown, handlers: StreamHandlers<Done>, signal?: AbortSignal) {
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/ask/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
-      signal,
-    });
+    res = await fetch(`${API_URL}${path}`, { ...json("POST", body), signal });
   } catch (err) {
     if ((err as Error).name === "AbortError") return;
     handlers.onError("Can't reach the Recall API. Is the backend running?");
@@ -141,8 +196,8 @@ export async function askStream(question: string, handlers: AskHandlers, signal?
   if (!res.ok || !res.body) {
     let detail = `Request failed (${res.status})`;
     try {
-      const body = await res.json();
-      if (typeof body.detail === "string") detail = body.detail;
+      const data = await res.json();
+      if (typeof data.detail === "string") detail = data.detail;
     } catch {}
     handlers.onError(detail);
     return;
@@ -166,7 +221,8 @@ export async function askStream(question: string, handlers: AskHandlers, signal?
       }
       if (!data) continue;
       const payload = JSON.parse(data);
-      if (event === "sources") handlers.onSources(payload.sources);
+      if (event === "query") handlers.onQuery?.(payload.query);
+      else if (event === "sources") handlers.onSources(payload.sources);
       else if (event === "delta") handlers.onDelta(payload.text);
       else if (event === "done") handlers.onDone(payload);
       else if (event === "error") handlers.onError(payload.message);

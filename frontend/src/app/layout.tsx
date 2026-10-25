@@ -19,7 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${geist.variable} ${geistMono.variable} ${newsreader.variable} font-sans antialiased`}>
         <Providers>
           <Nav />
-          <main className="mx-auto w-full max-w-4xl px-4 pt-8 pb-24 sm:px-6">{children}</main>
+          <main className="w-full px-4 pt-8 pb-24 sm:px-6">{children}</main>
         </Providers>
       </body>
     </html>

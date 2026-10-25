@@ -20,7 +20,7 @@ export function Nav() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <nav className="mx-auto flex h-14 max-w-4xl items-center gap-1 px-4 sm:px-6" aria-label="Main">
+      <nav className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:px-6" aria-label="Main">
         <Link href="/" className="mr-4 flex items-center gap-2" aria-label="Recall home">
           <span className="grid size-7 place-items-center rounded-md bg-brand font-heading text-[17px] leading-none font-semibold text-brand-foreground">
             R

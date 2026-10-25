@@ -32,7 +32,7 @@ function Library() {
   const isEmptyLibrary = !tag && items.data?.length === 0;
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-4xl space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-balance font-heading text-4xl font-medium">Library</h1>
