@@ -97,3 +97,33 @@ def test_delete_removes_item_and_file(client, tmp_path):
 def test_url_item_has_no_file(client):
     item = client.post("/items", data={"url": "https://example.com/post"}).json()
     assert client.get(f"/items/{item['id']}/file").status_code == 404
+
+
+def test_user_can_set_tags(client, session):
+    _seed(session)
+    item_id = client.get("/items", params={"tag": "ml"}).json()[0]["id"]
+    resp = client.put(f"/items/{item_id}/tags", json={"tags": ["Reading List", "ml", "ML!", " "]})
+    body = resp.json()
+    assert resp.status_code == 200
+    assert sorted(t["name"] for t in body["tags"]) == ["ml", "reading list"]
+    assert body["tags_edited"] is True
+    assert {"name": "reading list", "item_count": 1}.items() <= {
+        k: v
+        for t in client.get("/tags").json()
+        if t["name"] == "reading list"
+        for k, v in t.items()
+    }.items()
+
+
+def test_removing_a_tag_everywhere_drops_it_from_the_tag_list(client, session):
+    _seed(session)
+    for item in client.get("/items", params={"tag": "ml"}).json():
+        client.put(f"/items/{item['id']}/tags", json={"tags": []})
+    assert "ml" not in {t["name"] for t in client.get("/tags").json()}
+
+
+def test_tag_list_is_capped(client, session):
+    _seed(session)
+    item_id = client.get("/items").json()[0]["id"]
+    resp = client.put(f"/items/{item_id}/tags", json={"tags": [f"t{i}" for i in range(13)]})
+    assert resp.status_code == 422

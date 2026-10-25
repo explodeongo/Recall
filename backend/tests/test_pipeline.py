@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from app import worker
@@ -136,3 +138,34 @@ def test_worker_marks_unreadable_item_failed(session, tmp_path):
     item = session.get(Item, item.id)
     assert item.status == ItemStatus.failed
     assert "scanned image" in item.error
+
+
+def test_detailed_summary_is_saved(session):
+    item = _item(session)
+    process_item(session, item, embedder=HashingEmbedder(), llm=FakeLLM(), source=StubSource(DOC))
+    assert item.details["overview"] == "An overview of two index structures."
+    assert len(item.details["key_points"]) == 2
+    assert item.details["sections"][0]["heading"] == "Hash indexes"
+
+
+def test_hand_edited_tags_survive_reprocessing(session):
+    item = _item(session)
+    item.tags = [Tag(name="my reading")]
+    item.tags_edited = True
+    session.commit()
+    process_item(session, item, embedder=HashingEmbedder(), llm=FakeLLM(), source=StubSource(DOC))
+    assert [t.name for t in item.tags] == ["my reading"]
+
+
+def test_long_documents_are_sampled_from_start_middle_and_end():
+    from app.services.enrich import GAP, sample_text
+
+    paragraphs = [f"Paragraph {i}. " + "word " * 40 for i in range(400)]
+    text = "\n\n".join(paragraphs)
+    sample = sample_text(text, 8000)
+    assert len(sample) <= 8000
+    assert sample.count(GAP) == 3
+    assert "Paragraph 0." in sample and "Paragraph 399." in sample
+    middle = [int(n) for n in re.findall(r"Paragraph (\d+)\.", sample) if 100 < int(n) < 300]
+    assert middle  # excerpts from the middle third, not only the two ends
+    assert sample_text("short", 8000) == "short"

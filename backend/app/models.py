@@ -3,6 +3,7 @@ from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    Boolean,
     Column,
     Computed,
     DateTime,
@@ -14,7 +15,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.config import get_settings
@@ -58,6 +59,10 @@ class Item(Base):
     source_type: Mapped[SourceType] = mapped_column(Enum(SourceType, name="source_type"))
     source: Mapped[str] = mapped_column(Text)
     summary: Mapped[str | None] = mapped_column(Text)
+    # The page-long summary: {"overview": str, "key_points": [str], "sections": [{heading, body}]}
+    details: Mapped[dict | None] = mapped_column(JSONB)
+    # Set when the user edits the tags by hand, so reprocessing keeps their choice.
+    tags_edited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     status: Mapped[ItemStatus] = mapped_column(
         Enum(ItemStatus, name="item_status"), default=ItemStatus.queued
     )
@@ -115,3 +120,40 @@ class Job(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class Chat(Base):
+    """A saved conversation. With `item_id` set, it only searches that one document."""
+
+    __tablename__ = "chats"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(200))
+    item_id: Mapped[int | None] = mapped_column(ForeignKey("items.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    item: Mapped[Item | None] = relationship()
+    messages: Mapped[list["ChatMessage"]] = relationship(
+        back_populates="chat", cascade="all, delete-orphan", order_by="ChatMessage.id"
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"), index=True)
+    role: Mapped[str] = mapped_column(String(16))  # "user" or "assistant"
+    content: Mapped[str] = mapped_column(Text)
+    # Assistant messages keep what they were built from, so a reopened chat shows its citations.
+    sources: Mapped[list | None] = mapped_column(JSONB)
+    cited: Mapped[list | None] = mapped_column(JSONB)
+    not_found: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # A follow-up rewritten to stand on its own ("what about its height?" -> "B-tree height").
+    search_query: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    chat: Mapped[Chat] = relationship(back_populates="messages")

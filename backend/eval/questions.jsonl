@@ -1,0 +1,46 @@
+{"id": "q01", "question": "Which company's research lab were the inventors of the B-tree working at?", "doc": "btree", "answer": "Boeing", "style": "paraphrase"}
+{"id": "q02", "question": "When was Bayer and McCreight's paper on large ordered indices first circulated?", "doc": "btree", "answer": "July 1970", "style": "keyword"}
+{"id": "q03", "question": "Besides keeping a linked list per slot, how can a hash table place an item whose slot is already taken?", "doc": "hash-table", "answer": "open addressing", "style": "paraphrase"}
+{"id": "q04", "question": "How is the load factor of a hash table defined?", "doc": "hash-table", "answer": "ratio of the number of stored elements", "style": "keyword"}
+{"id": "q05", "question": "What is a covering index?", "doc": "database-index", "answer": "Covering index", "style": "keyword"}
+{"id": "q06", "question": "In a non-clustered index, what does the leaf level of the tree contain?", "doc": "database-index", "answer": "pointer to the record", "style": "keyword"}
+{"id": "q07", "question": "Which data structure suits files that receive a very large number of inserts, like transaction logs?", "doc": "lsm-tree", "answer": "high insert volume", "style": "paraphrase"}
+{"id": "q08", "question": "Who invented the log-structured merge-tree?", "doc": "lsm-tree", "answer": "O'Neil", "style": "keyword"}
+{"id": "q09", "question": "Can a probabilistic set-membership structure that answers 'possibly in set' ever wrongly say an element is absent?", "doc": "bloom-filter", "answer": "false negatives are not", "style": "paraphrase"}
+{"id": "q10", "question": "Who conceived the Bloom filter, and in what year?", "doc": "bloom-filter", "answer": "Burton Howard Bloom in 1970", "style": "keyword"}
+{"id": "q11", "question": "In Raft, what makes a server become a candidate and start a leader election?", "doc": "raft", "answer": "election timeout", "style": "keyword"}
+{"id": "q12", "question": "What was the main design goal of the consensus algorithm built as an alternative to Paxos?", "doc": "raft", "answer": "more understandable than Paxos", "style": "paraphrase"}
+{"id": "q13", "question": "What three roles does each process play in a typical Paxos deployment?", "doc": "paxos", "answer": "Proposer, Acceptor and Learner", "style": "keyword"}
+{"id": "q14", "question": "What does partition tolerance mean in the CAP theorem?", "doc": "cap-theorem", "answer": "continues to operate despite", "style": "keyword"}
+{"id": "q15", "question": "Which computer scientist is the theorem about consistency, availability and partition tolerance named after?", "doc": "cap-theorem", "answer": "Eric Brewer", "style": "paraphrase"}
+{"id": "q16", "question": "Who introduced the term consistent hashing, and where?", "doc": "consistent-hashing", "answer": "David Karger", "style": "keyword"}
+{"id": "q17", "question": "When a cache cluster grows or shrinks, why does hashing keys onto a ring avoid moving most of them?", "doc": "consistent-hashing", "answer": "need to be remapped", "style": "paraphrase"}
+{"id": "q18", "question": "What happens in the commit-request phase of two-phase commit?", "doc": "two-phase-commit", "answer": "voting phase", "style": "keyword"}
+{"id": "q19", "question": "What is the biggest weakness of the atomic commit protocol where a coordinator collects votes from every participant?", "doc": "two-phase-commit", "answer": "blocking protocol", "style": "paraphrase"}
+{"id": "q20", "question": "Which paper first proposed the transformer architecture, and in what year?", "doc": "transformer", "answer": "Attention Is All You Need", "style": "keyword"}
+{"id": "q21", "question": "Since self-attention ignores word order, how do these models know the order of the tokens?", "doc": "transformer", "answer": "positional encodings", "style": "paraphrase"}
+{"id": "q22", "question": "What is Bahdanau-style attention also called?", "doc": "attention", "answer": "additive attention", "style": "keyword"}
+{"id": "q23", "question": "What is Luong-style attention known as?", "doc": "attention", "answer": "multiplicative attention", "style": "keyword"}
+{"id": "q24", "question": "What two model architectures can Word2Vec use?", "doc": "word2vec", "answer": "continuous bag of words", "style": "keyword"}
+{"id": "q25", "question": "Who developed the word-embedding method presented at ICLR in 2013, and at which company?", "doc": "word2vec", "answer": "Mikolov", "style": "paraphrase"}
+{"id": "q26", "question": "What two objectives is BERT trained with?", "doc": "bert", "answer": "masked token prediction and next sentence prediction", "style": "keyword"}
+{"id": "q27", "question": "When did Google AI release its bidirectional encoder language model?", "doc": "bert", "answer": "October 31, 2018", "style": "paraphrase"}
+{"id": "q28", "question": "How does letting a chatbot look up documents before answering help with made-up answers?", "doc": "rag", "answer": "reduce AI hallucinations", "style": "paraphrase"}
+{"id": "q29", "question": "How does TCP CUBIC grow its congestion window?", "doc": "tcp-congestion", "answer": "cubic function of time", "style": "keyword"}
+{"id": "q30", "question": "Which Linux kernel versions used BIC as the default congestion control?", "doc": "tcp-congestion", "answer": "2.6.8 through 2.6.18", "style": "keyword"}
+{"id": "q31", "question": "How does the second major version of the web's transfer protocol avoid head-of-line blocking between requests?", "doc": "http2", "answer": "multiplexing multiple requests over a single TCP connection", "style": "paraphrase"}
+{"id": "q32", "question": "Who invented automatic reclamation of unused memory, and for which programming language?", "doc": "garbage-collection", "answer": "John McCarthy", "style": "paraphrase"}
+{"id": "q33", "question": "Why can counting references fail to free two objects that point at each other?", "doc": "garbage-collection", "answer": "cycle", "style": "paraphrase"}
+{"id": "q34", "question": "In what year did the Dutch computer scientist come up with his shortest-path algorithm?", "doc": "dijkstra", "answer": "1956", "style": "paraphrase"}
+{"id": "q35", "question": "What data structure is Dijkstra's algorithm usually implemented with?", "doc": "dijkstra", "answer": "priority queue", "style": "keyword"}
+{"id": "q36", "question": "In asymmetric cryptography, what does each key pair consist of?", "doc": "public-key-crypto", "answer": "public key and a corresponding private key", "style": "paraphrase"}
+{"id": "u01", "question": "What is the boiling point of ethanol?", "doc": null, "style": "off-topic"}
+{"id": "u02", "question": "Who won the 2018 FIFA World Cup?", "doc": null, "style": "off-topic"}
+{"id": "u03", "question": "How do I keep a sourdough starter alive?", "doc": null, "style": "off-topic"}
+{"id": "u04", "question": "What is the capital city of Australia?", "doc": null, "style": "off-topic"}
+{"id": "u05", "question": "How does photosynthesis turn light into chemical energy?", "doc": null, "style": "off-topic"}
+{"id": "u06", "question": "How does Kubernetes decide which node to schedule a pod on?", "doc": null, "style": "near-domain"}
+{"id": "u07", "question": "What is the worst-case time complexity of quicksort?", "doc": null, "style": "near-domain"}
+{"id": "u08", "question": "How does the Rust borrow checker prevent data races?", "doc": null, "style": "near-domain"}
+{"id": "u09", "question": "What learning rate schedule was used to train ResNet?", "doc": null, "style": "near-domain"}
+{"id": "u10", "question": "What are the advantages of GraphQL over REST APIs?", "doc": null, "style": "near-domain"}

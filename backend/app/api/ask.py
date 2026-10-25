@@ -34,7 +34,7 @@ def ask_stream(
         try:
             for kind, payload in stream_answer(session, embedder, llm, body.question, body.mode):
                 if kind == "sources":
-                    yield _sse("sources", {"sources": _sources(payload)})
+                    yield _sse("sources", {"sources": sources_json(payload)})
                 elif kind == "delta":
                     yield _sse("delta", {"text": payload})
                 else:
@@ -53,7 +53,7 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-def _sources(passages: list[Passage]) -> list[dict]:
+def sources_json(passages: list[Passage]) -> list[dict]:
     return [
         SourceOut.model_validate({**p.__dict__, "n": n}).model_dump(mode="json")
         for n, p in enumerate(passages, start=1)
@@ -64,7 +64,7 @@ def _ask_out(answer: Answer) -> AskOut:
     return AskOut(
         answer=answer.text,
         not_found=answer.not_found,
-        sources=_sources(answer.sources),
+        sources=sources_json(answer.sources),
         cited=answer.cited,
         timings=answer.timings.as_dict(),
     )

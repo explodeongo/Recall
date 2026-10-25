@@ -24,20 +24,32 @@ def make_pdf(pages: list[list[str]], *, title: str = "", header: str | None = No
 class FakeLLM:
     """Records prompts and returns canned output, so tests need no API key."""
 
-    def __init__(self, entry: dict | None = None, answer: str = "", error: Exception | None = None):
+    def __init__(
+        self,
+        entry: dict | None = None,
+        answer: str = "",
+        error: Exception | None = None,
+        rewrite: str | None = None,
+    ):
         self.entry = entry or {
             "title": "Database indexing",
             "summary": "Compares B-tree and hash indexes.",
+            "overview": "An overview of two index structures.",
+            "key_points": ["Hash indexes are fast for exact lookups.", "B-trees support ranges."],
+            "sections": [{"heading": "Hash indexes", "body": "Buckets and exact lookups."}],
             "tags": ["Databases", "indexing", "databases", "B-Trees!"],
         }
         self.answer = answer
         self.error = error
+        self.rewrite = rewrite  # reply to a follow-up rewrite request
         self.prompts: list[str] = []
 
     def generate(self, prompt, *, system=None, json_schema=None):
         self.prompts.append(prompt)
         if self.error:
             raise self.error
+        if "Follow-up question:" in prompt:
+            return self.rewrite or prompt.split("Follow-up question: ", 1)[1].split("\n", 1)[0]
         return json.dumps(self.entry) if json_schema else self.answer
 
     def stream(self, prompt, *, system=None):

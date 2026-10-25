@@ -1,0 +1,182 @@
+[
+  {
+    "id": "btree",
+    "title": "B-tree",
+    "url": "https://en.wikipedia.org/wiki/B-tree",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=B-tree&oldid=1377462701",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 42523
+  },
+  {
+    "id": "hash-table",
+    "title": "Hash table",
+    "url": "https://en.wikipedia.org/wiki/Hash_table",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Hash_table&oldid=1381079633",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 37398
+  },
+  {
+    "id": "database-index",
+    "title": "Database index",
+    "url": "https://en.wikipedia.org/wiki/Database_index",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Database_index&oldid=1357770109",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 15454
+  },
+  {
+    "id": "lsm-tree",
+    "title": "Log-structured merge-tree",
+    "url": "https://en.wikipedia.org/wiki/Log-structured_merge-tree",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Log-structured_merge-tree&oldid=1374573576",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 11758
+  },
+  {
+    "id": "bloom-filter",
+    "title": "Bloom filter",
+    "url": "https://en.wikipedia.org/wiki/Bloom_filter",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Bloom_filter&oldid=1381027200",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 62311
+  },
+  {
+    "id": "raft",
+    "title": "Raft (algorithm)",
+    "url": "https://en.wikipedia.org/wiki/Raft_%28algorithm%29",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Raft_%28algorithm%29&oldid=1381284725",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 16416
+  },
+  {
+    "id": "paxos",
+    "title": "Paxos (computer science)",
+    "url": "https://en.wikipedia.org/wiki/Paxos_%28computer_science%29",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Paxos_%28computer_science%29&oldid=1380699655",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 46536
+  },
+  {
+    "id": "cap-theorem",
+    "title": "CAP theorem",
+    "url": "https://en.wikipedia.org/wiki/CAP_theorem",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=CAP_theorem&oldid=1374143441",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 8064
+  },
+  {
+    "id": "consistent-hashing",
+    "title": "Consistent hashing",
+    "url": "https://en.wikipedia.org/wiki/Consistent_hashing",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Consistent_hashing&oldid=1375814388",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 15052
+  },
+  {
+    "id": "two-phase-commit",
+    "title": "Two-phase commit protocol",
+    "url": "https://en.wikipedia.org/wiki/Two-phase_commit_protocol",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Two-phase_commit_protocol&oldid=1321432957",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 12854
+  },
+  {
+    "id": "transformer",
+    "title": "Transformer (deep learning)",
+    "url": "https://en.wikipedia.org/wiki/Transformer_%28deep_learning%29",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Transformer_%28deep_learning%29&oldid=1381657826",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 79404
+  },
+  {
+    "id": "attention",
+    "title": "Attention (machine learning)",
+    "url": "https://en.wikipedia.org/wiki/Attention_%28machine_learning%29",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Attention_%28machine_learning%29&oldid=1380735636",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 26064
+  },
+  {
+    "id": "word2vec",
+    "title": "Word2Vec",
+    "url": "https://en.wikipedia.org/wiki/Word2Vec",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Word2Vec&oldid=1381528953",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 25963
+  },
+  {
+    "id": "bert",
+    "title": "BERT (language model)",
+    "url": "https://en.wikipedia.org/wiki/BERT_%28language_model%29",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=BERT_%28language_model%29&oldid=1381121729",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 26659
+  },
+  {
+    "id": "rag",
+    "title": "Retrieval-augmented generation",
+    "url": "https://en.wikipedia.org/wiki/Retrieval-augmented_generation",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Retrieval-augmented_generation&oldid=1381095247",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 15231
+  },
+  {
+    "id": "tcp-congestion",
+    "title": "TCP congestion control",
+    "url": "https://en.wikipedia.org/wiki/TCP_congestion_control",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=TCP_congestion_control&oldid=1379148476",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 40089
+  },
+  {
+    "id": "http2",
+    "title": "HTTP/2",
+    "url": "https://en.wikipedia.org/wiki/HTTP/2",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=HTTP/2&oldid=1373081544",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 26132
+  },
+  {
+    "id": "garbage-collection",
+    "title": "Garbage collection (computer science)",
+    "url": "https://en.wikipedia.org/wiki/Garbage_collection_%28computer_science%29",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Garbage_collection_%28computer_science%29&oldid=1373231348",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 27108
+  },
+  {
+    "id": "dijkstra",
+    "title": "Dijkstra's algorithm",
+    "url": "https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Dijkstra%27s_algorithm&oldid=1379857671",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 38368
+  },
+  {
+    "id": "public-key-crypto",
+    "title": "Public-key cryptography",
+    "url": "https://en.wikipedia.org/wiki/Public-key_cryptography",
+    "revision_url": "https://en.wikipedia.org/w/index.php?title=Public-key_cryptography&oldid=1379508921",
+    "license": "CC BY-SA 4.0",
+    "retrieved": "2026-10-25",
+    "chars": 31073
+  }
+]

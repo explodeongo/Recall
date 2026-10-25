@@ -5,14 +5,17 @@ from typing import Annotated
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 from pydantic import HttpUrl, TypeAdapter, ValidationError
+from sqlalchemy import delete as sa_delete
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.deps import SessionDep
-from app.models import Item, ItemStatus, SourceType, Tag
-from app.schemas import ItemOut
+from app.models import Item, ItemStatus, SourceType, Tag, item_tags
+from app.pipeline import get_or_create_tags
+from app.schemas import ItemOut, TagsIn
 from app.services import jobs
+from app.services.enrich import clean_tag
 
 router = APIRouter(prefix="/items", tags=["items"])
 _url_adapter = TypeAdapter(HttpUrl)
@@ -90,11 +93,27 @@ def reprocess_item(item_id: int, session: SessionDep) -> Item:
     return item
 
 
+@router.put("/{item_id}/tags", response_model=ItemOut)
+def set_item_tags(item_id: int, body: TagsIn, session: SessionDep) -> Item:
+    """Replace an item's tags with the user's own. Reprocessing keeps them from then on."""
+    item = _get_or_404(session, item_id)
+    names = list(dict.fromkeys(t for t in (clean_tag(raw) for raw in body.tags) if t))
+    item.tags = get_or_create_tags(session, names)
+    item.tags_edited = True
+    session.flush()
+    delete_unused_tags(session)
+    session.commit()
+    session.refresh(item, ["tags"])
+    return item
+
+
 @router.delete("/{item_id}", status_code=204)
 def delete_item(item_id: int, session: SessionDep) -> Response:
     item = _get_or_404(session, item_id)
     stored = Path(item.source) if item.source_type == SourceType.pdf else None
     session.delete(item)
+    session.flush()
+    delete_unused_tags(session)
     session.commit()
     if stored is not None:
         stored.unlink(missing_ok=True)
@@ -133,3 +152,8 @@ def _store_pdf(file: UploadFile) -> str:
                 raise HTTPException(413, f"PDF is larger than {settings.max_upload_mb} MB")
             out.write(chunk)
     return str(dest)
+
+
+def delete_unused_tags(session) -> None:
+    used = select(item_tags.c.tag_id)
+    session.execute(sa_delete(Tag).where(Tag.id.not_in(used)))

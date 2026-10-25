@@ -24,12 +24,48 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://recall:recall@localhost:5432/recall_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
       - run: uv sync --frozen
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pytest -q
+
+  # Retrieval evaluation on the pinned corpus. Embeddings run locally, so no API key is needed;
+  # the job fails if hybrid search drops below the proposal's 80% recall@3 target.
+  eval:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: recall
+          POSTGRES_PASSWORD: recall
+          POSTGRES_DB: recall_eval
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U recall" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      EVAL_DATABASE_URL: postgresql+psycopg://recall:recall@localhost:5432/recall_eval
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - run: uv sync --frozen
+      - uses: actions/cache@v6
+        with:
+          path: backend/data/models
+          key: models-${{ hashFiles('backend/app/config.py') }}
+      - run: uv run python -m eval.run --min-recall 0.8 --out eval/results-ci.md
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: eval-results
+          path: |
+            backend/eval/results-ci.md
+            backend/eval/results-ci.json
 
   frontend:
     runs-on: ubuntu-latest
@@ -37,8 +73,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm

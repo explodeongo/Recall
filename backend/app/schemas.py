@@ -25,10 +25,16 @@ class ItemOut(BaseModel):
     source_type: SourceType
     source: str
     summary: str | None
+    details: dict | None
+    tags_edited: bool
     status: ItemStatus
     error: str | None
     created_at: datetime
     tags: list[TagOut]
+
+
+class TagsIn(BaseModel):
+    tags: list[str] = Field(max_length=12)
 
 
 class UrlIn(BaseModel):
@@ -47,7 +53,7 @@ class ChunkOut(BaseModel):
 
 class AskIn(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
-    mode: SearchMode = SearchMode.hybrid
+    mode: SearchMode | None = None  # None: the server's configured mode
 
 
 class SourceOut(BaseModel):
@@ -71,3 +77,48 @@ class AskOut(BaseModel):
     sources: list[SourceOut]
     cited: list[int]
     timings: dict[str, float | None]
+
+
+class ChatCreate(BaseModel):
+    item_id: int | None = None
+
+
+class ChatRename(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+
+
+class MessageIn(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+
+
+class MessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    role: str
+    content: str
+    sources: list[SourceOut] | None
+    cited: list[int] | None
+    not_found: bool
+    search_query: str | None
+    created_at: datetime
+
+
+class ChatSummary(BaseModel):
+    id: int
+    title: str
+    item_id: int | None
+    item_title: str | None
+    message_count: int
+    updated_at: datetime
+
+
+class ChatOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    item_id: int | None
+    created_at: datetime
+    updated_at: datetime
+    messages: list[MessageOut]

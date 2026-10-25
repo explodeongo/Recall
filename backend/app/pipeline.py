@@ -45,7 +45,6 @@ def process_item(
         raise PermanentError("The page had too little text to save")
 
     chunks = chunk_pages(pages, settings.chunk_tokens, settings.chunk_overlap)
-    vectors = embedder.embed_documents([c.text for c in chunks])
 
     enrichment = None
     if llm is not None:
@@ -57,19 +56,29 @@ def process_item(
                 raise
             raise PermanentError(str(exc)) from exc
 
+    item.title = doc.title or (enrichment and enrichment.title) or item.title
+    # Each chunk is embedded with its document's title in front, so a passage deep inside a
+    # long article still carries what the article is about (measured in eval/results.md).
+    vectors = embedder.embed_documents([embedding_text(item.title, c.text) for c in chunks])
+
     session.execute(delete(Chunk).where(Chunk.item_id == item.id))
     session.add_all(
         Chunk(item_id=item.id, chunk_index=i, chunk_text=c.text, page=c.page, embedding=v)
         for i, (c, v) in enumerate(zip(chunks, vectors, strict=True))
     )
-    item.title = doc.title or (enrichment and enrichment.title) or item.title
     if enrichment is not None:
         item.summary = enrichment.summary
-        item.tags = _get_or_create_tags(session, enrichment.tags)
+        item.details = enrichment.details
+        if not item.tags_edited:  # tags the user chose by hand survive reprocessing
+            item.tags = get_or_create_tags(session, enrichment.tags)
     session.flush()
 
 
-def _get_or_create_tags(session: Session, names: list[str]) -> list[Tag]:
+def embedding_text(title: str, chunk: str) -> str:
+    return f"{title}\n\n{chunk}"
+
+
+def get_or_create_tags(session: Session, names: list[str]) -> list[Tag]:
     if not names:
         return []
     # ON CONFLICT keeps two workers tagging at once from tripping the unique constraint.

@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     fetch_contact: str | None = None  # put in the User-Agent; some sites require one
     allow_private_urls: bool = False  # only for local testing; blocks SSRF in a hosted demo
 
+    # Characters of a document the LLM sees when writing its summaries (sampled from start,
+    # middle and end when longer). The one exception to "only short passages go to the LLM".
+    summary_input_chars: int = 40_000
+
     # Chunking, in approximate tokens (see app/services/text.py)
     chunk_tokens: int = 400
     chunk_overlap: int = 60
@@ -34,7 +38,14 @@ class Settings(BaseSettings):
     # Retrieval and answering
     candidate_k: int = 20  # taken from each of vector and keyword search before fusion
     answer_k: int = 6  # passages sent to the LLM
-    min_similarity: float = 0.5  # below this best cosine similarity, reply "not found"
+    # Below this closest-passage cosine similarity, reply "not found" without calling the LLM.
+    # Tuned in eval/results.md: off-topic questions score under it, real ones above.
+    min_similarity: float = 0.58
+    # "hybrid", "vector", "keyword", or "rerank" (hybrid, then a cross-encoder re-scores the
+    # top rerank_pool passages). See eval/results.md for how they compare.
+    search_mode: str = "hybrid"
+    rerank_model: str = "jinaai/jina-reranker-v1-turbo-en"
+    rerank_pool: int = 20
 
 
 @lru_cache

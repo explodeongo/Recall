@@ -3,8 +3,6 @@ import json
 import pytest
 
 from app.config import get_settings
-from app.models import Item, SourceType
-from app.pipeline import process_item
 from app.services.answer import (
     NOT_FOUND_MESSAGE,
     answer_question,
@@ -13,51 +11,7 @@ from app.services.answer import (
 )
 from app.services.embeddings import HashingEmbedder
 from app.services.search import SearchMode, rrf, search
-from app.sources import ExtractedDoc, PageText
 from tests.helpers import FakeLLM
-
-LIBRARY = {
-    "Database indexing": [
-        "A hash index maps keys to buckets, so exact-match lookups are very fast.",
-        "A B-tree keeps keys sorted, so it also serves range scans and ORDER BY queries.",
-    ],
-    "Transformers": [
-        "The transformer architecture relies on self-attention instead of recurrence.",
-        "Positional encodings tell the model the order of the tokens in a sequence.",
-    ],
-    "Sourdough baking": [
-        "A sourdough starter is a culture of wild yeast and lactobacilli.",
-        "Bulk fermentation at warm temperatures makes the dough rise faster.",
-    ],
-}
-
-
-class StubSource:
-    def __init__(self, pages):
-        self.pages = pages
-
-    def extract(self, item):
-        return ExtractedDoc(title=None, pages=self.pages)
-
-
-@pytest.fixture
-def library(session, monkeypatch):
-    # Small chunks without overlap: one chunk per page, so a citation's page can be checked.
-    monkeypatch.setattr(get_settings(), "chunk_tokens", 20)
-    monkeypatch.setattr(get_settings(), "chunk_overlap", 0)
-    # The hashing embedder's similarities run lower than bge's; questions sharing a few words
-    # with a passage score about 0.3, unrelated ones 0.
-    monkeypatch.setattr(get_settings(), "min_similarity", 0.2)
-    ids = {}
-    for title, pages in LIBRARY.items():
-        item = Item(title=title, source_type=SourceType.pdf, source="unused")
-        session.add(item)
-        session.flush()
-        pages = [PageText(i + 1, text) for i, text in enumerate(pages)]
-        process_item(session, item, embedder=HashingEmbedder(), llm=None, source=StubSource(pages))
-        ids[title] = item.id
-    session.commit()
-    return ids
 
 
 def test_rrf_rewards_agreement():
@@ -66,9 +20,24 @@ def test_rrf_rewards_agreement():
     assert fused[0][1] == pytest.approx(1 / 61 + 1 / 62)
 
 
+class WordOverlapReranker:
+    """Scores a passage by how many question words it contains."""
+
+    def score(self, query, passages):
+        words = set(query.lower().split())
+        return [len(words & set(p.lower().split())) for p in passages]
+
+
 @pytest.mark.parametrize("mode", list(SearchMode))
 def test_every_mode_finds_the_right_passage(session, library, mode):
-    result = search(session, HashingEmbedder(), "which index serves range scans", mode=mode, k=3)
+    result = search(
+        session,
+        HashingEmbedder(),
+        "which index serves range scans",
+        mode=mode,
+        k=3,
+        reranker=WordOverlapReranker(),
+    )
     top = result.passages[0]
     assert top.item_id == library["Database indexing"]
     assert top.page == 2
@@ -179,3 +148,24 @@ def test_get_chunk(client, library, session):
     chunk = client.get(f"/chunks/{result.passages[0].chunk_id}").json()
     assert "starter" in chunk["chunk_text"] and chunk["page"] == 1
     assert client.get("/chunks/999999").status_code == 404
+
+
+def test_rerank_reorders_the_candidates(session, library):
+    class PreferSourdough:
+        def score(self, query, passages):
+            return [1.0 if "sourdough" in p.lower() else 0.0 for p in passages]
+
+    result = search(
+        session,
+        HashingEmbedder(),
+        "range scans",
+        mode=SearchMode.rerank,
+        k=2,
+        reranker=PreferSourdough(),
+    )
+    assert all(p.title == "Sourdough baking" for p in result.passages)
+
+
+def test_rerank_mode_needs_a_reranker(session, library):
+    with pytest.raises(ValueError):
+        search(session, HashingEmbedder(), "anything", mode=SearchMode.rerank)

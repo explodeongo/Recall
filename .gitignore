@@ -22,3 +22,6 @@ next-env.d.ts
 
 # local notes and tooling
 HANDOFF.md
+
+# evaluation output from CI runs
+backend/eval/results-ci.*
