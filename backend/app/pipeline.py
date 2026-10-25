@@ -61,7 +61,8 @@ def process_item(
     # long article still carries what the article is about (measured in eval/results.md).
     vectors = embedder.embed_documents([embedding_text(item.title, c.text) for c in chunks])
 
-    session.execute(delete(Chunk).where(Chunk.item_id == item.id))
+    # Only the document's own chunks; the reader's note chunks stay (see services/notes.py).
+    session.execute(delete(Chunk).where(Chunk.item_id == item.id, Chunk.kind == "text"))
     offsets = locate_chunks(full_text, [c.text for c in chunks])
     session.add_all(
         Chunk(

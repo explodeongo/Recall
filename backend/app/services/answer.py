@@ -79,7 +79,8 @@ def build_prompt(question: str, passages: list[Passage], history: list[Turn] | N
     blocks = []
     for n, p in enumerate(passages, start=1):
         where = f", page {p.page}" if p.page else ""
-        blocks.append(f'[{n}] From "{p.title}"{where}:\n{p.text}')
+        origin = f'your own notes on "{p.title}"' if p.kind == "note" else f'"{p.title}"{where}'
+        blocks.append(f"[{n}] From {origin}:\n{p.text}")
     prompt = "Passages:\n\n" + "\n\n".join(blocks)
     if history:
         lines = [f"User: {t.question}\nAssistant: {_shorten(t.answer)}" for t in history]

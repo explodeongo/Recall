@@ -26,6 +26,7 @@ class ItemOut(BaseModel):
     source: str
     summary: str | None
     details: dict | None
+    note: str | None
     tags_edited: bool
     status: ItemStatus
     error: str | None
@@ -85,6 +86,7 @@ class SourceOut(BaseModel):
     text: str
     start_char: int | None = None
     end_char: int | None = None
+    kind: str = "text"
 
 
 class AskOut(BaseModel):
@@ -157,3 +159,33 @@ class UserOut(BaseModel):
     id: int
     email: str
     name: str | None
+
+
+class HighlightIn(BaseModel):
+    start_char: int = Field(ge=0)
+    end_char: int = Field(gt=0)
+    note: str | None = Field(default=None, max_length=5000)
+
+
+class HighlightNoteIn(BaseModel):
+    note: str | None = Field(default=None, max_length=5000)
+
+
+class HighlightOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    item_id: int
+    start_char: int
+    end_char: int
+    quote: str
+    note: str | None
+    created_at: datetime
+
+
+class HighlightWithItem(HighlightOut):
+    item_title: str
+
+
+class NoteIn(BaseModel):
+    note: str = Field(max_length=50_000)

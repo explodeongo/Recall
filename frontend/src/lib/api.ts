@@ -21,6 +21,7 @@ export interface Item {
   source: string;
   summary: string | null;
   details: ItemDetails | null;
+  note: string | null;
   tags_edited: boolean;
   status: ItemStatus;
   error: string | null;
@@ -68,11 +69,32 @@ export interface Source {
   text: string;
   start_char?: number | null;
   end_char?: number | null;
+  /** "note" when the passage comes from your own notes on the item. */
+  kind?: "text" | "note";
+}
+
+/** How a source is named to the reader: a document's title, or "Your notes on …". */
+export const sourceName = (source: Pick<Source, "title" | "kind">) =>
+  source.kind === "note" ? `Your notes on ${source.title}` : source.title;
+
+export interface Highlight {
+  id: number;
+  item_id: number;
+  start_char: number;
+  end_char: number;
+  quote: string;
+  note: string | null;
+  created_at: string;
+}
+
+export interface HighlightWithItem extends Highlight {
+  item_title: string;
 }
 
 /** Where a citation opens: the item's reader, at the passage. The character range survives the
  *  item being processed again; the chunk id is the fallback for answers saved before ranges. */
-export function passageHref(source: Pick<Source, "item_id" | "chunk_id" | "start_char" | "end_char">) {
+export function passageHref(source: Pick<Source, "item_id" | "chunk_id" | "start_char" | "end_char" | "kind">) {
+  if (source.kind === "note") return `/items/${source.item_id}?view=summary#notes`;
   if (source.start_char != null && source.end_char != null) {
     return `/items/${source.item_id}?from=${source.start_char}&to=${source.end_char}`;
   }
@@ -165,6 +187,13 @@ export const api = {
   tags: () => request<TagWithCount[]>("/tags"),
   chunk: (id: number) => request<Chunk>(`/chunks/${id}`),
   content: (id: number) => request<{ pages: Page[] }>(`/items/${id}/content`),
+  setNote: (id: number, note: string) => request<Item>(`/items/${id}/note`, json("PUT", { note })),
+  highlights: (itemId: number) => request<Highlight[]>(`/items/${itemId}/highlights`),
+  allHighlights: () => request<HighlightWithItem[]>("/highlights"),
+  addHighlight: (itemId: number, start: number, end: number, note?: string) =>
+    request<Highlight>(`/items/${itemId}/highlights`, json("POST", { start_char: start, end_char: end, note: note ?? null })),
+  editHighlight: (id: number, note: string) => request<Highlight>(`/highlights/${id}`, json("PATCH", { note })),
+  deleteHighlight: (id: number) => request<void>(`/highlights/${id}`, { method: "DELETE" }),
   saveUrl: (url: string) => {
     const form = new FormData();
     form.append("url", url);

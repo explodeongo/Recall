@@ -5,7 +5,8 @@ import { AlignLeft, ArrowLeft, BookOpen, ExternalLink, MessageSquareText, Quote,
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useId, useMemo, useRef, useState } from "react";
-import { type Mark, Reader, joinPages } from "@/components/Reader";
+import { HighlightReader } from "@/components/HighlightReader";
+import { type Mark, joinPages } from "@/components/Reader";
 import { toast } from "sonner";
 import { SourceIcon, StatusBadge, sourceLabel, timeAgo } from "@/components/ItemBits";
 import {
@@ -107,6 +108,7 @@ function ItemView() {
             {data.summary && (
               <div className={cn("space-y-10", sawProcessing.current && "animate-develop")}>
                 <p className="max-w-[65ch] font-heading text-xl leading-relaxed text-pretty">{data.summary}</p>
+                <ItemNote item={data} />
                 {data.details ? <Details details={data.details} /> : <NoDetails item={data} />}
               </div>
             )}
@@ -117,6 +119,51 @@ function ItemView() {
         </Tabs>
       )}
     </article>
+  );
+}
+
+/** The reader's own note: saved as they type, and searchable by Ask once saved. */
+function ItemNote({ item }: { item: Item }) {
+  const queryClient = useQueryClient();
+  const [note, setNote] = useState(item.note ?? "");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function change(value: string) {
+    setNote(value);
+    setState("saving");
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      try {
+        const updated = await api.setNote(item.id, value);
+        queryClient.setQueryData(["item", item.id], updated);
+        setState("saved");
+      } catch {
+        setState("error");
+      }
+    }, 800);
+  }
+
+  return (
+    <section id="notes" aria-labelledby="notes-title" className="max-w-[68ch] scroll-mt-24 space-y-2">
+      <div className="flex items-baseline justify-between">
+        <h2 id="notes-title" className="font-heading text-2xl font-medium">
+          Your notes
+        </h2>
+        <span className="text-xs text-muted-foreground" aria-live="polite">
+          {state === "saving" ? "Saving…" : state === "saved" ? "Saved. Ask can use these now." : state === "error" ? "Couldn't save. Keep typing to retry." : ""}
+        </span>
+      </div>
+      <textarea
+        value={note}
+        onChange={(e) => change(e.target.value)}
+        rows={note ? Math.min(12, note.split("\n").length + 2) : 3}
+        maxLength={50000}
+        placeholder="What you think about this, how it connects to other things you've read…"
+        aria-labelledby="notes-title"
+        className="block w-full resize-y rounded-xl border bg-card px-4 py-3 text-[15px] leading-relaxed outline-none transition focus:border-brand/60 focus:ring-3 focus:ring-brand/15"
+      />
+    </section>
   );
 }
 
@@ -332,7 +379,7 @@ function DocumentText({ item, chunkId, range }: { item: Item; chunkId: number | 
           {chunk.data?.page ? `, on page ${chunk.data.page}` : ""}.
         </p>
       )}
-      <Reader pages={content.data.pages} marks={marks} focus={marks[0]?.id} />
+      <HighlightReader itemId={item.id} pages={content.data.pages} cited={marks} />
     </div>
   );
 }

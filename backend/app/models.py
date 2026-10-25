@@ -94,6 +94,8 @@ class Item(Base):
     # The cleaned full text for the reader: [{"page": int | None, "text": str}], paragraphs
     # separated by blank lines. Joined with blank lines, it's the text chunk offsets refer to.
     content: Mapped[list | None] = mapped_column(JSONB)
+    # The reader's own free-form note on the item.
+    note: Mapped[str | None] = mapped_column(Text)
     # Set when the user edits the tags by hand, so reprocessing keeps their choice.
     tags_edited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     status: Mapped[ItemStatus] = mapped_column(
@@ -106,6 +108,9 @@ class Item(Base):
         back_populates="item", cascade="all, delete-orphan", order_by="Chunk.chunk_index"
     )
     tags: Mapped[list["Tag"]] = relationship(secondary=item_tags, back_populates="items")
+    highlights: Mapped[list["Highlight"]] = relationship(
+        back_populates="item", cascade="all, delete-orphan", order_by="Highlight.start_char"
+    )
 
 
 class Chunk(Base):
@@ -115,6 +120,9 @@ class Chunk(Base):
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"), index=True)
     chunk_index: Mapped[int] = mapped_column(Integer)
     chunk_text: Mapped[str] = mapped_column(Text)
+    # "text": from the document. "note": from the reader's notes and highlights, so questions
+    # can be answered from them too (their chunk_index is negative to stay out of the way).
+    kind: Mapped[str] = mapped_column(String(16), default="text", server_default="text")
     # PDF page the chunk starts on, so citations can jump to it. Null for web articles.
     page: Mapped[int | None] = mapped_column(Integer)
     # Where the chunk sits in the item's joined content, so the reader can highlight it.
@@ -204,3 +212,20 @@ class ChatMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     chat: Mapped[Chat] = relationship(back_populates="messages")
+
+
+class Highlight(Base):
+    """A passage the reader marked in an item's full text, optionally with a note."""
+
+    __tablename__ = "highlights"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"), index=True)
+    start_char: Mapped[int] = mapped_column(Integer)
+    end_char: Mapped[int] = mapped_column(Integer)
+    quote: Mapped[str] = mapped_column(Text)
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    item: Mapped[Item] = relationship(back_populates="highlights")

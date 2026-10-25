@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useId, useState } from "react";
 import { SourceIcon } from "@/components/ItemBits";
 import { Skeleton } from "@/components/ui/skeleton";
-import { passageHref, sourceHref, type Source } from "@/lib/api";
+import { passageHref, sourceHref, sourceName, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export function Thinking({ searching }: { searching: boolean }) {
@@ -93,7 +93,7 @@ export function SourceCard({ source, index = 0, animate = true }: { source: Sour
         <span className="grid size-5 shrink-0 place-items-center rounded-md bg-brand-soft text-xs font-semibold text-brand tabular-nums">{source.n}</span>
         <SourceIcon type={source.source_type} className="size-3.5" />
         <Link href={passageHref(source)} className="min-w-0 truncate font-medium after:absolute after:inset-0">
-          {source.title}
+          {sourceName(source)}
         </Link>
         {source.page && <span className="shrink-0 text-muted-foreground">p. {source.page}</span>}
         <a
@@ -101,7 +101,7 @@ export function SourceCard({ source, index = 0, animate = true }: { source: Sour
           target="_blank"
           rel="noreferrer"
           className="relative z-10 ml-auto shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label={`Open ${source.title}${source.page ? ` at page ${source.page}` : ""}`}
+          aria-label={`Open ${sourceName(source)}${source.page ? ` at page ${source.page}` : ""}`}
         >
           <ExternalLink className="size-3.5" />
         </a>

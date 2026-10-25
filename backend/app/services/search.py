@@ -40,6 +40,7 @@ class Passage:
     # answers can still point at the passage.
     start_char: int | None = None
     end_char: int | None = None
+    kind: str = "text"  # "note" when it comes from the reader's own notes
 
 
 @dataclass(frozen=True)
@@ -166,6 +167,7 @@ def _load(session: Session, fused: list[tuple[int, float]]) -> list[Passage]:
                 score=score,
                 start_char=chunk.start_char,
                 end_char=chunk.end_char,
+                kind=chunk.kind,
             )
         )
     return passages
