@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Library, LogOut, MessageSquareText, Moon, Plus, Sun } from "lucide-react";
+import { Library, LogOut, MessageSquareText, Moon, Plus, Search, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { openSearch } from "@/components/SearchPalette";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -52,10 +53,21 @@ export function Nav() {
             <span className="hidden sm:inline">{label}</span>
           </Link>
         ))}
+        {!authPage && (
+          <button
+            onClick={openSearch}
+            className="ml-auto flex h-8 items-center gap-2 rounded-md border bg-card px-2.5 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground sm:w-56"
+            aria-label="Search your library"
+          >
+            <Search className="size-4" aria-hidden />
+            <span className="hidden sm:inline">Search</span>
+            <kbd className="ml-auto hidden rounded border bg-muted px-1.5 font-sans text-[11px] sm:inline">⌘K</kbd>
+          </button>
+        )}
         <Button
           variant="ghost"
           size="icon"
-          className="ml-auto"
+          className={authPage ? "ml-auto" : undefined}
           aria-label="Toggle dark mode"
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         >

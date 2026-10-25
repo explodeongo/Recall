@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from app.api import ask, auth, chats, chunks, highlights, items, tags
+from app.api import ask, auth, chats, chunks, highlights, items, search, tags
 from app.config import get_settings
 from app.db import engine
 
@@ -23,6 +23,7 @@ app.include_router(ask.router)
 app.include_router(chunks.router)
 app.include_router(chats.router)
 app.include_router(highlights.router)
+app.include_router(search.router)
 
 
 @app.get("/health", tags=["meta"])

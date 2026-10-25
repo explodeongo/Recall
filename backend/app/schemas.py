@@ -189,3 +189,43 @@ class HighlightWithItem(HighlightOut):
 
 class NoteIn(BaseModel):
     note: str = Field(max_length=50_000)
+
+
+class SearchItem(BaseModel):
+    id: int
+    title: str
+    source_type: SourceType
+    status: ItemStatus
+
+
+class SearchPassage(BaseModel):
+    item_id: int
+    title: str
+    text: str
+    page: int | None
+    start_char: int | None
+    end_char: int | None
+    kind: str
+
+
+class SearchHighlight(BaseModel):
+    id: int
+    item_id: int
+    item_title: str
+    quote: str
+    note: str | None
+    start_char: int
+    end_char: int
+
+
+class SearchChat(BaseModel):
+    id: int
+    title: str
+
+
+class SearchOut(BaseModel):
+    items: list[SearchItem]
+    passages: list[SearchPassage]
+    highlights: list[SearchHighlight]
+    chats: list[SearchChat]
+    tags: list[str]

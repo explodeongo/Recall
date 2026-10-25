@@ -87,6 +87,14 @@ export interface Highlight {
   created_at: string;
 }
 
+export interface SearchResults {
+  items: { id: number; title: string; source_type: SourceType; status: ItemStatus }[];
+  passages: { item_id: number; title: string; text: string; page: number | null; start_char: number | null; end_char: number | null; kind: "text" | "note" }[];
+  highlights: { id: number; item_id: number; item_title: string; quote: string; note: string | null; start_char: number; end_char: number }[];
+  chats: { id: number; title: string }[];
+  tags: string[];
+}
+
 export interface HighlightWithItem extends Highlight {
   item_title: string;
 }
@@ -188,6 +196,7 @@ export const api = {
   chunk: (id: number) => request<Chunk>(`/chunks/${id}`),
   content: (id: number) => request<{ pages: Page[] }>(`/items/${id}/content`),
   setNote: (id: number, note: string) => request<Item>(`/items/${id}/note`, json("PUT", { note })),
+  search: (q: string) => request<SearchResults>(`/search?q=${encodeURIComponent(q)}`),
   highlights: (itemId: number) => request<Highlight[]>(`/items/${itemId}/highlights`),
   allHighlights: () => request<HighlightWithItem[]>("/highlights"),
   addHighlight: (itemId: number, start: number, end: number, note?: string) =>
