@@ -1,0 +1,138 @@
+import pytest
+
+from app import worker
+from app.errors import PermanentError
+from app.models import Chunk, Item, ItemStatus, SourceType, Tag
+from app.pipeline import process_item
+from app.services import jobs
+from app.services.embeddings import HashingEmbedder
+from app.services.llm import LLMError
+from app.sources import ExtractedDoc, PageText
+from tests.helpers import FakeLLM, make_pdf
+
+
+class StubSource:
+    def __init__(self, doc: ExtractedDoc):
+        self.doc = doc
+
+    def extract(self, item):
+        return self.doc
+
+
+DOC = ExtractedDoc(
+    title=None,
+    pages=[
+        PageText(1, "Hash indexes map keys to buckets. They are fast for exact lookups."),
+        PageText(2, "B-trees keep keys sorted, so they also serve range scans and ORDER BY."),
+    ],
+)
+
+
+def _item(session, source_type=SourceType.pdf, source="unused") -> Item:
+    item = Item(title="indexing notes", source_type=source_type, source=source)
+    session.add(item)
+    session.commit()
+    return item
+
+
+def test_process_item_saves_chunks_summary_and_tags(session):
+    item = _item(session)
+    llm = FakeLLM()
+    process_item(session, item, embedder=HashingEmbedder(), llm=llm, source=StubSource(DOC))
+    session.commit()
+
+    item = session.get(Item, item.id)
+    assert item.title == "Database indexing"  # no title in the source, so the model's is used
+    assert item.summary == "Compares B-tree and hash indexes."
+    assert [t.name for t in item.tags] == ["databases", "indexing", "b-trees"]
+    chunks = session.query(Chunk).filter_by(item_id=item.id).all()
+    assert len(chunks) == 1 and chunks[0].page == 1
+    assert len(chunks[0].embedding) == 384
+    assert "B-trees keep keys sorted" in chunks[0].chunk_text
+
+
+def test_existing_tags_are_offered_and_reused(session):
+    session.add(Tag(name="databases"))
+    session.commit()
+    item = _item(session)
+    llm = FakeLLM()
+    process_item(session, item, embedder=HashingEmbedder(), llm=llm, source=StubSource(DOC))
+    session.commit()
+    assert "databases" in llm.prompts[0]
+    assert session.query(Tag).filter_by(name="databases").count() == 1
+
+
+def test_source_title_wins_over_model_title(session):
+    item = _item(session)
+    doc = ExtractedDoc(title="Indexing 101", pages=DOC.pages)
+    process_item(session, item, embedder=HashingEmbedder(), llm=FakeLLM(), source=StubSource(doc))
+    assert item.title == "Indexing 101"
+
+
+def test_reprocessing_replaces_chunks(session):
+    item = _item(session)
+    for _ in range(2):
+        process_item(
+            session, item, embedder=HashingEmbedder(), llm=FakeLLM(), source=StubSource(DOC)
+        )
+        session.commit()
+    assert session.query(Chunk).filter_by(item_id=item.id).count() == 1
+
+
+def test_without_llm_only_chunks_are_saved(session):
+    item = _item(session)
+    process_item(session, item, embedder=HashingEmbedder(), llm=None, source=StubSource(DOC))
+    assert item.summary is None and item.tags == []
+    assert session.query(Chunk).filter_by(item_id=item.id).count() == 1
+
+
+def test_scanned_pdf_fails_with_a_clear_message(session):
+    item = _item(session)
+    empty = ExtractedDoc(title=None, pages=[PageText(1, ""), PageText(2, "3")])
+    with pytest.raises(PermanentError, match="scanned"):
+        process_item(
+            session, item, embedder=HashingEmbedder(), llm=FakeLLM(), source=StubSource(empty)
+        )
+
+
+def test_non_retryable_llm_error_becomes_permanent(session):
+    item = _item(session)
+    llm = FakeLLM(error=LLMError("GEMINI_API_KEY is not set"))
+    with pytest.raises(PermanentError, match="GEMINI_API_KEY"):
+        process_item(session, item, embedder=HashingEmbedder(), llm=llm, source=StubSource(DOC))
+
+
+def test_worker_processes_a_real_pdf_end_to_end(session, tmp_path):
+    pdf = tmp_path / "notes.pdf"
+    pdf.write_bytes(
+        make_pdf(
+            [["Hash indexes give constant-time exact lookups."], ["B-trees support ranges."]],
+            header="CS 501 - Databases",
+        )
+    )
+    item = _item(session, source=str(pdf))
+    jobs.enqueue(session, item)
+    session.commit()
+
+    assert worker.run_once(HashingEmbedder(), FakeLLM()) is True
+    session.expire_all()
+    item = session.get(Item, item.id)
+    assert item.status == ItemStatus.ready and item.error is None
+    pages = [c.page for c in item.chunks]
+    assert pages == [1]
+    assert "CS 501" in item.chunks[0].chunk_text  # two pages: too few to call it a header
+    assert worker.run_once(HashingEmbedder(), FakeLLM()) is False
+
+
+def test_worker_marks_unreadable_item_failed(session, tmp_path):
+    pdf = tmp_path / "scan.pdf"
+    pdf.write_bytes(make_pdf([[], [], []]))
+    item = _item(session, source=str(pdf))
+    jobs.enqueue(session, item)
+    session.commit()
+
+    worker.run_once(HashingEmbedder(), FakeLLM())
+    session.expire_all()
+    item = session.get(Item, item.id)
+    assert item.status == ItemStatus.failed
+    assert "scanned image" in item.error

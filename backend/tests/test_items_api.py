@@ -77,5 +77,23 @@ def test_tags_with_counts(client, session):
     ]
 
 
-def test_ask_not_built_yet(client):
-    assert client.post("/ask", json={"question": "what?"}).status_code == 501
+def test_reprocess_requeues_a_failed_item(client, session):
+    item = Item(title="t", source_type=SourceType.url, source="https://x", status="failed")
+    session.add(item)
+    session.commit()
+    resp = client.post(f"/items/{item.id}/reprocess")
+    assert resp.status_code == 202 and resp.json()["status"] == "queued"
+    assert client.post(f"/items/{item.id}/reprocess").status_code == 409  # already queued
+
+
+def test_delete_removes_item_and_file(client, tmp_path):
+    item = client.post("/items", files={"file": ("a.pdf", PDF_BYTES, "application/pdf")}).json()
+    assert client.get(f"/items/{item['id']}/file").content == PDF_BYTES
+    assert client.delete(f"/items/{item['id']}").status_code == 204
+    assert client.get(f"/items/{item['id']}").status_code == 404
+    assert list(tmp_path.glob("*.pdf")) == []
+
+
+def test_url_item_has_no_file(client):
+    item = client.post("/items", data={"url": "https://example.com/post"}).json()
+    assert client.get(f"/items/{item['id']}/file").status_code == 404

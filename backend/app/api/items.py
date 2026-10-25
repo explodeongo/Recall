@@ -2,20 +2,19 @@ import uuid
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
+from fastapi.responses import FileResponse
 from pydantic import HttpUrl, TypeAdapter, ValidationError
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
-from app.db import get_session
-from app.models import Item, SourceType, Tag
+from app.deps import SessionDep
+from app.models import Item, ItemStatus, SourceType, Tag
 from app.schemas import ItemOut
 from app.services import jobs
 
 router = APIRouter(prefix="/items", tags=["items"])
-
-SessionDep = Annotated[Session, Depends(get_session)]
 _url_adapter = TypeAdapter(HttpUrl)
 
 
@@ -60,6 +59,49 @@ def list_items(session: SessionDep, tag: str | None = None) -> list[Item]:
 
 @router.get("/{item_id}", response_model=ItemOut)
 def get_item(item_id: int, session: SessionDep) -> Item:
+    """One item's summary, tags, status and source (FR-7)."""
+    return _get_or_404(session, item_id)
+
+
+@router.get("/{item_id}/file", response_class=FileResponse)
+def get_item_file(item_id: int, session: SessionDep) -> FileResponse:
+    """The original PDF, so a citation can open it at the cited page (`#page=N`)."""
+    item = _get_or_404(session, item_id)
+    path = Path(item.source)
+    if item.source_type != SourceType.pdf or not path.exists():
+        raise HTTPException(404, "This item has no stored file")
+    filename = f"{item.title[:100]}.pdf".replace('"', "")
+    return FileResponse(
+        path,
+        media_type="application/pdf",
+        filename=filename,
+        content_disposition_type="inline",
+    )
+
+
+@router.post("/{item_id}/reprocess", response_model=ItemOut, status_code=202)
+def reprocess_item(item_id: int, session: SessionDep) -> Item:
+    """Queue an item to be processed again, for example after a failure."""
+    item = _get_or_404(session, item_id)
+    if item.status in (ItemStatus.queued, ItemStatus.processing):
+        raise HTTPException(409, "This item is already being processed")
+    jobs.enqueue(session, item)
+    session.commit()
+    return item
+
+
+@router.delete("/{item_id}", status_code=204)
+def delete_item(item_id: int, session: SessionDep) -> Response:
+    item = _get_or_404(session, item_id)
+    stored = Path(item.source) if item.source_type == SourceType.pdf else None
+    session.delete(item)
+    session.commit()
+    if stored is not None:
+        stored.unlink(missing_ok=True)
+    return Response(status_code=204)
+
+
+def _get_or_404(session, item_id: int) -> Item:
     item = session.get(Item, item_id, options=[selectinload(Item.tags)])
     if item is None:
         raise HTTPException(404, "Item not found")

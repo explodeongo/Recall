@@ -1,0 +1,40 @@
+"""Source types: how each kind of saved item turns into text (NFR-5).
+
+Adding a new source type (video, audio) means one new class implementing `Source`, an entry in
+`get_source`, and a new `SourceType` enum value (plus its migration). The pipeline, search
+and API don't change.
+"""
+
+from dataclasses import dataclass
+from typing import Protocol
+
+from app.models import Item, SourceType
+
+
+@dataclass(frozen=True)
+class PageText:
+    """Text from one page of a document. `page` is 1-based, or None for sources with no pages.
+
+    Paragraphs are separated by a blank line.
+    """
+
+    page: int | None
+    text: str
+
+
+@dataclass(frozen=True)
+class ExtractedDoc:
+    title: str | None
+    pages: list[PageText]
+
+
+class Source(Protocol):
+    def extract(self, item: Item) -> ExtractedDoc: ...
+
+
+def get_source(source_type: SourceType) -> Source:
+    from app.sources.pdf import PdfSource
+    from app.sources.url import UrlSource
+
+    registry: dict[SourceType, type] = {SourceType.pdf: PdfSource, SourceType.url: UrlSource}
+    return registry[source_type]()

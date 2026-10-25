@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>B-trees vs hash indexes | Example Engineering Blog</title>
+  <meta property="og:title" content="B-trees vs hash indexes">
+</head>
+<body>
+  <nav><a href="/">Home</a> <a href="/about">About</a> <a href="/subscribe">Subscribe</a></nav>
+  <article>
+    <h1>B-trees vs hash indexes</h1>
+    <p>A database index is a separate structure that lets the engine find rows without scanning
+    the whole table. The two most common kinds are B-tree indexes and hash indexes, and they are
+    good at different things.</p>
+    <p>A hash index maps each key through a hash function to a bucket. Lookups for an exact key
+    are very fast, close to constant time, but the hashing destroys ordering, so a hash index
+    cannot answer range queries such as "all orders between March and May".</p>
+    <p>A B-tree keeps keys sorted in a balanced tree of pages. Equality lookups take a logarithmic
+    number of page reads, and because the keys are ordered the same index serves range scans,
+    prefix matches and ORDER BY without an extra sort.</p>
+    <p>In practice, choose a hash index only when every query on the column is an exact-match
+    lookup and the workload is dominated by such lookups. Otherwise the B-tree is the safer
+    default, which is why most databases create B-trees unless you ask for something else.</p>
+  </article>
+  <footer>Copyright 2026 Example Blog. All rights reserved. Cookie settings.</footer>
+</body>
+</html>

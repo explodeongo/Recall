@@ -1,5 +1,7 @@
+from sqlalchemy import func, update
+
 from app.db import SessionLocal
-from app.models import Item, ItemStatus, JobStatus, SourceType
+from app.models import Item, ItemStatus, Job, JobStatus, SourceType
 from app.services import jobs
 
 
@@ -30,6 +32,7 @@ def test_retry_then_fail(session):
         assert job.attempts == attempt
         jobs.fail(session, job, "boom")
         session.commit()
+        _make_due(session)
     assert job.status == JobStatus.failed
     assert session.get(Item, item.id).status == ItemStatus.failed
     assert session.get(Item, item.id).error == "boom"
@@ -53,3 +56,30 @@ def test_two_workers_never_claim_the_same_job(session):
         assert j1.id != j2.id
         w1.commit()
         w2.commit()
+
+
+def _make_due(session):
+    session.execute(update(Job).values(run_after=func.now()))
+    session.commit()
+
+
+def test_retry_waits_for_backoff(session):
+    _item_with_job(session)
+    job = jobs.claim_next(session)
+    jobs.fail(session, job, "rate limited")
+    session.commit()
+    assert job.status == JobStatus.queued
+    assert jobs.claim_next(session) is None  # not due yet
+    _make_due(session)
+    assert jobs.claim_next(session).id == job.id
+
+
+def test_reclaims_job_from_crashed_worker(session):
+    _item_with_job(session)
+    job = jobs.claim_next(session)
+    session.commit()
+    assert jobs.claim_next(session) is None  # still owned by its worker
+    session.execute(update(Job).values(updated_at=func.now() - jobs.STALE_AFTER - jobs.RETRY_BASE))
+    session.commit()
+    again = jobs.claim_next(session)
+    assert again.id == job.id and again.attempts == 2

@@ -37,8 +37,20 @@ def session():
 
 
 @pytest.fixture
-def client(tmp_path, monkeypatch):
+def fake_llm():
+    from tests.helpers import FakeLLM
+
+    return FakeLLM()
+
+
+@pytest.fixture
+def client(tmp_path, monkeypatch, fake_llm):
     from app.config import get_settings
+    from app.deps import embedder_dep, llm_dep
+    from app.services.embeddings import HashingEmbedder
 
     monkeypatch.setattr(get_settings(), "upload_dir", str(tmp_path))
-    return TestClient(app)
+    app.dependency_overrides[embedder_dep] = HashingEmbedder
+    app.dependency_overrides[llm_dep] = lambda: fake_llm
+    yield TestClient(app)
+    app.dependency_overrides.clear()

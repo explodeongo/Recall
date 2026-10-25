@@ -1,11 +1,70 @@
-from fastapi import APIRouter, HTTPException
+import json
+from collections.abc import Iterator
 
-from app.schemas import AskIn
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+
+from app.deps import EmbedderDep, LLMDep, SessionDep
+from app.schemas import AskIn, AskOut, SourceOut
+from app.services.answer import Answer, answer_question, stream_answer
+from app.services.llm import LLMError
+from app.services.search import Passage
 
 router = APIRouter(tags=["ask"])
 
 
-@router.post("/ask")
-def ask(body: AskIn) -> None:
-    """Answer a question from saved content with citations (FR-5). Lands in milestone 3."""
-    raise HTTPException(501, "Question answering is not built yet")
+@router.post("/ask", response_model=AskOut)
+def ask(body: AskIn, session: SessionDep, embedder: EmbedderDep, llm: LLMDep) -> AskOut:
+    """Answer a question from saved content only, citing the passages used (FR-5, NFR-1)."""
+    try:
+        result = answer_question(session, embedder, llm, body.question, body.mode)
+    except LLMError as exc:
+        raise HTTPException(503 if exc.retryable else 502, str(exc)) from exc
+    return _ask_out(result)
+
+
+@router.post("/ask/stream")
+def ask_stream(
+    body: AskIn, session: SessionDep, embedder: EmbedderDep, llm: LLMDep
+) -> StreamingResponse:
+    """The same answer as Server-Sent Events: `sources`, then `delta`s, then `done`
+    (or `error`)."""
+
+    def events() -> Iterator[str]:
+        try:
+            for kind, payload in stream_answer(session, embedder, llm, body.question, body.mode):
+                if kind == "sources":
+                    yield _sse("sources", {"sources": _sources(payload)})
+                elif kind == "delta":
+                    yield _sse("delta", {"text": payload})
+                else:
+                    yield _sse("done", _ask_out(payload).model_dump(exclude={"sources"}))
+        except LLMError as exc:
+            yield _sse("error", {"message": str(exc), "retryable": exc.retryable})
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _sse(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+def _sources(passages: list[Passage]) -> list[dict]:
+    return [
+        SourceOut.model_validate({**p.__dict__, "n": n}).model_dump(mode="json")
+        for n, p in enumerate(passages, start=1)
+    ]
+
+
+def _ask_out(answer: Answer) -> AskOut:
+    return AskOut(
+        answer=answer.text,
+        not_found=answer.not_found,
+        sources=_sources(answer.sources),
+        cited=answer.cited,
+        timings=answer.timings.as_dict(),
+    )
