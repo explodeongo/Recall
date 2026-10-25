@@ -3,17 +3,59 @@
 Save PDFs and web articles in one place, then ask questions in plain English and get answers built
 only from your own library, with a citation to the exact passage.
 
-> Status: milestones 1 to 4 built. PDFs and links are extracted, chunked, embedded locally,
-> summarised and tagged in the background; questions get streamed answers with clickable
-> citations, or "not found in your library". The evaluation harness (milestone 5) is next.
+![CI](https://github.com/explodeongo/Recall/actions/workflows/ci.yml/badge.svg)
+
+## What it does
+
+- **Save** a PDF or a link (articles, docs, Wikipedia, arXiv papers). Recall reads it in the
+  background, then writes a two-line summary for your library and a **page-long summary**: an
+  overview, the key points, and notes on each section of the document.
+- **Tag** automatically, 3 to 6 topic tags per item, and edit them yourself. Filter the library
+  by tag instantly, with no AI involved.
+- **Ask** in plain English and get an answer built only from your library, with a numbered
+  citation on every claim. Click one to see the exact passage, or open the PDF at that page. If
+  your library doesn't cover it, Recall says "Not found in your library" instead of guessing.
+- **Chat** with follow-ups: chats are saved, and a follow-up like "how many does the base model
+  use?" is rewritten into a full question before searching. A chat can also be limited to one
+  document ("Ask about this document").
+
+## Results
+
+Measured on 20 pinned Wikipedia articles and 46 questions, 10 of which the library can't answer.
+Method, caveats and the full tables are in [`backend/eval`](backend/eval/README.md).
+
+| Search mode | Answer passage ranked first | Answer passage in top 3 | Latency (p50) |
+| --- | --- | --- | --- |
+| Keyword only (Postgres full-text) | 64% | 86% | 13 ms |
+| Vector only (pgvector) | 72% | 89% | 11 ms |
+| **Hybrid, merged with reciprocal rank fusion** | **83%** | **92%** | 13 ms |
+
+End to end, with Gemini answering from the top six passages:
+
+| Measure | Result | Proposal target |
+| --- | --- | --- |
+| Correct source in the top 3 | 100% | 80% |
+| Unanswerable questions refused | 100% (10 of 10) | |
+| Answers citing the right document | 100% | |
+| Answer time, p50 / p95 | 1.2 s / 1.6 s | 5 to 10 s |
+
+What the evaluation changed: embedding each chunk with its document's title raised hybrid's
+first-place rate from 72% to 83%. A cross-encoder reranker was tried as well; it got the answer into
+the model's context more often (100% against 94%) but added about 0.6 s per question, so it ships
+as an option (`SEARCH_MODE=rerank`) rather than the default. The "not found" threshold (0.58) was
+tuned so off-topic questions never reach the LLM, while near-miss questions are left to the model,
+which is told to answer `NOT_FOUND` when the passages don't hold the answer.
 
 ## How it works
 
 - **Save:** `POST /items` stores a PDF or URL and queues a background job.
 - **Process:** a worker claims jobs from Postgres (`FOR UPDATE SKIP LOCKED`), extracts text,
-  chunks it, embeds each chunk locally, and asks the LLM for a summary and tags.
+  chunks it, embeds each chunk locally, and asks the LLM for the summaries and tags. The LLM sees
+  up to 40,000 characters, sampled from the start, middle and end of long documents, so the
+  page-long summary covers the whole document. Set `SUMMARY_INPUT_CHARS` lower to send less.
 - **Ask:** hybrid search (pgvector + Postgres full-text) finds the best passages; the LLM answers
-  from those passages only, or says "not found in your library".
+  from those passages only, or says "not found in your library". In a chat, follow-ups are
+  rewritten to stand alone before searching.
 - **Browse:** tag filters are a plain SQL lookup, no LLM involved.
 
 | Layer | Tech |
@@ -140,8 +182,9 @@ The web app expects the API at `http://localhost:8000`. To point it somewhere el
 
 ```bash
 cd backend
-uv run pytest                            # 78 tests, against the recall_test database
+uv run pytest                            # 98 tests, against the recall_test database
 uv run ruff check . && uv run ruff format --check .
+uv run python -m eval.run                # retrieval evaluation (see backend/eval)
 
 cd ../frontend
 npm run lint && npm run build
