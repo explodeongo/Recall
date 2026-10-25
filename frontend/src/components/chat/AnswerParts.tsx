@@ -97,7 +97,7 @@ export function SourceCard({ source, index = 0, animate = true }: { source: Sour
         </Link>
         {source.page && <span className="shrink-0 text-muted-foreground">p. {source.page}</span>}
         <a
-          href={sourceHref(source, source.item_id, source.page)}
+          href={sourceHref(source, source.item_id, source.page, source.text) ?? passageHref(source)}
           target="_blank"
           rel="noreferrer"
           className="relative z-10 ml-auto shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"

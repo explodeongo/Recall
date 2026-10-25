@@ -18,5 +18,5 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Everything except the API proxy, Next's own files and static assets.
-  matcher: ["/((?!api|_next|favicon.ico|.*\\.(?:png|svg|ico|webmanifest|txt)$).*)"],
+  matcher: ["/((?!api|_next|icons/|icon|apple-icon|manifest.webmanifest|.*\\.(?:png|svg|ico|txt)$).*)"],
 };

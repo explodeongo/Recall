@@ -28,6 +28,9 @@ EMBEDDING_DIM = get_settings().embedding_dim
 class SourceType(enum.StrEnum):
     pdf = "pdf"
     url = "url"
+    note = "note"  # text typed or pasted into Recall; `source` holds the text
+    file = "file"  # an uploaded Word, Markdown or text file; `source` is its stored path
+    youtube = "youtube"  # a video, read from its captions; `source` is the video URL
 
 
 class ItemStatus(enum.StrEnum):

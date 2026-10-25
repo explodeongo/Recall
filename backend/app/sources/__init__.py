@@ -33,8 +33,17 @@ class Source(Protocol):
 
 
 def get_source(source_type: SourceType) -> Source:
+    from app.sources.files import FileSource
+    from app.sources.note import NoteSource
     from app.sources.pdf import PdfSource
     from app.sources.url import UrlSource
+    from app.sources.youtube import YoutubeSource
 
-    registry: dict[SourceType, type] = {SourceType.pdf: PdfSource, SourceType.url: UrlSource}
+    registry: dict[SourceType, type] = {
+        SourceType.pdf: PdfSource,
+        SourceType.url: UrlSource,
+        SourceType.note: NoteSource,
+        SourceType.file: FileSource,
+        SourceType.youtube: YoutubeSource,
+    }
     return registry[source_type]()

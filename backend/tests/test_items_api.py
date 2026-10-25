@@ -27,12 +27,34 @@ def test_save_pdf_stores_file(client, tmp_path):
     assert len(list(tmp_path.glob("*.pdf"))) == 1
 
 
-def test_rejects_non_pdf(client):
-    resp = client.post("/items", files={"file": ("notes.txt", b"hello", "text/plain")})
+def test_rejects_unsupported_files(client):
+    resp = client.post("/items", files={"file": ("photo.png", b"\x89PNG....", "image/png")})
     assert resp.status_code == 415
 
 
+def test_saves_documents_notes_and_videos(client):
+    md = client.post("/items", files={"file": ("lecture.md", b"# Hi\n\ntext", "text/markdown")})
+    assert md.status_code == 202 and md.json()["source_type"] == "file"
+    assert (
+        client.get(f"/items/{md.json()['id']}/file")
+        .headers["content-disposition"]
+        .startswith("attachment")
+    )
+
+    note = client.post("/items", data={"text": "# Exam plan\nRevise B-trees first."})
+    assert note.json()["source_type"] == "note" and note.json()["title"] == "Exam plan"
+    titled = client.post("/items", data={"text": "body", "title": "My title"}).json()
+    assert titled["title"] == "My title"
+    assert client.post("/items", data={"text": "   "}).status_code == 422
+
+    video = client.post("/items", data={"url": "https://youtu.be/kCc8FmEb1nY"}).json()
+    assert video["source_type"] == "youtube"
+    article = client.post("/items", data={"url": "https://youtube.com/about"}).json()
+    assert article["source_type"] == "url"
+
+
 def test_requires_exactly_one_source(client):
+    assert client.post("/items", data={"url": "https://a.com", "text": "x"}).status_code == 422
     assert client.post("/items").status_code == 422
     resp = client.post(
         "/items",
@@ -174,3 +196,23 @@ def test_item_content_for_the_reader(client, session, user):
     _seed(session, user)
     no_text = client.get("/items", params={"tag": "ml"}).json()[0]["id"]
     assert client.get(f"/items/{no_text}/content").status_code == 404
+
+
+def test_library_search(client, library, session):
+    titles = lambda **params: [i["title"] for i in client.get("/items", params=params).json()]  # noqa: E731
+    assert titles(q="sourdough") == ["Sourdough baking"]  # title
+    assert titles(q="self-attention") == ["Transformers"]  # only in the text
+    assert titles(q="range scans") == ["Database indexing"]
+    assert titles(q="nothing like this") == []
+    assert titles(q="   ") == titles()  # blank means no filter
+
+
+def test_library_search_combines_with_tags(client, session, user):
+    _seed(session, user)
+    assert {i["title"] for i in client.get("/items", params={"q": "vector"}).json()} == {
+        "Vector DBs"
+    }
+    assert client.get("/items", params={"q": "vector", "tag": "ml"}).json()[0]["title"] == (
+        "Vector DBs"
+    )
+    assert client.get("/items", params={"q": "indexing", "tag": "ml"}).json() == []

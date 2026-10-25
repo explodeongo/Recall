@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Plus, RotateCw, Search } from "lucide-react";
+import { Loader2, Plus, RotateCw, Search, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { AddSources } from "@/components/AddSources";
 import { SourceIcon, StatusBadge, TagLink, sourceLabel, timeAgo } from "@/components/ItemBits";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -20,16 +20,31 @@ export default function LibraryPage() {
 }
 
 function Library() {
-  const tag = useSearchParams().get("tag") ?? undefined;
+  const router = useRouter();
+  const params = useSearchParams();
+  const tag = params.get("tag") ?? undefined;
+  // The search box is live: it filters as you type, and the text is kept in the URL (?q=) so a
+  // search survives a refresh and the back button.
+  const [search, setSearch] = useState(params.get("q") ?? "");
+  const q = useDebounced(search.trim(), 200);
+  useEffect(() => {
+    const next = new URLSearchParams(params.toString());
+    if (q) next.set("q", q);
+    else next.delete("q");
+    if (next.toString() !== params.toString()) router.replace(next.size ? `/?${next}` : "/", { scroll: false });
+  }, [q, params, router]);
+
   const items = useQuery({
-    queryKey: ["items", tag ?? null],
-    queryFn: () => api.items(tag),
+    queryKey: ["items", tag ?? null, q],
+    queryFn: () => api.items(tag, q || undefined),
+    placeholderData: (previous) => previous, // keep the list while a new search loads
     // Keep polling while anything is still being read, so statuses update by themselves.
     refetchInterval: (query) => (query.state.data?.some((i) => isBusy(i.status)) ? 2000 : false),
   });
   const tags = useQuery({ queryKey: ["tags"], queryFn: api.tags, refetchInterval: items.data?.some((i) => isBusy(i.status)) ? 4000 : false });
 
-  const isEmptyLibrary = !tag && items.data?.length === 0;
+  const isEmptyLibrary = !tag && !q && items.data?.length === 0;
+  const count = items.data?.length ?? 0;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -37,7 +52,11 @@ function Library() {
         <div>
           <h1 className="text-balance font-heading text-4xl font-medium">Library</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {items.data ? `${items.data.length} ${items.data.length === 1 ? "item" : "items"}${tag ? ` tagged #${tag}` : ""}` : " "}
+            {items.data
+              ? q
+                ? `${count} ${count === 1 ? "result" : "results"} for “${q}”${tag ? ` in #${tag}` : ""}`
+                : `${count} ${count === 1 ? "item" : "items"}${tag ? ` tagged #${tag}` : ""}`
+              : " "}
           </p>
         </div>
         {!isEmptyLibrary && (
@@ -47,7 +66,7 @@ function Library() {
         )}
       </header>
 
-      {!isEmptyLibrary && <AskBar />}
+      {!isEmptyLibrary && <SearchBar value={search} onChange={setSearch} searching={items.isFetching && !!q} />}
 
       {tags.data && tags.data.length > 0 && (
         <nav aria-label="Filter by tag" className="flex flex-wrap gap-1.5">
@@ -69,12 +88,24 @@ function Library() {
       ) : isEmptyLibrary ? (
         <EmptyLibrary />
       ) : items.data.length === 0 ? (
-        <p className="text-muted-foreground">
-          Nothing tagged #{tag}.{" "}
-          <Link href="/" className="text-brand underline-offset-4 hover:underline">
-            Show everything
-          </Link>
-        </p>
+        q ? (
+          <div className="rounded-xl border border-dashed p-6 text-center">
+            <p className="font-medium">No documents match “{q}”{tag ? ` in #${tag}` : ""}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Search looks at titles, summaries, your notes and the full text. Ask can also find things phrased differently.
+            </p>
+            <Link href={`/ask?q=${encodeURIComponent(q)}`} className={buttonVariants({ variant: "outline", className: "mt-4" })}>
+              <Sparkles /> Ask Recall instead
+            </Link>
+          </div>
+        ) : (
+          <p className="text-muted-foreground">
+            Nothing tagged #{tag}.{" "}
+            <Link href="/" className="text-brand underline-offset-4 hover:underline">
+              Show everything
+            </Link>
+          </p>
+        )
       ) : (
         <ul className="divide-y rounded-xl border bg-card">
           {items.data.map((item) => (
@@ -117,31 +148,75 @@ function ItemRow({ item, activeTag }: { item: Item; activeTag?: string }) {
   );
 }
 
-function AskBar() {
+/** Filters the documents as you type; "Ask" sends the same words to Ask instead. */
+function SearchBar({ value, onChange, searching }: { value: string; onChange: (v: string) => void; searching: boolean }) {
   const router = useRouter();
-  const [q, setQ] = useState("");
-  return (
-    <form
-      role="search"
-      onSubmit={(e) => {
+  const input = useRef<HTMLInputElement>(null);
+
+  // "/" focuses the search box, as in most apps with one.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(target.tagName) && !target.isContentEditable) {
         e.preventDefault();
-        if (q.trim()) router.push(`/ask?q=${encodeURIComponent(q.trim())}`);
-      }}
-      className="group flex items-center gap-2 rounded-xl border bg-card px-4 py-2.5 shadow-xs transition focus-within:border-brand/60 focus-within:ring-3 focus-within:ring-brand/15"
+        input.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  return (
+    <div
+      role="search"
+      className="flex items-center gap-2 rounded-xl border bg-card py-1.5 pr-1.5 pl-4 shadow-xs transition focus-within:border-brand/60 focus-within:ring-3 focus-within:ring-brand/15"
     >
-      <Search className="size-4 text-muted-foreground" aria-hidden />
+      {searching ? (
+        <Loader2 className="size-4 animate-spin text-muted-foreground motion-reduce:animate-none" aria-hidden />
+      ) : (
+        <Search className="size-4 text-muted-foreground" aria-hidden />
+      )}
       <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Ask your library a question…"
-        aria-label="Ask your library a question"
-        className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+        ref={input}
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onChange("");
+        }}
+        placeholder="Search your documents…"
+        aria-label="Search your documents"
+        className="min-w-0 flex-1 bg-transparent py-1 text-[15px] outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
       />
-      <Button type="submit" size="sm" variant="ghost" disabled={!q.trim()} aria-label="Ask">
-        <ArrowRight />
+      {value && (
+        <Button type="button" size="icon-sm" variant="ghost" onClick={() => onChange("")} aria-label="Clear search">
+          <X />
+        </Button>
+      )}
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        disabled={!value.trim()}
+        onClick={() => router.push(`/ask?q=${encodeURIComponent(value.trim())}`)}
+        className="text-brand"
+      >
+        <Sparkles /> Ask
       </Button>
-    </form>
+      <kbd className="hidden rounded border bg-muted px-1.5 font-sans text-[11px] text-muted-foreground sm:inline" aria-hidden>
+        /
+      </kbd>
+    </div>
   );
+}
+
+function useDebounced<T>(value: T, ms: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
 }
 
 function EmptyLibrary() {

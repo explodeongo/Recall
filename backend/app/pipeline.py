@@ -20,6 +20,12 @@ from app.sources import Source, get_source
 __all__ = ["PermanentError", "process_item"]
 
 MIN_TEXT_CHARS = 50
+# How each source type is described to the LLM when it writes the summary.
+KINDS = {
+    SourceType.youtube: "video transcript",
+    SourceType.note: "note",
+    SourceType.url: "web page",
+}
 
 
 def process_item(
@@ -36,7 +42,11 @@ def process_item(
     doc = (source or get_source(item.source_type)).extract(item)
     pages = [p for p in clean_pages(doc.pages) if p.text]
     full_text = "\n\n".join(p.text for p in pages)
-    if len(full_text) < MIN_TEXT_CHARS:
+    # Notes are whatever the reader typed, however short; other sources need real text.
+    too_short = (
+        not full_text if item.source_type == SourceType.note else len(full_text) < MIN_TEXT_CHARS
+    )
+    if too_short:
         if item.source_type == SourceType.pdf:
             raise PermanentError(
                 "No text could be read from this PDF. It may be a scanned image, and OCR "
@@ -50,7 +60,7 @@ def process_item(
     if llm is not None:
         existing = list(session.scalars(select(Tag.name).where(Tag.user_id == item.user_id)))
         try:
-            enrichment = enrich(llm, full_text, existing)
+            enrichment = enrich(llm, full_text, existing, KINDS.get(item.source_type, "document"))
         except LLMError as exc:
             if exc.retryable:
                 raise

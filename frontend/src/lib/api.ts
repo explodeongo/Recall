@@ -2,7 +2,7 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 export type ItemStatus = "queued" | "processing" | "ready" | "failed";
-export type SourceType = "pdf" | "url";
+export type SourceType = "pdf" | "url" | "note" | "file" | "youtube";
 export type SearchMode = "hybrid" | "vector" | "keyword";
 
 export interface Tag {
@@ -190,7 +190,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  items: (tag?: string) => request<Item[]>(tag ? `/items?tag=${encodeURIComponent(tag)}` : "/items"),
+  items: (tag?: string, q?: string) => {
+    const params = new URLSearchParams();
+    if (tag) params.set("tag", tag);
+    if (q) params.set("q", q);
+    return request<Item[]>(params.size ? `/items?${params}` : "/items");
+  },
   item: (id: number) => request<Item>(`/items/${id}`),
   tags: () => request<TagWithCount[]>("/tags"),
   chunk: (id: number) => request<Chunk>(`/chunks/${id}`),
@@ -208,9 +213,15 @@ export const api = {
     form.append("url", url);
     return request<Item>("/items", { method: "POST", body: form });
   },
-  savePdf: (file: File) => {
+  saveFile: (file: File) => {
     const form = new FormData();
     form.append("file", file);
+    return request<Item>("/items", { method: "POST", body: form });
+  },
+  saveNote: (text: string, title?: string) => {
+    const form = new FormData();
+    form.append("text", text);
+    if (title) form.append("title", title);
     return request<Item>("/items", { method: "POST", body: form });
   },
   reprocess: (id: number) => request<Item>(`/items/${id}/reprocess`, { method: "POST" }),
@@ -237,10 +248,27 @@ export const fileUrl = (itemId: number, page?: number | null) =>
   `${API_URL}/items/${itemId}/file${page ? `#page=${page}` : ""}`;
 
 /** Where "open source" goes: the stored PDF (at a page, if known) or the original link. */
-export function sourceHref(item: { source_type: SourceType; source: string }, itemId: number, page?: number | null) {
-  if (item.source_type === "pdf") return fileUrl(itemId, page);
+/** Where "open original" goes: the stored file (a PDF at a page, if known), the video at the
+ *  passage's time, or the original link. Notes have no original: null. */
+export function sourceHref(item: { source_type: SourceType; source: string }, itemId: number, page?: number | null, passage?: string) {
+  if (item.source_type === "note") return null;
+  if (item.source_type === "pdf" || item.source_type === "file") return fileUrl(itemId, item.source_type === "pdf" ? page : null);
+  if (item.source_type === "youtube") {
+    const seconds = passage ? secondsAt(passage) : null;
+    if (seconds === null) return item.source;
+    const url = new URL(item.source);
+    url.searchParams.set("t", `${seconds}s`);
+    return url.toString();
+  }
   if (page && /\.pdf($|[?#])|arxiv\.org\/pdf\//i.test(item.source)) return `${item.source}#page=${page}`;
   return item.source;
+}
+
+/** The first "[m:ss]" or "[h:mm:ss]" timestamp in a video passage, in seconds. */
+function secondsAt(text: string) {
+  const match = /\[(?:(\d+):)?(\d{1,2}):(\d{2})\]/.exec(text);
+  if (!match) return null;
+  return Number(match[1] ?? 0) * 3600 + Number(match[2]) * 60 + Number(match[3]);
 }
 
 export const isBusy = (status: ItemStatus) => status === "queued" || status === "processing";

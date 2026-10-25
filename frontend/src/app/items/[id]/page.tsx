@@ -83,9 +83,12 @@ function ItemView() {
               <MessageSquareText /> Ask about this document
             </Link>
           )}
-          <a href={sourceHref(data, data.id)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>
-            <ExternalLink /> Open {data.source_type === "pdf" ? "PDF" : "original"}
-          </a>
+          {sourceHref(data, data.id) && (
+            <a href={sourceHref(data, data.id)!} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>
+              <ExternalLink />
+              {{ pdf: "Open PDF", file: "Download file", youtube: "Watch on YouTube", url: "Open original", note: "" }[data.source_type]}
+            </a>
+          )}
           <DeleteButton item={data} />
         </div>
         {data.status !== "queued" && data.status !== "processing" && <TagEditor item={data} />}
@@ -396,7 +399,7 @@ function CitedPassage({ chunkId, item }: { chunkId: number; item: Item }) {
       <p className="max-w-[70ch] whitespace-pre-line text-[15px] leading-relaxed">{chunk.data.chunk_text}</p>
       {chunk.data.page && (
         <a
-          href={sourceHref(item, item.id, chunk.data.page)}
+          href={sourceHref(item, item.id, chunk.data.page) ?? undefined}
           target="_blank"
           rel="noreferrer"
           className="mt-3 inline-flex items-center gap-1 text-sm text-brand underline-offset-4 hover:underline"

@@ -195,3 +195,11 @@ def test_locate_chunks_handles_overlap_and_misses():
         8,
         None,
     ]
+
+
+def test_short_notes_are_fine(session):
+    item = Item(title="todo", source_type=SourceType.note, source="Buy milk.")
+    session.add(item)
+    session.commit()
+    process_item(session, item, embedder=HashingEmbedder(), llm=FakeLLM())
+    assert item.content == [{"page": None, "text": "Buy milk."}]

@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, FileText, Globe, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileText, FileType, Globe, Loader2, NotebookPen, Play } from "lucide-react";
 import Link from "next/link";
 import type { Item, ItemStatus, SourceType, Tag } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -22,13 +22,27 @@ export function StatusBadge({ status, className }: { status: ItemStatus; classNa
   );
 }
 
+const SOURCE_KINDS: Record<SourceType, { icon: React.ElementType; label: string }> = {
+  pdf: { icon: FileText, label: "PDF" },
+  url: { icon: Globe, label: "Web article" },
+  note: { icon: NotebookPen, label: "Note" },
+  file: { icon: FileType, label: "Document" },
+  youtube: { icon: Play, label: "Video" },
+};
+
 export function SourceIcon({ type, className }: { type: SourceType; className?: string }) {
-  const Icon = type === "pdf" ? FileText : Globe;
-  return <Icon className={cn("size-4 shrink-0 text-muted-foreground", className)} aria-label={type === "pdf" ? "PDF" : "Web article"} />;
+  const { icon: Icon, label } = SOURCE_KINDS[type] ?? SOURCE_KINDS.url;
+  return <Icon className={cn("size-4 shrink-0 text-muted-foreground", className)} aria-label={label} />;
 }
 
 export function sourceLabel(item: Pick<Item, "source_type" | "source">) {
   if (item.source_type === "pdf") return "PDF";
+  if (item.source_type === "note") return "Note";
+  if (item.source_type === "youtube") return "YouTube";
+  if (item.source_type === "file") {
+    const ext = item.source.split(".").pop()?.toLowerCase();
+    return ext === "docx" ? "Word document" : ext === "txt" ? "Text file" : "Markdown";
+  }
   try {
     return new URL(item.source).hostname.replace(/^www\./, "");
   } catch {
