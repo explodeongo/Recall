@@ -122,3 +122,22 @@ class ChatOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     messages: list[MessageOut]
+
+
+class SignupIn(BaseModel):
+    email: str = Field(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    password: str = Field(min_length=8, max_length=200)
+    name: str | None = Field(default=None, max_length=200)
+
+
+class LoginIn(BaseModel):
+    email: str = Field(max_length=320)
+    password: str = Field(max_length=200)
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    name: str | None

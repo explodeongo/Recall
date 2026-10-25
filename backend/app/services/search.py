@@ -9,7 +9,7 @@ only ranks, so the two very different score scales never have to be compared.
 from dataclasses import dataclass, replace
 from enum import StrEnum
 
-from sqlalchemy import Text, cast, func, select
+from sqlalchemy import Text, cast, func, select, text
 from sqlalchemy.orm import Session
 
 from app.models import Chunk, Item, SourceType
@@ -56,16 +56,19 @@ def search(
     reranker: Reranker | None = None,
     rerank_pool: int = 20,
     item_ids: list[int] | None = None,
+    user_id: int | None = None,
 ) -> SearchResult:
-    """`item_ids` limits the search to those items (a chat about one document)."""
-    vector_hits = _vector_search(session, embedder.embed_query(query), candidate_k, item_ids)
+    """`user_id` limits the search to one person's library and `item_ids` to particular items
+    (a chat about one document). Without either, the whole database is searched (evaluation)."""
+    scope = _Scope(item_ids, user_id)
+    vector_hits = _vector_search(session, embedder.embed_query(query), candidate_k, scope)
     best = vector_hits[0][1] if vector_hits else None
 
     rankings: list[list[int]] = []
     if mode in (SearchMode.hybrid, SearchMode.vector, SearchMode.rerank):
         rankings.append([chunk_id for chunk_id, _ in vector_hits])
     if mode in (SearchMode.hybrid, SearchMode.keyword, SearchMode.rerank):
-        rankings.append(_keyword_search(session, query, candidate_k, item_ids))
+        rankings.append(_keyword_search(session, query, candidate_k, scope))
     fused = rrf(rankings)
 
     if mode != SearchMode.rerank:
@@ -88,19 +91,42 @@ def rrf(rankings: list[list[int]], k: int = RRF_K) -> list[tuple[int, float]]:
     return sorted(scores.items(), key=lambda pair: (-pair[1], pair[0]))
 
 
+@dataclass(frozen=True)
+class _Scope:
+    item_ids: list[int] | None = None
+    user_id: int | None = None
+
+    def apply(self, stmt):
+        if self.item_ids is not None:
+            stmt = stmt.where(Chunk.item_id.in_(self.item_ids))
+        if self.user_id is not None:
+            stmt = stmt.join(Item, Item.id == Chunk.item_id).where(Item.user_id == self.user_id)
+        return stmt
+
+    @property
+    def filtered(self) -> bool:
+        return self.item_ids is not None or self.user_id is not None
+
+
+_EVERYTHING = _Scope()
+
+
 def _vector_search(
-    session: Session, vector: list[float], limit: int, item_ids: list[int] | None = None
+    session: Session, vector: list[float], limit: int, scope: _Scope = _EVERYTHING
 ) -> list[tuple[int, float]]:
+    if scope.filtered:
+        # With a filter, the HNSW index would stop after its first candidates and could return
+        # too few rows; iterative scan keeps going until enough rows pass the filter.
+        session.execute(text("SET LOCAL hnsw.iterative_scan = relaxed_order"))
     distance = Chunk.embedding.cosine_distance(vector)
-    query = select(Chunk.id, (1 - distance).label("similarity")).where(Chunk.embedding.is_not(None))
-    if item_ids is not None:
-        query = query.where(Chunk.item_id.in_(item_ids))
-    rows = session.execute(query.order_by(distance).limit(limit)).all()
-    return [(row.id, float(row.similarity)) for row in rows]
+    stmt = select(Chunk.id, (1 - distance).label("similarity")).where(Chunk.embedding.is_not(None))
+    rows = session.execute(scope.apply(stmt).order_by(distance).limit(limit)).all()
+    # relaxed_order can return near-ties slightly out of order; put them back.
+    return sorted(((row.id, float(row.similarity)) for row in rows), key=lambda r: -r[1])
 
 
 def _keyword_search(
-    session: Session, query: str, limit: int, item_ids: list[int] | None = None
+    session: Session, query: str, limit: int, scope: _Scope = _EVERYTHING
 ) -> list[int]:
     # plainto_tsquery stems the words and drops stop words but ANDs them together, which
     # misses most passages for a natural question. Swapping & for | ORs them instead, and
@@ -108,9 +134,7 @@ def _keyword_search(
     anded = cast(func.plainto_tsquery("english", query), Text)
     tsquery = func.to_tsquery("english", func.replace(anded, "&", "|"))
     rank = func.ts_rank_cd(Chunk.tsv, tsquery)
-    stmt = select(Chunk.id).where(Chunk.tsv.op("@@")(tsquery))
-    if item_ids is not None:
-        stmt = stmt.where(Chunk.item_id.in_(item_ids))
+    stmt = scope.apply(select(Chunk.id).where(Chunk.tsv.op("@@")(tsquery)))
     return list(session.scalars(stmt.order_by(rank.desc()).limit(limit)))
 
 

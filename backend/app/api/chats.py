@@ -1,18 +1,20 @@
 import json
 from collections.abc import Iterator
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.api.ask import sources_json
-from app.deps import EmbedderDep, LLMDep, SessionDep
+from app.config import get_settings
+from app.deps import CurrentUser, EmbedderDep, LLMDep, SessionDep
 from app.models import Chat, ChatMessage, Item
 from app.schemas import ChatCreate, ChatOut, ChatRename, ChatSummary, MessageIn
 from app.services.answer import Answer, Turn, stream_answer
 from app.services.chat import HISTORY_TURNS, chat_title, standalone_question
 from app.services.llm import LLMError
+from app.services.ratelimit import limit
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 
@@ -20,7 +22,7 @@ NEW_CHAT = "New chat"
 
 
 @router.get("", response_model=list[ChatSummary])
-def list_chats(session: SessionDep) -> list[ChatSummary]:
+def list_chats(session: SessionDep, user: CurrentUser) -> list[ChatSummary]:
     """Saved chats, most recently used first."""
     count = (
         select(func.count(ChatMessage.id)).where(ChatMessage.chat_id == Chat.id).scalar_subquery()
@@ -28,6 +30,7 @@ def list_chats(session: SessionDep) -> list[ChatSummary]:
     rows = session.execute(
         select(Chat, count.label("message_count"), Item.title.label("item_title"))
         .outerjoin(Item, Item.id == Chat.item_id)
+        .where(Chat.user_id == user.id)
         .order_by(Chat.updated_at.desc(), Chat.id.desc())
     ).all()
     return [
@@ -44,46 +47,55 @@ def list_chats(session: SessionDep) -> list[ChatSummary]:
 
 
 @router.post("", response_model=ChatOut, status_code=201)
-def create_chat(body: ChatCreate, session: SessionDep) -> Chat:
+def create_chat(body: ChatCreate, session: SessionDep, user: CurrentUser) -> Chat:
     """Start a chat, optionally limited to one item ("ask about this document")."""
-    if body.item_id is not None and session.get(Item, body.item_id) is None:
-        raise HTTPException(404, "Item not found")
-    chat = Chat(title=NEW_CHAT, item_id=body.item_id)
+    if body.item_id is not None:
+        item = session.get(Item, body.item_id)
+        if item is None or item.user_id != user.id:
+            raise HTTPException(404, "Item not found")
+    chat = Chat(user_id=user.id, title=NEW_CHAT, item_id=body.item_id)
     session.add(chat)
     session.commit()
-    return _get_or_404(session, chat.id)
+    return _get_or_404(session, chat.id, user.id)
 
 
 @router.get("/{chat_id}", response_model=ChatOut)
-def get_chat(chat_id: int, session: SessionDep) -> Chat:
-    return _get_or_404(session, chat_id)
+def get_chat(chat_id: int, session: SessionDep, user: CurrentUser) -> Chat:
+    return _get_or_404(session, chat_id, user.id)
 
 
 @router.patch("/{chat_id}", response_model=ChatOut)
-def rename_chat(chat_id: int, body: ChatRename, session: SessionDep) -> Chat:
-    chat = _get_or_404(session, chat_id)
+def rename_chat(chat_id: int, body: ChatRename, session: SessionDep, user: CurrentUser) -> Chat:
+    chat = _get_or_404(session, chat_id, user.id)
     chat.title = body.title.strip()
     session.commit()
-    return _get_or_404(session, chat_id)
+    return _get_or_404(session, chat_id, user.id)
 
 
 @router.delete("/{chat_id}", status_code=204)
-def delete_chat(chat_id: int, session: SessionDep) -> Response:
-    session.delete(_get_or_404(session, chat_id))
+def delete_chat(chat_id: int, session: SessionDep, user: CurrentUser) -> Response:
+    session.delete(_get_or_404(session, chat_id, user.id))
     session.commit()
     return Response(status_code=204)
 
 
 @router.post("/{chat_id}/messages")
 def send_message(
-    chat_id: int, body: MessageIn, session: SessionDep, embedder: EmbedderDep, llm: LLMDep
+    chat_id: int,
+    body: MessageIn,
+    request: Request,
+    session: SessionDep,
+    user: CurrentUser,
+    embedder: EmbedderDep,
+    llm: LLMDep,
 ) -> StreamingResponse:
     """Ask the next question in a chat, streamed as Server-Sent Events: `query` (what was
     searched), `sources`, `delta`s, then `done` with the saved message ids, or `error`.
 
     Both messages are saved only once the answer is complete, so an interrupted answer leaves
     the chat as it was."""
-    chat = _get_or_404(session, chat_id)
+    limit(request, "ask", per_minute=get_settings().ask_per_minute, key=f"user:{user.id}")
+    chat = _get_or_404(session, chat_id, user.id)
     history = _turns(chat.messages)[-HISTORY_TURNS:]
     item_ids = [chat.item_id] if chat.item_id is not None else None
 
@@ -100,6 +112,7 @@ def send_message(
                 search_query=query,
                 history=history,
                 item_ids=item_ids,
+                user_id=user.id,
             ):
                 if kind == "sources":
                     yield _sse("sources", {"sources": sources_json(payload)})
@@ -112,7 +125,7 @@ def send_message(
             return
 
         sources = sources_json(answer.sources)
-        user = ChatMessage(chat_id=chat.id, role="user", content=body.question, search_query=query)
+        asked = ChatMessage(chat_id=chat.id, role="user", content=body.question, search_query=query)
         reply = ChatMessage(
             chat_id=chat.id,
             role="assistant",
@@ -121,7 +134,7 @@ def send_message(
             cited=answer.cited,
             not_found=answer.not_found,
         )
-        session.add_all([user, reply])
+        session.add_all([asked, reply])
         if chat.title == NEW_CHAT:
             chat.title = chat_title(body.question)
         chat.updated_at = func.now()
@@ -133,7 +146,7 @@ def send_message(
                 "not_found": answer.not_found,
                 "cited": answer.cited,
                 "timings": answer.timings.as_dict(),
-                "message_ids": [user.id, reply.id],
+                "message_ids": [asked.id, reply.id],
                 "title": chat.title,
             },
         )
@@ -153,11 +166,11 @@ def _turns(messages: list[ChatMessage]) -> list[Turn]:
     return turns
 
 
-def _get_or_404(session, chat_id: int) -> Chat:
+def _get_or_404(session, chat_id: int, user_id: int) -> Chat:
     chat = session.get(
         Chat, chat_id, options=[selectinload(Chat.messages), selectinload(Chat.item)]
     )
-    if chat is None:
+    if chat is None or chat.user_id != user_id:
         raise HTTPException(404, "Chat not found")
     return chat
 

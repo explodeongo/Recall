@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.deps import EmbedderDep, LLMDep, SessionDep
+from app.deps import CurrentUser, EmbedderDep, LLMDep, SessionDep
 from app.schemas import AskIn, AskOut, SourceOut
 from app.services.answer import Answer, answer_question, stream_answer
 from app.services.llm import LLMError
@@ -14,10 +14,12 @@ router = APIRouter(tags=["ask"])
 
 
 @router.post("/ask", response_model=AskOut)
-def ask(body: AskIn, session: SessionDep, embedder: EmbedderDep, llm: LLMDep) -> AskOut:
+def ask(
+    body: AskIn, session: SessionDep, user: CurrentUser, embedder: EmbedderDep, llm: LLMDep
+) -> AskOut:
     """Answer a question from saved content only, citing the passages used (FR-5, NFR-1)."""
     try:
-        result = answer_question(session, embedder, llm, body.question, body.mode)
+        result = answer_question(session, embedder, llm, body.question, body.mode, user_id=user.id)
     except LLMError as exc:
         raise HTTPException(503 if exc.retryable else 502, str(exc)) from exc
     return _ask_out(result)
@@ -25,14 +27,16 @@ def ask(body: AskIn, session: SessionDep, embedder: EmbedderDep, llm: LLMDep) ->
 
 @router.post("/ask/stream")
 def ask_stream(
-    body: AskIn, session: SessionDep, embedder: EmbedderDep, llm: LLMDep
+    body: AskIn, session: SessionDep, user: CurrentUser, embedder: EmbedderDep, llm: LLMDep
 ) -> StreamingResponse:
     """The same answer as Server-Sent Events: `sources`, then `delta`s, then `done`
     (or `error`)."""
 
     def events() -> Iterator[str]:
         try:
-            for kind, payload in stream_answer(session, embedder, llm, body.question, body.mode):
+            for kind, payload in stream_answer(
+                session, embedder, llm, body.question, body.mode, user_id=user.id
+            ):
                 if kind == "sources":
                     yield _sse("sources", {"sources": sources_json(payload)})
                 elif kind == "delta":

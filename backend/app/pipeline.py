@@ -48,7 +48,7 @@ def process_item(
 
     enrichment = None
     if llm is not None:
-        existing = list(session.scalars(select(Tag.name)))
+        existing = list(session.scalars(select(Tag.name).where(Tag.user_id == item.user_id)))
         try:
             enrichment = enrich(llm, full_text, existing)
         except LLMError as exc:
@@ -70,7 +70,7 @@ def process_item(
         item.summary = enrichment.summary
         item.details = enrichment.details
         if not item.tags_edited:  # tags the user chose by hand survive reprocessing
-            item.tags = get_or_create_tags(session, enrichment.tags)
+            item.tags = get_or_create_tags(session, enrichment.tags, item.user_id)
     session.flush()
 
 
@@ -78,10 +78,16 @@ def embedding_text(title: str, chunk: str) -> str:
     return f"{title}\n\n{chunk}"
 
 
-def get_or_create_tags(session: Session, names: list[str]) -> list[Tag]:
+def get_or_create_tags(session: Session, names: list[str], user_id: int | None) -> list[Tag]:
+    """Each person has their own tags; `user_id` None is the evaluation's unowned library."""
     if not names:
         return []
     # ON CONFLICT keeps two workers tagging at once from tripping the unique constraint.
-    session.execute(insert(Tag).values([{"name": n} for n in names]).on_conflict_do_nothing())
-    by_name = {t.name: t for t in session.scalars(select(Tag).where(Tag.name.in_(names)))}
+    session.execute(
+        insert(Tag)
+        .values([{"name": n, "user_id": user_id} for n in names])
+        .on_conflict_do_nothing()
+    )
+    owner = Tag.user_id.is_(None) if user_id is None else Tag.user_id == user_id
+    by_name = {t.name: t for t in session.scalars(select(Tag).where(owner, Tag.name.in_(names)))}
     return [by_name[n] for n in names]

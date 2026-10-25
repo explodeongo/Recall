@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     upload_dir: str = "data/uploads"
     max_upload_mb: int = 25
     cors_origins: list[str] = ["http://localhost:3000"]
+    cookie_secure: bool = False  # set true when served over https
+    ask_per_minute: int = 20  # questions per person per minute, to protect the LLM quota
     embedding_dim: int = 384
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     model_cache_dir: str = "data/models"

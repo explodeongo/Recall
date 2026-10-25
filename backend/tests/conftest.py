@@ -32,7 +32,10 @@ def migrated_db():
 def clean_tables():
     yield
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE items, tags, jobs, chats RESTART IDENTITY CASCADE"))
+        conn.execute(text("TRUNCATE items, tags, jobs, chats, users RESTART IDENTITY CASCADE"))
+    from app.services import ratelimit
+
+    ratelimit.reset()
 
 
 @pytest.fixture
@@ -57,8 +60,29 @@ def client(tmp_path, monkeypatch, fake_llm):
     monkeypatch.setattr(get_settings(), "upload_dir", str(tmp_path))
     app.dependency_overrides[embedder_dep] = HashingEmbedder
     app.dependency_overrides[llm_dep] = lambda: fake_llm
-    yield TestClient(app)
+    test_client = TestClient(app)
+    # Every test client is signed in; its cookie rides along on later requests.
+    resp = test_client.post(
+        "/auth/signup", json={"email": "me@example.com", "password": "hunter22!"}
+    )
+    assert resp.status_code == 201, resp.text
+    yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def anon_client(client):
+    """A second browser with no session, sharing the same app and fakes."""
+    return TestClient(app)
+
+
+@pytest.fixture
+def user(client, session):
+    from sqlalchemy import select
+
+    from app.models import User
+
+    return session.scalars(select(User).where(User.email == "me@example.com")).one()
 
 
 LIBRARY = {
@@ -86,7 +110,7 @@ class StubSource:
 
 
 @pytest.fixture
-def library(session, monkeypatch):
+def library(session, monkeypatch, user):
     # Small chunks without overlap: one chunk per page, so a citation's page can be checked.
     monkeypatch.setattr(get_settings(), "chunk_tokens", 20)
     monkeypatch.setattr(get_settings(), "chunk_overlap", 0)
@@ -95,7 +119,7 @@ def library(session, monkeypatch):
     monkeypatch.setattr(get_settings(), "min_similarity", 0.2)
     ids = {}
     for title, pages in LIBRARY.items():
-        item = Item(title=title, source_type=SourceType.pdf, source="unused")
+        item = Item(user_id=user.id, title=title, source_type=SourceType.pdf, source="unused")
         session.add(item)
         session.flush()
         pages = [PageText(i + 1, text) for i, text in enumerate(pages)]

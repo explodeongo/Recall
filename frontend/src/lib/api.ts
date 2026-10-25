@@ -1,4 +1,5 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+/** Same-origin by default: next.config.ts proxies /api to the backend. */
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 export type ItemStatus = "queued" | "processing" | "ready" | "failed";
 export type SourceType = "pdf" | "url";
@@ -32,6 +33,12 @@ export interface ItemDetails {
   overview: string;
   key_points: string[];
   sections: { heading: string; body: string }[];
+}
+
+export interface User {
+  id: number;
+  email: string;
+  name: string | null;
 }
 
 export interface Chunk {
@@ -117,6 +124,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new ApiError("Can't reach the Recall API. Is the backend running?", 0);
   }
+  if (res.status === 401 && !path.startsWith("/auth/")) {
+    // The session expired or was signed out elsewhere: go and sign in, then come back.
+    const next = window.location.pathname + window.location.search;
+    window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+    throw new ApiError("Please log in.", 401);
+  }
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
     try {
@@ -146,6 +159,11 @@ export const api = {
   reprocess: (id: number) => request<Item>(`/items/${id}/reprocess`, { method: "POST" }),
   remove: (id: number) => request<void>(`/items/${id}`, { method: "DELETE" }),
   setTags: (id: number, tags: string[]) => request<Item>(`/items/${id}/tags`, json("PUT", { tags })),
+
+  me: () => request<User>("/auth/me"),
+  signup: (email: string, password: string, name?: string) => request<User>("/auth/signup", json("POST", { email, password, name })),
+  login: (email: string, password: string) => request<User>("/auth/login", json("POST", { email, password })),
+  logout: () => request<void>("/auth/logout", { method: "POST" }),
 
   chats: () => request<ChatSummary[]>("/chats"),
   chat: (id: number) => request<Chat>(`/chats/${id}`),

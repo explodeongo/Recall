@@ -1,10 +1,20 @@
 "use client";
 
-import { Library, MessageSquareText, Moon, Plus, Sun } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Library, LogOut, MessageSquareText, Moon, Plus, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -16,6 +26,7 @@ const links = [
 export function Nav() {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
+  const authPage = pathname === "/login" || pathname === "/signup";
   const isActive = (href: string) => (href === "/" ? pathname === "/" || pathname.startsWith("/items") : pathname.startsWith(href));
 
   return (
@@ -27,7 +38,7 @@ export function Nav() {
           </span>
           <span className="font-heading text-xl font-semibold tracking-tight">Recall</span>
         </Link>
-        {links.map(({ href, label, icon: Icon }) => (
+        {!authPage && links.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
@@ -51,7 +62,42 @@ export function Nav() {
           <Sun className="hidden size-4 dark:block" />
           <Moon className="size-4 dark:hidden" />
         </Button>
+        {!authPage && <AccountMenu />}
       </nav>
     </header>
+  );
+}
+
+function AccountMenu() {
+  const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
+  if (!me.data) return null;
+  const initial = (me.data.name || me.data.email).trim()[0]?.toUpperCase() ?? "?";
+
+  async function logout() {
+    try {
+      await api.logout();
+    } finally {
+      window.location.assign("/login");
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="icon" aria-label={`Account: ${me.data.email}`} />}
+      >
+        <span className="grid size-7 place-items-center rounded-full bg-brand-soft text-xs font-semibold text-brand">{initial}</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="font-normal">
+          {me.data.name && <span className="block truncate text-sm font-medium text-foreground">{me.data.name}</span>}
+          <span className="block truncate text-xs text-muted-foreground">{me.data.email}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout}>
+          <LogOut /> Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

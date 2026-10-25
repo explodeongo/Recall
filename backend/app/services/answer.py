@@ -111,7 +111,7 @@ def strip_invalid_citations(text: str, n_sources: int) -> str:
 
 
 def _retrieve(
-    session, embedder, question, mode, item_ids=None
+    session, embedder, question, mode, item_ids=None, user_id=None
 ) -> tuple[list[Passage], bool, float]:
     settings = get_settings()
     started = time.perf_counter()
@@ -126,6 +126,7 @@ def _retrieve(
         reranker=get_reranker() if mode == SearchMode.rerank else None,
         rerank_pool=settings.rerank_pool,
         item_ids=item_ids,
+        user_id=user_id,
     )
     elapsed = (time.perf_counter() - started) * 1000
     too_far = result.best_similarity is None or result.best_similarity < settings.min_similarity
@@ -138,9 +139,10 @@ def answer_question(
     llm: LLMClient,
     question: str,
     mode: SearchMode | None = None,
+    user_id: int | None = None,
 ) -> Answer:
     """Non-streaming answer, for the JSON endpoint and the evaluation."""
-    events = list(stream_answer(session, embedder, llm, question, mode))
+    events = list(stream_answer(session, embedder, llm, question, mode, user_id=user_id))
     return events[-1][1]
 
 
@@ -154,6 +156,7 @@ def stream_answer(
     search_query: str | None = None,
     history: list[Turn] | None = None,
     item_ids: list[int] | None = None,
+    user_id: int | None = None,
 ) -> Iterator[tuple[str, object]]:
     """Yields ("sources", passages), then ("delta", text) pieces, then ("done", Answer).
 
@@ -162,7 +165,7 @@ def stream_answer(
     """
     timings = Timings()
     passages, not_found, timings.retrieval_ms = _retrieve(
-        session, embedder, search_query or question, mode, item_ids
+        session, embedder, search_query or question, mode, item_ids, user_id
     )
     if not_found:
         log.info("ask: not found (gate) retrieval=%.0fms", timings.retrieval_ms)
