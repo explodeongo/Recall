@@ -298,3 +298,12 @@ class ItemPatch(BaseModel):
 class ResurfaceOut(BaseModel):
     items: list[ItemOut]
     cards_due: int
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(max_length=200)
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+class PasswordConfirm(BaseModel):
+    password: str = Field(max_length=200)

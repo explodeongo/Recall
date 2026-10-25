@@ -1,11 +1,15 @@
+from datetime import UTC, datetime
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, Request, Response
 from sqlalchemy import func, select
 
 from app.config import get_settings
 from app.deps import SESSION_COOKIE, CurrentUser, SessionDep
-from app.models import User
-from app.schemas import LoginIn, SignupIn, UserOut
+from app.models import Item, SourceType, User
+from app.schemas import LoginIn, PasswordChange, PasswordConfirm, SignupIn, UserOut
 from app.services import auth
+from app.services.export import build_export
 from app.services.ratelimit import limit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -48,6 +52,57 @@ def logout(request: Request, session: SessionDep) -> Response:
     response = Response(status_code=204)
     response.delete_cookie(SESSION_COOKIE, path="/")
     return response
+
+
+@router.post("/password", status_code=204)
+def change_password(
+    body: PasswordChange, request: Request, session: SessionDep, user: CurrentUser
+) -> Response:
+    """Change the password. Other signed-in browsers are signed out; this one stays in."""
+    limit(request, "auth", per_minute=10)
+    if not auth.verify_password(body.current_password, user.password_hash):
+        raise HTTPException(403, "Your current password isn't right.")
+    user.password_hash = auth.hash_password(body.new_password)
+    auth.end_other_sessions(session, user, request.cookies.get(SESSION_COOKIE))
+    session.commit()
+    return Response(status_code=204)
+
+
+@router.post("/delete-account", status_code=204)
+def delete_account(
+    body: PasswordConfirm, request: Request, session: SessionDep, user: CurrentUser
+) -> Response:
+    """Delete the account and everything in it, including uploaded files. Can't be undone."""
+    limit(request, "auth", per_minute=10)
+    if not auth.verify_password(body.password, user.password_hash):
+        raise HTTPException(403, "That password isn't right.")
+    files = [
+        Path(i.source)
+        for i in session.scalars(
+            select(Item).where(
+                Item.user_id == user.id, Item.source_type.in_([SourceType.pdf, SourceType.file])
+            )
+        )
+    ]
+    session.delete(user)  # items, chats, tags, highlights, cards and sessions cascade
+    session.commit()
+    for path in files:
+        path.unlink(missing_ok=True)
+    response = Response(status_code=204)
+    response.delete_cookie(SESSION_COOKIE, path="/")
+    return response
+
+
+@router.get("/export")
+def export(session: SessionDep, user: CurrentUser, files: bool = False) -> Response:
+    """Everything in the library as a zip: Markdown, full text, chats and a JSON copy."""
+    data = build_export(session, user, include_files=files)
+    stamp = datetime.now(UTC).strftime("%Y-%m-%d")
+    return Response(
+        data,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="recall-export-{stamp}.zip"'},
+    )
 
 
 @router.get("/me", response_model=UserOut)

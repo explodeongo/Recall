@@ -75,6 +75,13 @@ def end_session(session: Session, token: str | None) -> None:
         session.execute(delete(UserSession).where(UserSession.token_hash == _token_hash(token)))
 
 
+def end_other_sessions(session: Session, user: User, keep_token: str | None) -> None:
+    keep = _token_hash(keep_token) if keep_token else ""
+    session.execute(
+        delete(UserSession).where(UserSession.user_id == user.id, UserSession.token_hash != keep)
+    )
+
+
 def claim_unowned(session: Session, user: User) -> None:
     """Give the first account everything saved before accounts existed."""
     for model in (Item, Tag, Chat):

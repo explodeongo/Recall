@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Layers, Library, LogOut, MessageSquareText, Moon, Plus, Search, Sun } from "lucide-react";
+import { Highlighter, Layers, Library, LogOut, MessageSquareText, Moon, Plus, Search, Settings, Sun } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,6 +88,7 @@ export function Nav() {
 }
 
 function AccountMenu() {
+  const router = useRouter();
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
   if (!me.data) return null;
   const initial = (me.data.name || me.data.email).trim()[0]?.toUpperCase() ?? "?";
@@ -112,6 +113,13 @@ function AccountMenu() {
           {me.data.name && <span className="block truncate text-sm font-medium text-foreground">{me.data.name}</span>}
           <span className="block truncate text-xs text-muted-foreground">{me.data.email}</span>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push("/highlights")}>
+          <Highlighter /> Highlights
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/settings")}>
+          <Settings /> Settings and export
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
           <LogOut /> Log out
