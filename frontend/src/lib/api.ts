@@ -23,6 +23,9 @@ export interface Item {
   details: ItemDetails | null;
   note: string | null;
   tags_edited: boolean;
+  starred: boolean;
+  archived: boolean;
+  last_opened_at: string | null;
   status: ItemStatus;
   error: string | null;
   created_at: string;
@@ -235,10 +238,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  items: (tag?: string, q?: string) => {
+  items: (tag?: string, q?: string, view?: "all" | "starred" | "archived") => {
     const params = new URLSearchParams();
     if (tag) params.set("tag", tag);
     if (q) params.set("q", q);
+    if (view && view !== "all") params.set("view", view);
     return request<Item[]>(params.size ? `/items?${params}` : "/items");
   },
   item: (id: number) => request<Item>(`/items/${id}`),
@@ -276,6 +280,9 @@ export const api = {
     if (title) form.append("title", title);
     return request<Item>("/items", { method: "POST", body: form });
   },
+  patchItem: (id: number, patch: { title?: string; starred?: boolean; archived?: boolean }) => request<Item>(`/items/${id}`, json("PATCH", patch)),
+  markOpened: (id: number) => request<void>(`/items/${id}/opened`, { method: "POST" }),
+  resurface: () => request<{ items: Item[]; cards_due: number }>("/items/resurface"),
   reprocess: (id: number) => request<Item>(`/items/${id}/reprocess`, { method: "POST" }),
   remove: (id: number) => request<void>(`/items/${id}`, { method: "DELETE" }),
   setTags: (id: number, tags: string[]) => request<Item>(`/items/${id}/tags`, json("PUT", { tags })),

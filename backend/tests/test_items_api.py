@@ -256,3 +256,54 @@ def test_library_search_combines_with_tags(client, session, user):
         "Vector DBs"
     )
     assert client.get("/items", params={"q": "indexing", "tag": "ml"}).json() == []
+
+
+def test_star_archive_rename_and_views(client, session, user):
+    _seed(session, user)
+    items = client.get("/items").json()
+    first, second = items[0]["id"], items[1]["id"]
+    assert (
+        client.patch(f"/items/{first}", json={"starred": True, "title": "Renamed"}).json()["title"]
+        == "Renamed"
+    )
+    client.patch(f"/items/{second}", json={"archived": True})
+    titles = lambda **p: {i["title"] for i in client.get("/items", params=p).json()}  # noqa: E731
+    assert titles(view="starred") == {"Renamed"}
+    assert len(titles()) == 2  # archived left the main list
+    assert len(titles(view="archived")) == 1
+    archived_title = titles(view="archived").pop()
+    assert archived_title in titles(q=archived_title.split()[0])  # still searchable
+
+
+def test_resurface_brings_back_old_unopened_items(client, session, user):
+    from datetime import UTC, datetime, timedelta
+
+    old = datetime.now(UTC) - timedelta(days=30)
+    for n in range(4):
+        session.add(
+            Item(
+                user_id=user.id,
+                title=f"Old {n}",
+                source_type=SourceType.url,
+                source="https://o",
+                status="ready",
+                created_at=old,
+            )
+        )
+    session.add(
+        Item(
+            user_id=user.id,
+            title="New",
+            source_type=SourceType.url,
+            source="https://n",
+            status="ready",
+        )
+    )
+    session.commit()
+    body = client.get("/items/resurface").json()
+    assert len(body["items"]) == 3 and all(i["title"].startswith("Old") for i in body["items"])
+    assert body["cards_due"] == 0
+    for item in client.get("/items").json():
+        if item["title"].startswith("Old"):
+            assert client.post(f"/items/{item['id']}/opened").status_code == 204
+    assert client.get("/items/resurface").json()["items"] == []  # all opened just now

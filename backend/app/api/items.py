@@ -1,19 +1,20 @@
 import uuid
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 from pydantic import HttpUrl, TypeAdapter, ValidationError
 from sqlalchemy import delete as sa_delete
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.deps import CurrentUser, EmbedderDep, SessionDep
-from app.models import Item, ItemStatus, SourceType, Tag, item_tags
+from app.models import Card, Item, ItemStatus, SourceType, Tag, item_tags
 from app.pipeline import get_or_create_tags
-from app.schemas import ContentOut, ItemOut, TagsIn
+from app.schemas import ContentOut, ItemOut, ItemPatch, ResurfaceOut, TagsIn
 from app.services import jobs
 from app.services.enrich import clean_tag
 from app.services.library_search import search_items
@@ -21,6 +22,7 @@ from app.sources.files import EXTENSIONS as FILE_EXTENSIONS
 from app.sources.youtube import video_id
 
 router = APIRouter(prefix="/items", tags=["items"])
+RESURFACE_AFTER_DAYS = 7
 MAX_NOTE_CHARS = 200_000
 MEDIA_TYPES = {
     ".pdf": "application/pdf",
@@ -82,17 +84,76 @@ def list_items(
     embedder: EmbedderDep,
     tag: str | None = None,
     q: str | None = None,
+    view: Literal["all", "starred", "archived"] = "all",
 ) -> list[Item]:
     """List items, newest first (FR-6), or search them. `tag` filters by tag (no LLM). `q`
     matches each word anywhere: titles, tags, summaries, notes and full text, best first, with
     the matching passage; documents close in meaning follow as "related"
     (services/library_search.py)."""
     if q and q.strip():
+        # Search covers everything, archived included: finding things is the point.
         return search_items(session, user.id, q, tag=tag, embedder=embedder)
     query = select(Item).where(Item.user_id == user.id).options(selectinload(Item.tags))
+    if view == "starred":
+        query = query.where(Item.starred.is_(True))
+    query = query.where(Item.archived.is_(view == "archived"))
     if tag:
         query = query.where(Item.tags.any(Tag.name == tag.lower()))
     return list(session.scalars(query.order_by(Item.created_at.desc())))
+
+
+@router.get("/resurface", response_model=ResurfaceOut)
+def resurface(session: SessionDep, user: CurrentUser) -> dict:
+    """A few things saved a while ago and not opened since, for the top of the library. The
+    pick changes daily and skips anything opened or saved in the last few days."""
+    stale = datetime.now(UTC) - timedelta(days=RESURFACE_AFTER_DAYS)
+    seen = func.coalesce(Item.last_opened_at, Item.created_at)
+    candidates = list(
+        session.scalars(
+            select(Item)
+            .options(selectinload(Item.tags))
+            .where(
+                Item.user_id == user.id,
+                Item.status == ItemStatus.ready,
+                Item.archived.is_(False),
+                seen < stale,
+            )
+            .order_by(seen, Item.id)
+            .limit(30)
+        )
+    )
+    # Rotate through the oldest-unseen items, a different few each day.
+    if candidates:
+        start = date.today().toordinal() % len(candidates)
+        candidates = (candidates[start:] + candidates[:start])[:3]
+    due = session.scalar(
+        select(func.count(Card.id)).where(Card.user_id == user.id, Card.due_at <= func.now())
+    )
+    return {"items": candidates, "cards_due": due or 0}
+
+
+@router.patch("/{item_id}", response_model=ItemOut)
+def update_item(item_id: int, body: ItemPatch, session: SessionDep, user: CurrentUser) -> Item:
+    """Rename, star or archive an item."""
+    item = _get_or_404(session, item_id, user.id)
+    if body.title is not None:
+        item.title = body.title.strip()
+    if body.starred is not None:
+        item.starred = body.starred
+    if body.archived is not None:
+        item.archived = body.archived
+    session.commit()
+    session.refresh(item, ["tags"])
+    return item
+
+
+@router.post("/{item_id}/opened", status_code=204)
+def mark_opened(item_id: int, session: SessionDep, user: CurrentUser) -> Response:
+    """Called when the item page is opened, so resurfacing knows what's been looked at."""
+    item = _get_or_404(session, item_id, user.id)
+    item.last_opened_at = func.now()
+    session.commit()
+    return Response(status_code=204)
 
 
 @router.get("/{item_id}", response_model=ItemOut)

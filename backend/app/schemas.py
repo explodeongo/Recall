@@ -43,6 +43,9 @@ class ItemOut(BaseModel):
     details: dict | None
     note: str | None
     tags_edited: bool
+    starred: bool
+    archived: bool
+    last_opened_at: datetime | None
     status: ItemStatus
     error: str | None
     created_at: datetime
@@ -284,3 +287,14 @@ class ReviewStats(BaseModel):
     reviewed_today: int
     streak_days: int
     next_due_at: datetime | None
+
+
+class ItemPatch(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=500)
+    starred: bool | None = None
+    archived: bool | None = None
+
+
+class ResurfaceOut(BaseModel):
+    items: list[ItemOut]
+    cards_due: int

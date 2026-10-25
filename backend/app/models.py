@@ -101,6 +101,10 @@ class Item(Base):
     # What the item is about (title, summary, tags) as one vector, so search can find a
     # document by its topic even when its text never uses the searched words.
     summary_embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM))
+    starred: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Archived items leave the main list but stay searchable and answerable.
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    last_opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # The reader's own free-form note on the item.
     note: Mapped[str | None] = mapped_column(Text)
     # Set when the user edits the tags by hand, so reprocessing keeps their choice.

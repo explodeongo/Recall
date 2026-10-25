@@ -1,10 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlignLeft, ArrowLeft, BookOpen, ExternalLink, Layers, Loader2, MessageSquareText, Plus, Quote, RotateCw, Trash2, X } from "lucide-react";
+import { AlignLeft, Archive, ArrowLeft, BookOpen, ExternalLink, Layers, Loader2, MessageSquareText, MoreHorizontal, Pencil, Plus, Quote, RotateCw, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useId, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { HighlightReader } from "@/components/HighlightReader";
 import { type Mark, joinPages } from "@/components/Reader";
 import { toast } from "sonner";
@@ -18,9 +18,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { StarButton } from "@/components/StarButton";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, isBusy, sourceHref, type Item, type ItemDetails } from "@/lib/api";
@@ -50,6 +51,14 @@ function ItemView() {
   });
   // Only an item seen being read on this visit gets the reveal; opening a finished one is instant.
   const sawProcessing = useRef(false);
+  const [renaming, setRenaming] = useState(false);
+  // Record the visit once, so "Worth another look" doesn't suggest what was just read.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || !item.data || item.data.status !== "ready") return;
+    opened.current = true;
+    api.markOpened(id).catch(() => {});
+  }, [id, item.data]);
 
   if (item.isPending) return <ItemSkeleton />;
   if (item.isError) {
@@ -76,7 +85,14 @@ function ItemView() {
           <span>Saved {timeAgo(data.created_at)}</span>
           {data.status !== "ready" && <StatusBadge status={data.status} />}
         </div>
-        <h1 className="text-balance font-heading text-3xl leading-tight font-medium break-words sm:text-4xl">{data.title}</h1>
+        {renaming ? (
+          <RenameTitle item={data} onDone={() => setRenaming(false)} />
+        ) : (
+          <h1 className="text-balance font-heading text-3xl leading-tight font-medium break-words sm:text-4xl">
+            {data.archived && <span className="mr-2 align-middle font-sans text-xs font-medium tracking-normal text-muted-foreground">Archived</span>}
+            {data.title}
+          </h1>
+        )}
         <div className="flex flex-wrap gap-2 pt-1">
           {data.status === "ready" && (
             <Link href={`/ask?item=${data.id}`} className={cn(buttonVariants(), "bg-brand text-brand-foreground hover:bg-brand/85")}>
@@ -90,7 +106,8 @@ function ItemView() {
               {{ pdf: "Open PDF", file: "Download file", youtube: "Watch on YouTube", url: "Open original", note: "" }[data.source_type]}
             </a>
           )}
-          <DeleteButton item={data} />
+          <StarButton item={data} className="size-8" />
+          <ItemMenu item={data} onRename={() => setRenaming(true)} />
         </div>
         {data.status !== "queued" && data.status !== "processing" && <TagEditor item={data} />}
       </header>
@@ -542,9 +559,61 @@ function Failed({ item }: { item: Item }) {
   );
 }
 
-function DeleteButton({ item }: { item: Item }) {
+function RenameTitle({ item, onDone }: { item: Item; onDone: () => void }) {
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState(item.title);
+  const save = useMutation({
+    mutationFn: () => api.patchItem(item.id, { title: title.trim() }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["item", item.id], updated);
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      onDone();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (title.trim() && title.trim() !== item.title) save.mutate();
+        else onDone();
+      }}
+    >
+      <label htmlFor="rename" className="sr-only">
+        Title
+      </label>
+      <input
+        id="rename"
+        autoFocus
+        value={title}
+        maxLength={500}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => e.key === "Escape" && onDone()}
+        onBlur={(e) => e.currentTarget.form?.requestSubmit()}
+        className="w-full rounded-lg border bg-card px-2 py-1 font-heading text-3xl leading-tight font-medium outline-none focus:border-brand/60 sm:text-4xl"
+      />
+    </form>
+  );
+}
+
+/** Rename, archive or delete. Delete asks first; archive can be undone from the toast. */
+function ItemMenu({ item, onRename }: { item: Item; onRename: () => void }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const archive = useMutation({
+    mutationFn: (archived: boolean) => api.patchItem(item.id, { archived }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["item", item.id], updated);
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      if (updated.archived) {
+        toast.success("Archived. It's out of your main list but still searchable.", {
+          action: { label: "Undo", onClick: () => archive.mutate(false) },
+        });
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
   const remove = useMutation({
     mutationFn: () => api.remove(item.id),
     onSuccess: () => {
@@ -556,25 +625,41 @@ function DeleteButton({ item }: { item: Item }) {
     onError: (err) => toast.error(err.message),
   });
   return (
-    <AlertDialog>
-      <AlertDialogTrigger render={<Button variant="ghost" className="text-muted-foreground" />}>
-        <Trash2 /> Delete
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete this item?</AlertDialogTitle>
-          <AlertDialogDescription>
-            &ldquo;{item.title}&rdquo; and everything Recall learned from it will be removed. This can&apos;t be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}>
-            Delete
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="More actions" />}>
+          <MoreHorizontal />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem onClick={onRename}>
+            <Pencil /> Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => archive.mutate(!item.archived)}>
+            <Archive /> {item.archived ? "Unarchive" : "Archive"}
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onClick={() => setConfirmDelete(true)}>
+            <Trash2 /> Delete…
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{item.title}&rdquo;, your highlights, notes and flashcards on it will be removed. This can&apos;t be undone. Archive it
+              instead to keep it searchable.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

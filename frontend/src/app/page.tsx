@@ -1,15 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Plus, RotateCw, Search, Sparkles, X } from "lucide-react";
+import { Layers, Loader2, Plus, RotateCw, Search, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { AddSources } from "@/components/AddSources";
+import { StarButton } from "@/components/StarButton";
 import { SourceIcon, StatusBadge, TagLink, sourceLabel, timeAgo } from "@/components/ItemBits";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MARK_END, MARK_START, api, isBusy, passageHref, type Item } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export default function LibraryPage() {
   return (
@@ -23,6 +25,7 @@ function Library() {
   const router = useRouter();
   const params = useSearchParams();
   const tag = params.get("tag") ?? undefined;
+  const view = (["starred", "archived"].includes(params.get("view") ?? "") ? params.get("view") : "all") as "all" | "starred" | "archived";
   // The search box is live: it filters as you type, and the text is kept in the URL (?q=) so a
   // search survives a refresh and the back button.
   const [search, setSearch] = useState(params.get("q") ?? "");
@@ -35,15 +38,16 @@ function Library() {
   }, [q, params, router]);
 
   const items = useQuery({
-    queryKey: ["items", tag ?? null, q],
-    queryFn: () => api.items(tag, q || undefined),
+    queryKey: ["items", tag ?? null, q, view],
+    queryFn: () => api.items(tag, q || undefined, view),
     placeholderData: (previous) => previous, // keep the list while a new search loads
     // Keep polling while anything is still being read, so statuses update by themselves.
     refetchInterval: (query) => (query.state.data?.some((i) => isBusy(i.status)) ? 2000 : false),
   });
   const tags = useQuery({ queryKey: ["tags"], queryFn: api.tags, refetchInterval: items.data?.some((i) => isBusy(i.status)) ? 4000 : false });
 
-  const isEmptyLibrary = !tag && !q && items.data?.length === 0;
+  const isEmptyLibrary = !tag && !q && view === "all" && items.data?.length === 0;
+  const browsing = !tag && !q && view === "all";
   const count = items.data?.length ?? 0;
 
   return (
@@ -55,7 +59,7 @@ function Library() {
             {items.data
               ? q
                 ? `${count} ${count === 1 ? "result" : "results"} for “${q}”${tag ? ` in #${tag}` : ""}`
-                : `${count} ${count === 1 ? "item" : "items"}${tag ? ` tagged #${tag}` : ""}`
+                : `${count} ${view === "starred" ? "starred " : view === "archived" ? "archived " : ""}${count === 1 ? "item" : "items"}${tag ? ` tagged #${tag}` : ""}`
               : " "}
           </p>
         </div>
@@ -67,6 +71,10 @@ function Library() {
       </header>
 
       {!isEmptyLibrary && <SearchBar value={search} onChange={setSearch} searching={items.isFetching && !!q} />}
+
+      {browsing && <Resurface />}
+
+      {!isEmptyLibrary && !q && <ViewSwitch view={view} />}
 
       {tags.data && tags.data.length > 0 && (
         <nav aria-label="Filter by tag" className="flex flex-wrap gap-1.5">
@@ -88,7 +96,11 @@ function Library() {
       ) : isEmptyLibrary ? (
         <EmptyLibrary />
       ) : items.data.length === 0 ? (
-        q ? (
+        view !== "all" && !q ? (
+          <p className="text-muted-foreground">
+            {view === "starred" ? "Nothing starred yet. Star things you want to keep close." : "Nothing archived. Archive what you're done with; it stays searchable."}
+          </p>
+        ) : q ? (
           <div className="rounded-xl border border-dashed p-6 text-center">
             <p className="font-medium">No documents match “{q}”{tag ? ` in #${tag}` : ""}</p>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -157,6 +169,82 @@ function MatchSnippet({ item }: { item: Item }) {
   );
 }
 
+function ViewSwitch({ view }: { view: "all" | "starred" | "archived" }) {
+  const views = [
+    { id: "all", label: "All", href: "/" },
+    { id: "starred", label: "Starred", href: "/?view=starred" },
+    { id: "archived", label: "Archived", href: "/?view=archived" },
+  ] as const;
+  return (
+    <nav aria-label="Show" className="flex gap-1 text-sm">
+      {views.map((v) => (
+        <Link
+          key={v.id}
+          href={v.href}
+          aria-current={view === v.id ? "page" : undefined}
+          className={cn(
+            "rounded-md px-2.5 py-1 transition-colors duration-150",
+            view === v.id ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {v.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/** A few things saved a while ago and not opened since, and any flashcards due. */
+function Resurface() {
+  const data = useQuery({ queryKey: ["resurface"], queryFn: api.resurface, staleTime: 5 * 60_000 });
+  if (!data.data || (data.data.items.length === 0 && data.data.cards_due === 0)) return null;
+  const { items, cards_due } = data.data;
+  if (items.length === 0) {
+    return (
+      <Link
+        href="/review"
+        className="flex items-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm transition-colors duration-150 hover:border-brand/40"
+      >
+        <Layers className="size-4 text-brand" aria-hidden />
+        <span>
+          {cards_due} {cards_due === 1 ? "flashcard is" : "flashcards are"} ready to review
+        </span>
+        <span className="ml-auto text-brand">Review now</span>
+      </Link>
+    );
+  }
+  return (
+    <section aria-labelledby="resurface-title" className="space-y-3">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 id="resurface-title" className="font-heading text-xl font-medium">
+          Worth another look
+        </h2>
+        {cards_due > 0 && (
+          <Link href="/review" className="inline-flex items-center gap-1.5 text-sm text-brand underline-offset-4 hover:underline">
+            <Layers className="size-4" aria-hidden /> {cards_due} {cards_due === 1 ? "card" : "cards"} to review
+          </Link>
+        )}
+      </div>
+      {items.length > 0 && (
+        <ul className="grid gap-2 sm:grid-cols-3">
+          {items.map((item) => (
+            <li key={item.id}>
+              <Link href={`/items/${item.id}`} className="flex h-full flex-col rounded-xl border bg-card p-4 transition-colors duration-150 hover:border-brand/40">
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <SourceIcon type={item.source_type} className="size-3.5" />
+                  Saved {timeAgo(item.created_at)}
+                </span>
+                <span className="mt-1.5 line-clamp-2 font-medium leading-snug">{item.title}</span>
+                {item.summary && <span className="mt-1.5 line-clamp-3 text-sm text-muted-foreground">{item.summary}</span>}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function ItemRow({ item, activeTag }: { item: Item; activeTag?: string }) {
   return (
     <li className="group relative px-4 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-muted/40 sm:px-5">
@@ -167,7 +255,10 @@ function ItemRow({ item, activeTag }: { item: Item; activeTag?: string }) {
             <Link href={`/items/${item.id}`} className="font-medium leading-snug after:absolute after:inset-0 focus-visible:outline-none">
               <span className="line-clamp-2 break-words">{item.title}</span>
             </Link>
-            {item.status !== "ready" && <StatusBadge status={item.status} className="shrink-0" />}
+            <div className="relative z-10 flex shrink-0 items-center gap-1">
+              {item.status !== "ready" && <StatusBadge status={item.status} />}
+              <StarButton item={item} />
+            </div>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {sourceLabel(item)} · {timeAgo(item.created_at)}
