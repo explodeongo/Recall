@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, AtSign, FileText, Globe, History, Search, Square } from "lucide-react";
+import { ArrowUp, AtSign, FileText, Globe, Hash, History, MessageSquareText, Search, Square } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -153,7 +153,9 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
           )}
         </div>
 
-        <div className="mx-auto max-w-3xl">
+        {/* The window's full height below the nav (the page's bottom padding is taken back),
+            so the question box sits at the bottom like any chat, with the conversation above. */}
+        <div className="mx-auto -mb-24 flex min-h-[calc(100dvh-5.5rem)] max-w-3xl flex-col">
           {itemId !== null && (
             <p className="mb-6 flex items-center gap-2 rounded-lg border bg-brand-soft/40 px-3 py-2 text-sm">
               <FileText className="size-4 shrink-0 text-brand" aria-hidden />
@@ -186,7 +188,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
           ) : empty ? (
             <Welcome scoped={itemId !== null} onPick={ask} />
           ) : (
-            <div className="space-y-10 pb-4">
+            <div className="flex-1 space-y-10 pb-4">
               {turnsOf(messages).map(([question, answer]) => (
                 <Exchange key={question.id} chatId={chatId} question={question.content} context={question.context ?? null} searchQuery={question.search_query} answer={answer} />
               ))}
@@ -213,17 +215,33 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
 
 function Welcome({ scoped, onPick }: { scoped: boolean; onPick: (q: string) => void }) {
   const tags = useQuery({ queryKey: ["tags"], queryFn: api.tags, enabled: !scoped });
+  const items = useQuery({ queryKey: ["mention-items"], queryFn: () => api.items(), enabled: !scoped, staleTime: 60_000 });
+  // Two from the biggest topics, two about things saved lately.
+  const suggestions = [
+    ...(tags.data ?? [])
+      .filter((t) => t.item_count > 1)
+      .slice(0, 2)
+      .map((t) => ({ q: `What have I saved about ${t.name}?`, from: `#${t.name}`, icon: Hash })),
+    ...(items.data ?? [])
+      .filter((i) => i.status === "ready" && i.source_type !== "note")
+      .slice(0, 2)
+      .map((i) => ({ q: `What are the main ideas in “${i.title}”?`, from: "Saved recently", icon: FileText })),
+  ];
+  const libraryEmpty = !scoped && tags.data?.length === 0 && items.data?.length === 0;
+
   return (
-    <header className="space-y-6 pt-2 pb-8">
-      <div>
-        <h1 className="text-balance font-heading text-4xl font-medium">{scoped ? "Ask about this document" : "Ask your library"}</h1>
-        <p className="mt-2 text-muted-foreground">
-          Answers come from what you&apos;ve saved first, with a numbered source for every claim. Type @ to ask about one item or
-          tag; ask follow-ups, and Recall keeps the conversation so you can come back to it.
-        </p>
-      </div>
-      {!scoped && tags.data && tags.data.length === 0 && (
-        <p className="text-sm text-muted-foreground">
+    <header className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+      <span className="grid size-11 place-items-center rounded-xl bg-brand-soft text-brand" aria-hidden>
+        <MessageSquareText className="size-5" />
+      </span>
+      <h1 className="mt-4 text-balance font-heading text-4xl font-medium">{scoped ? "Ask about this document" : "Ask your library"}</h1>
+      <p className="mt-2 max-w-md text-pretty text-muted-foreground">
+        {scoped
+          ? "Answers come only from this document, each claim with the passage it's from."
+          : "Answers come from what you've saved, each claim with a numbered source. Ask follow-ups, or type @ to ask about one item or tag."}
+      </p>
+      {libraryEmpty && (
+        <p className="mt-6 text-sm text-muted-foreground">
           Your library is empty, so there&apos;s nothing to ask about yet.{" "}
           <Link href="/add" className="text-brand underline-offset-4 hover:underline">
             Add a PDF or a link
@@ -231,24 +249,23 @@ function Welcome({ scoped, onPick }: { scoped: boolean; onPick: (q: string) => v
           first.
         </p>
       )}
-      {!scoped && tags.data && tags.data.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-sm text-muted-foreground">Try one of these, or ask your own:</h2>
-          <div className="flex flex-wrap gap-2">
-            {tags.data.filter((t) => t.item_count > 0).slice(0, 4).map((t) => {
-              const q = `What have I saved about ${t.name}?`;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => onPick(q)}
-                  className="rounded-full border bg-card shadow-xs px-3 py-1.5 text-sm text-muted-foreground transition-[color,border-color,transform] duration-150 hover:border-brand/50 hover:text-foreground active:scale-[0.97]"
-                >
-                  {q}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      {suggestions.length > 0 && (
+        <ul className="mt-8 grid w-full gap-2 text-left sm:grid-cols-2" aria-label="Questions to try">
+          {suggestions.map(({ q, from, icon: Icon }, i) => (
+            // Two on a phone, so the question box never covers one.
+            <li key={q} className={cn("animate-enter", i >= 2 && "hidden sm:block")} style={{ "--i": i } as React.CSSProperties}>
+              <button
+                onClick={() => onPick(q)}
+                className="group flex h-full w-full flex-col gap-1.5 rounded-xl border bg-card p-3.5 text-left shadow-xs transition-[border-color,background-color,transform] duration-150 ease-(--ease-out) hover:border-brand/40 hover:bg-brand-soft/30 active:scale-[0.99]"
+              >
+                <span className="line-clamp-2 text-sm leading-snug">{q}</span>
+                <span className="mt-auto flex items-center gap-1 text-xs text-muted-foreground">
+                  <Icon className="size-3" aria-hidden /> {from}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </header>
   );
