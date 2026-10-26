@@ -7,17 +7,26 @@ only from your own library, with a citation to the exact passage.
 
 ## What it does
 
-- **Save** a PDF or a link (articles, docs, Wikipedia, arXiv papers). Recall reads it in the
-  background, then writes a two-line summary for your library and a **page-long summary**: an
-  overview, the key points, and notes on each section of the document.
-- **Tag** automatically, 3 to 6 topic tags per item, and edit them yourself. Filter the library
-  by tag instantly, with no AI involved.
-- **Ask** in plain English and get an answer built only from your library, with a numbered
-  citation on every claim. Click one to see the exact passage, or open the PDF at that page. If
-  your library doesn't cover it, Recall says "Not found in your library" instead of guessing.
-- **Chat** with follow-ups: chats are saved, and a follow-up like "how many does the base model
-  use?" is rewritten into a full question before searching. A chat can also be limited to one
-  document ("Ask about this document").
+- **Save anything:** PDFs, Word, Markdown and text files, links to articles, PDFs or YouTube
+  videos (read from their captions), or a note typed straight in. Paste a list of links at
+  once, save the page you're on with the "Save to Recall" bookmark button, or share to Recall
+  from your phone once it's installed. Each item is read in the background and gets a
+  two-line summary, a page-long summary (overview, key points, section by section) and tags.
+- **Read and mark up:** read any item inside Recall, highlight passages, add notes to them or
+  to the whole item. Your notes become part of what Ask can answer from.
+- **Ask:** questions in plain English get answers built only from your library, with a
+  numbered citation on every claim; click one to land on the exact passage, highlighted.
+  When your library doesn't cover it, Recall says "Not found in your library" instead of
+  guessing. Chats are saved and understand follow-ups, and can be limited to one document.
+- **Find:** the Library's search matches each word anywhere (titles, tags, summaries, your
+  notes and the full text), shows the passage where it matched, and adds documents that are
+  about the same thing in other words. ⌘K jumps to any document, passage, highlight or chat.
+- **Remember:** "Quiz me" turns a document into flashcards, and Review brings them back with
+  spaced repetition, tracking a daily streak. Things saved a while ago and never reopened
+  come back as "Worth another look".
+- **Organise and own it:** tags (automatic and your own), stars, archive, rename; accounts
+  keep each person's library private; export everything as Markdown and JSON at any time, or
+  delete your account and all of it.
 
 ## Results
 

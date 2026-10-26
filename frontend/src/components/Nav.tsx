@@ -35,11 +35,11 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <nav className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:px-6" aria-label="Main">
-        <Link href="/" className="mr-4 flex items-center gap-2" aria-label="Recall home">
+        <Link href="/" className="mr-1 flex items-center gap-2 sm:mr-4" aria-label="Recall home">
           <span className="grid size-7 place-items-center rounded-md bg-brand font-heading text-[17px] leading-none font-semibold text-brand-foreground">
             R
           </span>
-          <span className="font-heading text-xl font-semibold tracking-tight">Recall</span>
+          <span className="hidden font-heading text-xl font-semibold tracking-tight sm:inline">Recall</span>
         </Link>
         {!authPage && links.map(({ href, label, icon: Icon }) => (
           <Link
@@ -47,7 +47,7 @@ export function Nav() {
             href={href}
             aria-current={isActive(href) ? "page" : undefined}
             className={cn(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+              "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2.5",
               isActive(href) && "bg-muted font-medium text-foreground",
             )}
           >
@@ -74,7 +74,8 @@ export function Nav() {
         <Button
           variant="ghost"
           size="icon"
-          className={authPage ? "ml-auto" : undefined}
+          // On phones there isn't room; the account menu has it there.
+          className={authPage ? "ml-auto" : "hidden sm:inline-flex"}
           aria-label="Toggle dark mode"
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         >
@@ -89,6 +90,7 @@ export function Nav() {
 
 function AccountMenu() {
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
   if (!me.data) return null;
   const initial = (me.data.name || me.data.email).trim()[0]?.toUpperCase() ?? "?";
@@ -119,6 +121,9 @@ function AccountMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/settings")}>
           <Settings /> Settings and export
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+          {resolvedTheme === "dark" ? <Sun /> : <Moon />} {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
