@@ -1,21 +1,23 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, FileText, Globe, History, Search, Square } from "lucide-react";
+import { ArrowUp, AtSign, FileText, Globe, History, Search, Square } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerText } from "@/components/AnswerText";
 import { FromTheWeb, NotFound, SourcesList, Thinking } from "@/components/chat/AnswerParts";
 import { ChatList } from "@/components/chat/ChatList";
+import { MentionMenu, PinnedChips, SourceSwitch, mentionAt, useAnswerSource, useMentions, type Mention, type Pinned } from "@/components/chat/ContextPicker";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api, sendChatMessage, type Chat, type ChatMessage, type MessageDone, type Source } from "@/lib/api";
+import { api, sendChatMessage, type AnswerSource, type Chat, type ChatMessage, type MessageContext, type MessageDone, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 /** The answer being streamed in right now, before it's saved into the chat. */
 interface Pending {
   question: string;
+  context: MessageContext;
   query: string | null;
   sources: Source[] | null;
   text: string;
@@ -35,19 +37,10 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
     setPendingState(pendingRef.current);
   }, []);
   const [historyOpen, setHistoryOpen] = useState(false);
-  // Whether to search the web for what the library doesn't cover; remembered per browser.
-  const [web, setWebState] = useState(true);
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("recall-web") === "off") setWebState(false);
-    } catch {}
-  }, []);
-  const setWeb = (on: boolean) => {
-    setWebState(on);
-    try {
-      localStorage.setItem("recall-web", on ? "on" : "off");
-    } catch {}
-  };
+  // Where answers come from: library, library + web, or web; remembered per browser.
+  const [source, setSource] = useAnswerSource();
+  // "@" context: answers only from these items and tags, kept for follow-ups until removed.
+  const [pinned, setPinned] = useState<Pinned>({ items: [], tags: [] });
   const abort = useRef<AbortController | null>(null);
   const started = useRef(false);
   const bottom = useRef<HTMLDivElement>(null);
@@ -57,11 +50,21 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
   const item = useQuery({ queryKey: ["item", itemId], queryFn: () => api.item(itemId!), enabled: itemId !== null });
   const busy = pending !== null && pending.error === null;
 
+  // Reopening a chat picks up where it was: the last question's "@" context stays pinned.
+  const restored = useRef<number | null>(null);
+  useEffect(() => {
+    if (!chat.data || restored.current === chat.data.id) return;
+    restored.current = chat.data.id;
+    const last = [...chat.data.messages].reverse().find((m) => m.role === "user");
+    if (last?.context) setPinned({ items: last.context.items, tags: last.context.tags });
+  }, [chat.data]);
+
   const ask = useCallback(
     async (raw: string) => {
       const question = raw.trim();
       if (!question || busy) return;
-      setPending({ question, query: null, sources: null, text: "", error: null, status: null });
+      const context: MessageContext = { ...pinned, source };
+      setPending({ question, context, query: null, sources: null, text: "", error: null, status: null });
 
       let id = chatId;
       if (id === null) {
@@ -84,7 +87,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
       await sendChatMessage(
         id,
         question,
-        web,
+        context,
         {
           onQuery: (query) => setPending((p) => p && { ...p, query }),
           onStatus: (status) => setPending((p) => p && { ...p, status }),
@@ -101,7 +104,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
         controller.signal,
       );
     },
-    [busy, chatId, itemId, queryClient, setPending, web],
+    [busy, chatId, itemId, queryClient, setPending, pinned, source],
   );
 
   // A question handed over from the Library's search bar (?q=) is asked once on arrival.
@@ -185,7 +188,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
           ) : (
             <div className="space-y-10 pb-4">
               {turnsOf(messages).map(([question, answer]) => (
-                <Exchange key={question.id} question={question.content} searchQuery={question.search_query} answer={answer} />
+                <Exchange key={question.id} question={question.content} context={question.context ?? null} searchQuery={question.search_query} answer={answer} />
               ))}
               {pending && <PendingExchange pending={pending} />}
             </div>
@@ -194,8 +197,10 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
             busy={busy}
             onAsk={ask}
             onStop={stop}
-            web={web}
-            onWebChange={setWeb}
+            source={source}
+            onSourceChange={setSource}
+            pinned={pinned}
+            onPinnedChange={setPinned}
             placeholder={!empty ? "Ask a follow-up…" : itemId !== null ? "Ask anything about this document…" : undefined}
           />
           {/* Below the pinned question box, so scrolling here shows the newest text above it. */}
@@ -213,8 +218,8 @@ function Welcome({ scoped, onPick }: { scoped: boolean; onPick: (q: string) => v
       <div>
         <h1 className="text-balance font-heading text-4xl font-medium">{scoped ? "Ask about this document" : "Ask your library"}</h1>
         <p className="mt-2 text-muted-foreground">
-          Answers come only from what you&apos;ve saved, with a numbered source for every claim. Ask follow-ups; Recall keeps the
-          conversation, and saves it so you can come back to it.
+          Answers come from what you&apos;ve saved first, with a numbered source for every claim. Type @ to ask about one item or
+          tag; ask follow-ups, and Recall keeps the conversation so you can come back to it.
         </p>
       </div>
       {!scoped && tags.data && tags.data.length === 0 && (
@@ -249,18 +254,18 @@ function Welcome({ scoped, onPick }: { scoped: boolean; onPick: (q: string) => v
   );
 }
 
-function Exchange({ question, searchQuery, answer }: { question: string; searchQuery: string | null; answer: ChatMessage }) {
+function Exchange({ question, context, searchQuery, answer }: { question: string; context: MessageContext | null; searchQuery: string | null; answer: ChatMessage }) {
   const sources = answer.sources ?? [];
   const cited = (answer.cited ?? []).map((n) => sources[n - 1]).filter(Boolean);
   const fromWeb = cited.some((s) => s.kind === "web");
   return (
     <section className="space-y-4">
-      <Question text={question} searchQuery={searchQuery} />
+      <Question text={question} context={context} searchQuery={searchQuery} />
       {answer.not_found ? (
         <NotFound searchedWeb={answer.content.includes("web")} />
       ) : (
         <>
-          {fromWeb && <FromTheWeb partly={cited.some((s) => s.kind !== "web")} />}
+          {fromWeb && context?.source !== "web" && <FromTheWeb partly={cited.some((s) => s.kind !== "web")} />}
           <AnswerText text={answer.content} sources={sources} />
           {sources.length > 0 && <SourcesList sources={sources} cited={answer.cited ?? []} />}
         </>
@@ -273,7 +278,7 @@ function PendingExchange({ pending }: { pending: Pending }) {
   const sources = pending.sources ?? [];
   return (
     <section aria-live="polite" aria-busy={pending.error === null} className="animate-enter space-y-4">
-      <Question text={pending.question} searchQuery={pending.query} />
+      <Question text={pending.question} context={pending.context} searchQuery={pending.query} />
       {pending.error && !pending.text ? (
         <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
           {pending.error === "Stopped." ? "Stopped. This question wasn't saved." : `Something went wrong: ${pending.error}. This question wasn't saved; try asking again.`}
@@ -295,11 +300,21 @@ function PendingExchange({ pending }: { pending: Pending }) {
   );
 }
 
-function Question({ text, searchQuery }: { text: string; searchQuery: string | null }) {
+function Question({ text, context, searchQuery }: { text: string; context: MessageContext | null; searchQuery: string | null }) {
   const rewritten = searchQuery && searchQuery.trim().toLowerCase() !== text.trim().toLowerCase();
   return (
     <div className="flex flex-col items-end gap-1.5">
+      {context && (context.items.length > 0 || context.tags.length > 0) && (
+        <div className="flex max-w-[85%] justify-end">
+          <PinnedChips pinned={context} />
+        </div>
+      )}
       <p className="max-w-[85%] rounded-2xl rounded-br-md bg-muted px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">{text}</p>
+      {context?.source === "web" && (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Globe className="size-3 shrink-0" aria-hidden /> Asked the web only
+        </p>
+      )}
       {rewritten && (
         <p className="flex max-w-[85%] items-center gap-1.5 text-xs text-muted-foreground">
           <Search className="size-3 shrink-0" aria-hidden />
@@ -315,22 +330,76 @@ function Composer({
   onAsk,
   onStop,
   placeholder,
-  web,
-  onWebChange,
+  source,
+  onSourceChange,
+  pinned,
+  onPinnedChange,
 }: {
   busy: boolean;
   onAsk: (q: string) => void;
   onStop: () => void;
   placeholder?: string;
-  web: boolean;
-  onWebChange: (on: boolean) => void;
+  source: AnswerSource;
+  onSourceChange: (s: AnswerSource) => void;
+  pinned: Pinned;
+  onPinnedChange: (p: Pinned) => void;
 }) {
   const [question, setQuestion] = useState("");
+  const box = useRef<HTMLTextAreaElement>(null);
+  // The "@" being typed, if any, and the highlighted option in its menu.
+  const [mention, setMention] = useState<{ start: number; query: string } | null>(null);
+  const [active, setActive] = useState(0);
+  const options = useMentions(mention?.query ?? "", pinned, mention !== null);
+
   const send = () => {
     if (!question.trim() || busy) return;
     onAsk(question);
     setQuestion("");
+    setMention(null);
   };
+
+  const track = (text: string, caret: number) => {
+    const found = mentionAt(text, caret);
+    setMention(found);
+    if (found?.query !== mention?.query) setActive(0);
+  };
+
+  const pick = (m: Mention) => {
+    if (m.kind === "tag") onPinnedChange({ ...pinned, tags: [...pinned.tags, m.name] });
+    else onPinnedChange({ ...pinned, items: [...pinned.items, { id: m.id, title: m.title }] });
+    // Put the name where "@query" was, so the question still reads as a sentence
+    // ("what does Attention Is All You Need say…"); the chip does the limiting.
+    if (mention) {
+      const caret = box.current?.selectionStart ?? question.length;
+      const name = (m.kind === "tag" ? m.name : m.title) + " ";
+      const next = question.slice(0, mention.start) + name + question.slice(caret).replace(/^ /, "");
+      const at = mention.start + name.length;
+      setQuestion(next);
+      requestAnimationFrame(() => box.current?.setSelectionRange(at, at));
+    }
+    setMention(null);
+  };
+
+  const unpin = (m: Mention) =>
+    onPinnedChange(
+      m.kind === "tag" ? { ...pinned, tags: pinned.tags.filter((t) => t !== m.name) } : { ...pinned, items: pinned.items.filter((i) => i.id !== m.id) },
+    );
+
+  const openMenu = () => {
+    const el = box.current!;
+    const caret = el.selectionStart ?? question.length;
+    const spacer = caret > 0 && !/\s/.test(question[caret - 1]) ? " " : "";
+    const next = question.slice(0, caret) + spacer + "@" + question.slice(caret);
+    setQuestion(next);
+    el.focus();
+    const at = caret + spacer.length + 1;
+    requestAnimationFrame(() => el.setSelectionRange(at, at));
+    setMention({ start: at - 1, query: "" });
+    setActive(0);
+  };
+
+  const pinnedAny = pinned.items.length > 0 || pinned.tags.length > 0;
+
   return (
     // Pinned to the bottom of the window, over a fade so the conversation slides under it.
     <div className="sticky bottom-0 -mx-2 bg-gradient-to-t from-background from-70% to-transparent px-2 pt-6 pb-4">
@@ -339,42 +408,81 @@ function Composer({
           e.preventDefault();
           send();
         }}
-        className="rounded-2xl border bg-card p-2 shadow-sm transition focus-within:border-brand/60 focus-within:ring-3 focus-within:ring-brand/15"
+        className="relative rounded-2xl border bg-card p-2 shadow-sm transition focus-within:border-brand/60 focus-within:ring-3 focus-within:ring-brand/15"
       >
+        {mention && <MentionMenu options={options} active={active} onPick={pick} query={mention.query} />}
+        {pinnedAny && (
+          <div className="px-2 pt-1">
+            <PinnedChips pinned={pinned} onRemove={unpin} />
+          </div>
+        )}
         <label htmlFor="question" className="sr-only">
           Your question
         </label>
         <textarea
           id="question"
+          ref={box}
           autoFocus
           rows={2}
           value={question}
           maxLength={1000}
-          onChange={(e) => setQuestion(e.target.value)}
+          role="combobox"
+          aria-expanded={mention !== null}
+          aria-controls={mention ? "mention-menu" : undefined}
+          aria-activedescendant={mention && options.length ? `mention-${active}` : undefined}
+          aria-autocomplete="list"
+          onChange={(e) => {
+            setQuestion(e.target.value);
+            track(e.target.value, e.target.selectionStart);
+          }}
+          onSelect={(e) => track(e.currentTarget.value, e.currentTarget.selectionStart)}
+          onBlur={() => setMention(null)}
           onKeyDown={(e) => {
+            if (mention) {
+              if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                e.preventDefault();
+                const n = options.length || 1;
+                setActive((a) => (a + (e.key === "ArrowDown" ? 1 : n - 1)) % n);
+                return;
+              }
+              if ((e.key === "Enter" || e.key === "Tab") && options[active]) {
+                e.preventDefault();
+                pick(options[active]);
+                return;
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setMention(null);
+                return;
+              }
+            }
+            if (e.key === "Backspace" && !question && pinnedAny) {
+              // An empty box: backspace takes off the last pin, as in most chip inputs.
+              const lastItem = pinned.items.at(-1);
+              if (lastItem) unpin({ kind: "item", ...lastItem });
+              else unpin({ kind: "tag", name: pinned.tags.at(-1)! });
+              return;
+            }
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               send();
             }
           }}
-          placeholder={placeholder ?? "When is a hash index better than a B-tree?"}
+          placeholder={placeholder ?? "Ask anything. Type @ to limit it to an item or tag."}
           className="block w-full resize-none bg-transparent px-3 py-2 text-[16px] outline-none placeholder:text-muted-foreground"
         />
-        <div className="flex items-center justify-between px-2 pb-1">
+        <div className="flex items-center gap-2 px-2 pb-1">
+          <SourceSwitch value={source} onChange={onSourceChange} />
           <button
             type="button"
-            onClick={() => onWebChange(!web)}
-            aria-pressed={web}
-            title={web ? "Searching the web for what your library doesn't cover" : "Answers only from your library"}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97]",
-              web ? "border-brand/40 bg-brand-soft text-brand" : "text-muted-foreground hover:text-foreground",
-            )}
+            onClick={openMenu}
+            disabled={source === "web"}
+            title={source === "web" ? "Web-only answers don't use your library" : "Limit the answer to items or tags"}
+            className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground transition-[color,border-color,transform] duration-150 hover:text-foreground active:scale-[0.97] disabled:opacity-40"
           >
-            <Globe className="size-3.5" aria-hidden />
-            {web ? "Web on" : "Library only"}
+            <AtSign className="size-3.5" aria-hidden />
+            <span className="hidden sm:inline">Context</span>
           </button>
-          <span className="hidden text-xs text-muted-foreground md:inline">Enter to ask · Shift+Enter for a new line</span>
           {/* One button whose icon cross-fades between Ask and Stop, so it never jumps. */}
           <Button
             type={busy ? "button" : "submit"}
@@ -392,6 +500,7 @@ function Composer({
           </Button>
         </div>
       </form>
+      {source === "web" && pinnedAny && <p className="mt-1.5 px-2 text-xs text-muted-foreground">Pinned items are ignored while answering from the web only.</p>}
     </div>
   );
 }
@@ -413,7 +522,17 @@ function appendTurn(chat: Chat, pending: Pending, done: MessageDone): Chat {
     title: done.title,
     messages: [
       ...chat.messages,
-      { id: userId, role: "user", content: pending.question, sources: null, cited: null, not_found: false, search_query: pending.query, created_at: now },
+      {
+        id: userId,
+        role: "user",
+        content: pending.question,
+        context: pending.context,
+        sources: null,
+        cited: null,
+        not_found: false,
+        search_query: pending.query,
+        created_at: now,
+      },
       {
         id: replyId,
         role: "assistant",

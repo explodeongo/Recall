@@ -225,6 +225,9 @@ class ChatMessage(Base):
     not_found: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     # A follow-up rewritten to stand on its own ("what about its height?" -> "B-tree height").
     search_query: Mapped[str | None] = mapped_column(Text)
+    # On questions: what the answer was limited to, as asked ("@" items and tags, and the
+    # source: library, both or web). {"items": [{"id", "title"}], "tags": [...], "source": ...}
+    context: Mapped[dict | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     chat: Mapped[Chat] = relationship(back_populates="messages")

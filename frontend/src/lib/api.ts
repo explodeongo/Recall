@@ -242,7 +242,18 @@ export interface ChatMessage {
   cited: number[] | null;
   not_found: boolean;
   search_query: string | null;
+  /** On questions: what the answer was limited to ("@" items and tags) and where it could come from. */
+  context?: MessageContext | null;
   created_at: string;
+}
+
+/** Where answers may come from: the library, the library then the web, or only the web. */
+export type AnswerSource = "library" | "both" | "web";
+
+export interface MessageContext {
+  items: { id: number; title: string }[];
+  tags: string[];
+  source: AnswerSource;
 }
 
 export interface Chat {
@@ -408,8 +419,9 @@ export interface StreamHandlers<Done> {
 }
 
 /** Ask the next question in a saved chat; the answer streams back as Server-Sent Events. */
-export function sendChatMessage(chatId: number, question: string, web: boolean, handlers: StreamHandlers<MessageDone>, signal?: AbortSignal) {
-  return postStream(`/chats/${chatId}/messages`, { question, web }, handlers, signal);
+export function sendChatMessage(chatId: number, question: string, context: MessageContext, handlers: StreamHandlers<MessageDone>, signal?: AbortSignal) {
+  const body = { question, source: context.source, item_ids: context.items.map((i) => i.id), tags: context.tags };
+  return postStream(`/chats/${chatId}/messages`, body, handlers, signal);
 }
 
 /** POST and parse Server-Sent Events (EventSource can't send a POST body). */

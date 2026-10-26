@@ -257,6 +257,7 @@ def stream_answer(
     item_ids: list[int] | None = None,
     user_id: int | None = None,
     web: bool = False,
+    library: bool = True,
     web_search=None,
 ) -> Iterator[tuple[str, object]]:
     """Yields ("sources", passages), ("status", text), ("delta", text) pieces, and finally
@@ -265,13 +266,16 @@ def stream_answer(
     In a chat, `search_query` is the follow-up rewritten to stand alone (it's what gets
     searched), `history` the recent turns, and `item_ids` the documents the chat is limited to.
     With `web`, what the library doesn't cover is answered from web pages (services/web.py),
-    still only from passages the model is shown.
+    still only from passages the model is shown. Without `library`, only from the web.
     """
     timings = Timings()
     query = search_query or question
-    passages, gate_closed, timings.retrieval_ms = _retrieve(
-        session, embedder, query, mode, item_ids, user_id
-    )
+    if library:
+        passages, gate_closed, timings.retrieval_ms = _retrieve(
+            session, embedder, query, mode, item_ids, user_id
+        )
+    else:
+        passages, gate_closed, web = [], True, True
     if gate_closed:
         passages = []
     yield "sources", passages
@@ -285,7 +289,7 @@ def stream_answer(
         early = _pool.submit(_web_search, query, embedder, web_search)
     # Without relevant passages there's still something to work with in a conversation (the
     # earlier answers); without either, skip straight to the web, or say "not found".
-    if passages or history:
+    if library and (passages or history):
         system = SYSTEM + (SYSTEM_WEB_ALLOWED if web and passages else "")
         stream = _Stream()
         for piece in llm.stream(build_prompt(question, passages, history), system=system):

@@ -16,6 +16,7 @@ from app.services.answer import Answer, Turn, stream_answer
 from app.services.chat import HISTORY_TURNS, chat_title, standalone_question
 from app.services.llm import LLMError
 from app.services.ratelimit import limit
+from app.services.tags import has_tags
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 
@@ -99,7 +100,12 @@ def send_message(
     chat = _get_or_404(session, chat_id, user.id)
     quota.check(session, user.id, "questions", get_settings().daily_questions)
     history = _turns(chat.messages)[-HISTORY_TURNS:]
-    item_ids = [chat.item_id] if chat.item_id is not None else None
+    context = _context(session, user.id, body)
+    if context["items"] or context["tags"]:
+        item_ids = _scope(session, user.id, context)
+    else:
+        item_ids = [chat.item_id] if chat.item_id is not None else None
+    source = context["source"]
 
     def events() -> Iterator[str]:
         try:
@@ -115,7 +121,8 @@ def send_message(
                 history=history,
                 item_ids=item_ids,
                 user_id=user.id,
-                web=body.web,
+                web=source != "library",
+                library=source != "web",
             ):
                 if kind == "sources":
                     yield _sse("sources", {"sources": sources_json(payload)})
@@ -130,7 +137,13 @@ def send_message(
             return
 
         sources = sources_json(answer.sources)
-        asked = ChatMessage(chat_id=chat.id, role="user", content=body.question, search_query=query)
+        asked = ChatMessage(
+            chat_id=chat.id,
+            role="user",
+            content=body.question,
+            search_query=query,
+            context=context if context != {"items": [], "tags": [], "source": "both"} else None,
+        )
         reply = ChatMessage(
             chat_id=chat.id,
             role="assistant",
@@ -162,6 +175,34 @@ def send_message(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+def _context(session, user_id: int, body: MessageIn) -> dict:
+    """The question's "@" context, checked against the user's library, and its source."""
+    items = []
+    if body.item_ids:
+        rows = session.execute(
+            select(Item.id, Item.title).where(Item.id.in_(body.item_ids), Item.user_id == user_id)
+        ).all()
+        found = {r.id: r.title for r in rows}
+        items = [{"id": i, "title": found[i]} for i in dict.fromkeys(body.item_ids) if i in found]
+        if not items:
+            raise HTTPException(404, "Those items aren't in your library.")
+    tags = list(dict.fromkeys(t.strip().lower() for t in body.tags if t.strip()))
+    source = body.source or ("both" if body.web else "library")
+    return {"items": items, "tags": tags, "source": source}
+
+
+def _scope(session, user_id: int, context: dict) -> list[int]:
+    """Item ids for "@" context: the pinned items and every item carrying a pinned tag."""
+    ids = {i["id"] for i in context["items"]}
+    if context["tags"]:
+        ids |= set(
+            session.scalars(
+                select(Item.id).where(Item.user_id == user_id, has_tags(context["tags"], "any"))
+            )
+        )
+    return sorted(ids) or [-1]  # a tag nothing carries: nothing to answer from
 
 
 def _turns(messages: list[ChatMessage]) -> list[Turn]:

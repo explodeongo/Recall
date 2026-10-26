@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, computed_field, model_validator
 
@@ -156,6 +157,11 @@ class MessageIn(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     # Search the web for what the library doesn't cover (answers stay cited, from pages).
     web: bool = True
+    # Where answers may come from; overrides `web` when given. "web" skips the library.
+    source: Literal["library", "both", "web"] | None = None
+    # "@" context: answer only from these items, and the items carrying these tags.
+    item_ids: list[int] = Field(default_factory=list, max_length=20)
+    tags: list[str] = Field(default_factory=list, max_length=10)
 
 
 class MessageOut(BaseModel):
@@ -168,6 +174,7 @@ class MessageOut(BaseModel):
     cited: list[int] | None
     not_found: bool
     search_query: str | None
+    context: dict | None = None
     created_at: datetime
 
 

@@ -102,3 +102,57 @@ def test_saved_sources_keep_their_position_in_the_text(client, library, fake_llm
     content = client.get(f"/items/{source['item_id']}/content").json()["pages"]
     joined = "\n\n".join(p["text"] for p in content)
     assert joined[source["start_char"] : source["end_char"]] == source["text"]
+
+
+def _send(client, chat_id, **body):
+    resp = client.post(f"/chats/{chat_id}/messages", json=body)
+    return _events(resp.text) if resp.status_code == 200 else resp
+
+
+def test_pinned_items_and_tags_limit_the_answer(client, session, library, fake_llm):
+    from app.models import Item, Tag
+
+    chat_id = client.post("/chats", json={}).json()["id"]
+    fake_llm.answer = "NOT_FOUND"
+    events = _send(
+        client,
+        chat_id,
+        question="which index serves range scans?",
+        item_ids=[library["Sourdough baking"]],
+        source="library",
+    )
+    sources = next(d for k, d in events if k == "sources")["sources"]
+    assert {s["title"] for s in sources} <= {"Sourdough baking"}
+
+    asked = client.get(f"/chats/{chat_id}").json()["messages"][0]
+    assert asked["context"] == {
+        "items": [{"id": library["Sourdough baking"], "title": "Sourdough baking"}],
+        "tags": [],
+        "source": "library",
+    }
+
+    # A tag pins every item carrying it.
+    item = session.get(Item, library["Sourdough baking"])
+    item.tags = [Tag(name="baking", user_id=item.user_id)]
+    session.commit()
+    events = _send(client, chat_id, question="which index serves range scans?", tags=["Baking"])
+    sources = next(d for k, d in events if k == "sources")["sources"]
+    assert {s["title"] for s in sources} <= {"Sourdough baking"}
+    # A tag nothing carries leaves nothing to answer from.
+    events = _send(client, chat_id, question="range scans?", tags=["nothing"], source="library")
+    assert next(d for k, d in events if k == "sources")["sources"] == []
+
+    assert _send(client, chat_id, question="hi", item_ids=[999]).status_code == 404
+
+
+def test_web_only_skips_the_library(client, library, fake_llm, web):
+    web.results = [("Range scans", "https://example.com/b-tree", "B-trees keep keys sorted.")]
+    fake_llm.answer = "B-trees keep keys sorted [1]."
+    chat_id = client.post("/chats", json={}).json()["id"]
+    events = _send(client, chat_id, question="which index serves range scans?", source="web")
+    first_sources = next(d for k, d in events if k == "sources")["sources"]
+    assert first_sources == []  # no library passages at all
+    done = next(d for k, d in events if k == "done")
+    assert done["web_used"] and web.queries
+    final = [d for k, d in events if k == "sources"][-1]["sources"]
+    assert [s["kind"] for s in final] == ["web"]
