@@ -63,6 +63,9 @@ class Settings(BaseSettings):
     # the query, as "related". Measured on real queries: "my CV" vs a résumé 0.60, unrelated
     # documents under 0.55.
     related_min_similarity: float = 0.57
+    # Linking saved items to each other (item pages' "Connected", the Graph). Stricter than
+    # search's "related": bge-small scores unrelated documents up to ~0.59.
+    connection_min_similarity: float = 0.6
     rerank_model: str = "jinaai/jina-reranker-v1-turbo-en"
     rerank_pool: int = 20
 

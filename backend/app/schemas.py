@@ -367,6 +367,14 @@ class GraphNode(BaseModel):
     source_type: SourceType
     tags: list[TagOut]
     created_at: datetime
+    cluster: int | None  # None: linked to nothing, or a pair too loose to group
+
+
+class GraphCluster(BaseModel):
+    id: int
+    label: str | None  # the tag most members share
+    size: int
+    color: str | None
 
 
 class GraphEdge(BaseModel):
@@ -376,6 +384,7 @@ class GraphEdge(BaseModel):
 
 
 class GraphOut(BaseModel):
+    clusters: list[GraphCluster]
     nodes: list[GraphNode]
     edges: list[GraphEdge]
 

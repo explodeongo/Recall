@@ -214,9 +214,20 @@ export interface GraphNode {
   source_type: SourceType;
   tags: Tag[];
   created_at: string;
+  /** The topic group it belongs to; null when it's linked to nothing (or only loosely). */
+  cluster: number | null;
+}
+
+export interface GraphCluster {
+  id: number;
+  /** The tag most of its items share, if any. */
+  label: string | null;
+  size: number;
+  color: string | null;
 }
 
 export interface Graph {
+  clusters: GraphCluster[];
   nodes: GraphNode[];
   edges: { source: number; target: number; similarity: number }[];
 }

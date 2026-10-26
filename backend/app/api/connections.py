@@ -30,7 +30,19 @@ def item_connections(item_id: int, session: SessionDep, user: CurrentUser) -> li
 def library_graph(session: SessionDep, user: CurrentUser) -> dict:
     """The library as a graph: items, and links between items on related topics."""
     items, edges = service.graph(session, user.id)
+    groups = service.clusters(items, edges)
+    cluster_of = {i: c.id for c in groups for i in c.item_ids}
+    colors = {t.name: color_of(t) for i in items for t in i.tags}
     return {
+        "clusters": [
+            {
+                "id": c.id,
+                "label": c.label,
+                "size": len(c.item_ids),
+                "color": colors.get(c.label) if c.label else None,
+            }
+            for c in groups
+        ],
         "nodes": [
             {
                 "id": i.id,
@@ -38,6 +50,7 @@ def library_graph(session: SessionDep, user: CurrentUser) -> dict:
                 "source_type": i.source_type,
                 "tags": [{"id": t.id, "name": t.name, "color": color_of(t)} for t in i.tags],
                 "created_at": i.created_at,
+                "cluster": cluster_of.get(i.id),
             }
             for i in items
         ],
