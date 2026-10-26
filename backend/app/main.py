@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,6 +13,13 @@ from app.db import engine
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     stop = None
+    # Show Recall's own log lines (items read, questions answered) next to uvicorn's.
+    recall_log = logging.getLogger("recall")
+    if not recall_log.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s:     %(message)s"))
+        recall_log.addHandler(handler)
+        recall_log.setLevel(logging.INFO)
     if get_settings().run_worker_in_api:
         from app.worker import start_in_background
 
