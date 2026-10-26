@@ -20,15 +20,23 @@ only from your own library, with a citation to the exact passage.
   pages and answers only from them, citing each page and labelling the answer "from the
   web". It never answers from the model's memory, which is where made-up answers come from;
   if neither your library nor the web has it, it says so. Chats are saved and handle
-  follow-ups ("tell me more", "summarize that", "explain it simply"). The web can be turned
-  off per chat, and a chat can be limited to one document.
+  follow-ups ("tell me more", "summarize that", "explain it simply"). Choose where answers
+  come from (Library, Library + Web, or Web), and type `@` to limit a question to some items
+  or tags.
 - **Find:** the Library's search matches each word anywhere (titles, tags, summaries, your
   notes and the full text), shows the passage where it matched, and adds documents that are
   about the same thing in other words. ⌘K jumps to any document, passage, highlight or chat.
-- **Remember:** "Quiz me" turns a document into flashcards, and Review brings them back with
-  spaced repetition, tracking a daily streak. Things saved a while ago and never reopened
+- **Connect:** every item lists the saved items closest to it in topic, with the passage that
+  links them, and the Graph page draws the whole library as a map of related items.
+- **Remember:** "Quiz me" turns a document into flashcards, multiple-choice and true/false
+  questions with explanations, and Review brings them back with spaced repetition, from New
+  to Mastered, tracking a daily streak. Things saved a while ago and never reopened
   come back as "Worth another look".
-- **Organise and own it:** tags (automatic and your own), stars, archive, rename; accounts
+- **Use it from your AI assistant:** Recall is an MCP server. Make a token in Settings and
+  Claude, Cursor or any MCP app can search your library, ask it with citations, read items
+  and save new things (see [Connect AI assistants](#connect-ai-assistants-mcp)).
+- **Organise and own it:** colored tags (automatic and your own; filter by several at once,
+  manage them in one place), stars, archive, rename; accounts
   keep each person's library private; export everything as Markdown and JSON at any time, or
   delete your account and all of it.
 
@@ -209,6 +217,21 @@ The web app expects the API at `http://localhost:8000`. To point it somewhere el
   worker, then retry the item.
 - **Gemini errors about the model**: models get retired. Set `GEMINI_MODEL` in `backend/.env`
   to a current one from [the model list](https://ai.google.dev/gemini-api/docs/models).
+
+## Connect AI assistants (MCP)
+
+The API serves an [MCP](https://modelcontextprotocol.io) endpoint at `/mcp` with seven tools:
+`search_library`, `ask_library` (library-only, cited), `get_item`, `read_item`, `list_items`,
+`list_tags` and `save_to_library`. Make a token under **Settings → Connect AI assistants**,
+then, for Claude Code:
+
+```bash
+claude mcp add --transport http recall http://localhost:8000/mcp --header "Authorization: Bearer rcl_..."
+```
+
+Other apps take the same URL and header in their MCP settings. The same token also works for
+the REST API (`Authorization: Bearer ...`). When deployed, set `PUBLIC_API_URL` and `WEB_URL`
+so the endpoint and the links it returns use your real addresses.
 
 ## Deploy
 

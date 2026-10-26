@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConnectAssistants } from "@/components/ConnectAssistants";
 import { API_URL, api } from "@/lib/api";
 
 export default function SettingsPage() {
@@ -20,6 +21,7 @@ export default function SettingsPage() {
           </p>
         )}
       </header>
+      <ConnectAssistants />
       <ExportSection />
       <PasswordSection />
       {me.data && <DeleteSection email={me.data.email} />}

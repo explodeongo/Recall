@@ -191,6 +191,15 @@ export function passageHref(source: Pick<Source, "item_id" | "chunk_id" | "start
   return `/items/${source.item_id}?chunk=${source.chunk_id}`;
 }
 
+/** A personal access token for the API and AI assistants (MCP). The token itself is shown once. */
+export interface ApiToken {
+  id: number;
+  name: string;
+  prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+}
+
 export interface Connection {
   item: Item;
   similarity: number;
@@ -364,7 +373,10 @@ export const api = {
   me: () => request<User>("/auth/me"),
   signup: (email: string, password: string, name?: string, inviteCode?: string) =>
     request<User>("/auth/signup", json("POST", { email, password, name, invite_code: inviteCode })),
-  authConfig: () => request<{ signup_requires_code: boolean }>("/auth/config"),
+  authConfig: () => request<{ signup_requires_code: boolean; mcp_url: string }>("/auth/config"),
+  apiTokens: () => request<ApiToken[]>("/auth/tokens"),
+  createApiToken: (name: string) => request<ApiToken & { token: string }>("/auth/tokens", json("POST", { name })),
+  revokeApiToken: (id: number) => request<void>(`/auth/tokens/${id}`, { method: "DELETE" }),
   login: (email: string, password: string) => request<User>("/auth/login", json("POST", { email, password })),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 

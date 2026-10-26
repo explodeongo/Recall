@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
-from app.models import Chat, Item, Tag, User, UserSession
+from app.models import ApiToken, Chat, Item, Tag, User, UserSession
 
 SESSION_DAYS = 30
 _N, _R, _P = 2**14, 8, 1
@@ -86,3 +86,28 @@ def claim_unowned(session: Session, user: User) -> None:
     """Give the first account everything saved before accounts existed."""
     for model in (Item, Tag, Chat):
         session.execute(update(model).where(model.user_id.is_(None)).values(user_id=user.id))
+
+
+API_TOKEN_PREFIX = "rcl_"
+
+
+def create_api_token(session: Session, user: User, name: str) -> tuple[ApiToken, str]:
+    """A new personal access token; returns the row and the token, which isn't kept."""
+    token = API_TOKEN_PREFIX + secrets.token_urlsafe(32)
+    row = ApiToken(user_id=user.id, name=name, token_hash=_token_hash(token), prefix=token[:10])
+    session.add(row)
+    return row, token
+
+
+def user_for_api_token(session: Session, token: str | None) -> User | None:
+    """The token's owner, noting when it was last used (at most once a minute)."""
+    if not token or not token.startswith(API_TOKEN_PREFIX):
+        return None
+    row = session.scalars(select(ApiToken).where(ApiToken.token_hash == _token_hash(token))).first()
+    if row is None:
+        return None
+    now = datetime.now(UTC)
+    if row.last_used_at is None or now - row.last_used_at > timedelta(minutes=1):
+        row.last_used_at = now
+        session.commit()
+    return row.user

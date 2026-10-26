@@ -80,6 +80,23 @@ class UserSession(Base):
     user: Mapped[User] = relationship()
 
 
+class ApiToken(Base):
+    """A personal access token for the API and the MCP server ("Authorization: Bearer ...").
+    Shown once when made; only its SHA-256 is stored, plus a prefix to tell tokens apart."""
+
+    __tablename__ = "api_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(80))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    prefix: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    user: Mapped[User] = relationship()
+
+
 class Item(Base):
     __tablename__ = "items"
 

@@ -18,7 +18,7 @@ def test_files_can_live_in_the_database(client, session, monkeypatch, tmp_path):
 
 def test_invite_code(anon_client, monkeypatch):
     monkeypatch.setattr(get_settings(), "signup_code", "letmein")
-    assert anon_client.get("/auth/config").json() == {"signup_requires_code": True}
+    assert anon_client.get("/auth/config").json()["signup_requires_code"] is True
     body = {"email": "new@example.com", "password": "password1"}
     assert anon_client.post("/auth/signup", json=body).status_code == 403
     assert (

@@ -392,3 +392,21 @@ class PasswordChange(BaseModel):
 
 class PasswordConfirm(BaseModel):
     password: str = Field(max_length=200)
+
+
+class ApiTokenIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+
+
+class ApiTokenOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    prefix: str
+    created_at: datetime
+    last_used_at: datetime | None
+
+
+class ApiTokenCreated(ApiTokenOut):
+    token: str  # shown once

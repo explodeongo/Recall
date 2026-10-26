@@ -8,6 +8,7 @@ from sqlalchemy import text
 from app.api import ask, auth, cards, chats, chunks, connections, highlights, items, search, tags
 from app.config import get_settings
 from app.db import engine
+from app.mcp_server import app as mcp_app
 
 
 @asynccontextmanager
@@ -24,7 +25,9 @@ async def lifespan(app: FastAPI):
         from app.worker import start_in_background
 
         stop = start_in_background()
-    yield
+    # The MCP endpoint's sessions live as long as the API does.
+    async with mcp_app.router.lifespan_context(mcp_app):
+        yield
     if stop is not None:
         stop.set()
 
@@ -56,3 +59,8 @@ def health() -> dict[str, str]:
     with engine.connect() as conn:
         conn.execute(text("select 1"))
     return {"status": "ok"}
+
+
+# Last, so the API's own routes win: /mcp for AI assistants (app/mcp_server.py), and its
+# OAuth protected-resource metadata under /.well-known.
+app.mount("/", mcp_app)

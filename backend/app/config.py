@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     file_store: str = "local"  # "local" (UPLOAD_DIR) or "database" (survives disk wipes)
     max_upload_mb: int = 25
     cors_origins: list[str] = ["http://localhost:3000"]
+    # Where the API and the web app are reached from outside: links handed to AI assistants
+    # over MCP point at the web app, and assistants connect to the API's /mcp.
+    public_api_url: str = "http://localhost:8000"
+    web_url: str = "http://localhost:3000"
     cookie_secure: bool = False  # set true when served over https
     ask_per_minute: int = 20  # questions per person per minute, to protect the LLM quota
 

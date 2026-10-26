@@ -5,9 +5,18 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from sqlalchemy import func, select
 
 from app.config import get_settings
-from app.deps import SESSION_COOKIE, CurrentUser, SessionDep
-from app.models import Item, SourceType, User
-from app.schemas import LoginIn, PasswordChange, PasswordConfirm, SignupIn, UserOut
+from app.deps import SESSION_COOKIE, BrowserUser, CurrentUser, SessionDep
+from app.models import ApiToken, Item, SourceType, User
+from app.schemas import (
+    ApiTokenCreated,
+    ApiTokenIn,
+    ApiTokenOut,
+    LoginIn,
+    PasswordChange,
+    PasswordConfirm,
+    SignupIn,
+    UserOut,
+)
 from app.services import auth, files
 from app.services.export import build_export
 from app.services.ratelimit import limit
@@ -39,7 +48,11 @@ def signup(body: SignupIn, request: Request, response: Response, session: Sessio
 @router.get("/config")
 def auth_config() -> dict:
     """What the sign-up form needs to know before anyone is signed in."""
-    return {"signup_requires_code": bool(get_settings().signup_code)}
+    settings = get_settings()
+    return {
+        "signup_requires_code": bool(settings.signup_code),
+        "mcp_url": settings.public_api_url.rstrip("/") + "/mcp",
+    }
 
 
 @router.post("/login", response_model=UserOut)
@@ -129,3 +142,34 @@ def _set_cookie(response: Response, token: str) -> None:
         samesite="lax",
         path="/",
     )
+
+
+@router.get("/tokens", response_model=list[ApiTokenOut])
+def list_tokens(session: SessionDep, user: BrowserUser) -> list[ApiToken]:
+    """Personal API tokens (for the API and AI assistants over MCP), newest first."""
+    return list(
+        session.scalars(
+            select(ApiToken).where(ApiToken.user_id == user.id).order_by(ApiToken.id.desc())
+        )
+    )
+
+
+@router.post("/tokens", response_model=ApiTokenCreated, status_code=201)
+def create_token(body: ApiTokenIn, session: SessionDep, user: BrowserUser) -> dict:
+    """Make a token. The token itself is in this response only; it isn't stored."""
+    count = session.scalar(select(func.count(ApiToken.id)).where(ApiToken.user_id == user.id))
+    if count >= 20:
+        raise HTTPException(409, "You have 20 tokens. Revoke one you don't use first.")
+    row, token = auth.create_api_token(session, user, body.name.strip())
+    session.commit()
+    return {**ApiTokenOut.model_validate(row).model_dump(), "token": token}
+
+
+@router.delete("/tokens/{token_id}", status_code=204)
+def revoke_token(token_id: int, session: SessionDep, user: BrowserUser) -> Response:
+    row = session.get(ApiToken, token_id)
+    if row is None or row.user_id != user.id:
+        raise HTTPException(404, "Token not found")
+    session.delete(row)
+    session.commit()
+    return Response(status_code=204)
