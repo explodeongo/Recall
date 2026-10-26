@@ -1,24 +1,25 @@
-/** The "R" mark, for generated icons. `padding` leaves the safe zone maskable icons need. */
-export function Mark({ size, padding = 0, radius = 0.22 }: { size: number; padding?: number; radius?: number }) {
-  const inner = size - padding * 2;
+/**
+ * Recall's mark: the "R" of Newsreader (the heading face) at semibold, on a lavender tile in
+ * the brand's dark-mode colors, which read on light and dark browser chrome alike. Drawn as
+ * a path on a 64-unit grid, so generated icons don't depend on fonts. app/icon.svg is the
+ * same drawing; change both together.
+ */
+export const TILE = "#99a6fd";
+export const INK = "#101223";
+export const R_PATH =
+  "M31.94 30.21Q34.94 30.21 36.81 28.61Q38.68 27.02 38.68 23.86Q38.68 21.81 37.87 20.39Q37.05 18.97 35.2 18.23Q33.35 17.49 30.26 17.49H21.17L21.98 14.08H33.57Q38.02 14.08 40.74 15.27Q43.45 16.45 44.68 18.47Q45.91 20.5 45.91 23.03Q45.91 25.41 44.82 27.3Q43.73 29.18 41.6 30.4Q39.46 31.62 36.25 31.99V31.85Q38.65 31.96 40.02 32.57Q41.39 33.17 42.19 34.37Q42.98 35.56 43.58 37.5L45.6 43.84Q46.14 45.56 46.67 46.34Q47.2 47.12 47.96 47.32Q48.72 47.51 49.88 47.51V49.74Q46.57 49.98 44.51 49.9Q42.45 49.82 41.25 49.29Q40.06 48.76 39.4 47.68Q38.75 46.61 38.27 44.88L36.45 38.45Q35.9 36.47 35.33 35.4Q34.77 34.33 33.87 33.9Q32.97 33.47 31.37 33.47H21.83L21.01 30.21ZM26.61 14.08V46.82L30.67 48.26V49.7H15.32V48.26L19.42 46.82V16.96L15.32 15.52V14.08Z";
+
+/**
+ * The mark at `size` pixels, for ImageResponse. `bleed` fills the whole square (for icons the
+ * system masks itself, like iOS and Android "maskable"), with the R shrunk into the safe zone.
+ */
+export function Mark({ size, bleed = false }: { size: number; bleed?: boolean }) {
+  const glyph = bleed ? 0.8 : 1;
+  const shift = (64 * (1 - glyph)) / 2;
   return (
-    <div style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center", background: "#4f46c8" }}>
-      <div
-        style={{
-          width: inner,
-          height: inner,
-          borderRadius: inner * radius,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-          fontSize: inner * 0.62,
-          fontWeight: 700,
-          fontFamily: "Georgia, serif",
-        }}
-      >
-        R
-      </div>
-    </div>
+    <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <rect width="64" height="64" rx={bleed ? 0 : 14} fill={TILE} />
+      <path d={R_PATH} fill={INK} transform={`translate(${shift} ${shift}) scale(${glyph})`} />
+    </svg>
   );
 }

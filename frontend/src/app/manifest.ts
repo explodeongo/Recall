@@ -8,12 +8,12 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Save what you read. Ask it anything later, with answers cited from your own library.",
     start_url: "/",
     display: "standalone",
-    background_color: "#fcfcfe",
-    theme_color: "#4f46c8",
+    background_color: "#f8f5f1",
+    theme_color: "#4850be",
     icons: [
       { src: "/icons/192", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/512", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/512", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icons/maskable", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     share_target: {
       action: "/save",
