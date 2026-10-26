@@ -1,13 +1,21 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, LogOut } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConnectAssistants } from "@/components/ConnectAssistants";
 import { API_URL, api } from "@/lib/api";
+
+async function logOut() {
+  try {
+    await api.logout();
+  } finally {
+    window.location.assign("/login");
+  }
+}
 
 export default function SettingsPage() {
   const me = useQuery({ queryKey: ["me"], queryFn: api.me });
@@ -16,9 +24,14 @@ export default function SettingsPage() {
       <header>
         <h1 className="font-heading text-4xl font-medium">Settings</h1>
         {me.data && (
-          <p className="mt-2 text-muted-foreground">
-            Signed in as <span className="text-foreground">{me.data.email}</span>
-          </p>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-muted-foreground">
+              Signed in as <span className="text-foreground">{me.data.email}</span>
+            </p>
+            <Button variant="outline" size="sm" onClick={logOut}>
+              <LogOut /> Log out
+            </Button>
+          </div>
         )}
       </header>
       <ConnectAssistants />
