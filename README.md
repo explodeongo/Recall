@@ -5,6 +5,8 @@ only from your own library, with a citation to the exact passage.
 
 ![CI](https://github.com/explodeongo/Recall/actions/workflows/ci.yml/badge.svg)
 
+![Ask: an answer from the library, every claim cited](docs/screenshots/ask.jpg)
+
 ## What it does
 
 - **Save anything:** PDFs, Word, Markdown and text files, links to articles, PDFs or YouTube
@@ -39,6 +41,17 @@ only from your own library, with a citation to the exact passage.
   manage them in one place), stars, archive, rename; accounts
   keep each person's library private; export everything as Markdown and JSON at any time, or
   delete your account and all of it.
+
+## Screenshots
+
+| | |
+| --- | --- |
+| ![Library](docs/screenshots/library.jpg) | ![An item with its connections](docs/screenshots/item.jpg) |
+| **Library:** search inside every document, colored tags, things worth another look | **An item:** summary, overview, key points, and what it connects to |
+| ![Graph](docs/screenshots/graph.jpg) | ![Review](docs/screenshots/review.jpg) |
+| **Graph:** the library as topics, with the passage linking two items | **Review:** flashcards, multiple choice and true/false, spaced out |
+| ![Dark mode](docs/screenshots/dark.jpg) | ![Connect AI assistants](docs/screenshots/assistants.jpg) |
+| **Dark mode,** and `@` to ask about one document | **MCP:** Claude or Cursor can search and ask your library |
 
 ## Results
 
@@ -206,6 +219,17 @@ The web app expects the API at `http://localhost:8000`. To point it somewhere el
 4. Go to **Ask** and ask something the document answers. The answer streams in with numbered
    citations; click one to see the exact passage, and for a PDF, to open it at that page.
 5. Ask something it doesn't cover. Recall replies "Not found in your library" instead of guessing.
+
+### 8. Or try the demo library
+
+A ready-made library of about 30 articles, papers, videos and notes, with chats, highlights
+and quizzes, in its own database (yours is untouched). [`docs/demo.md`](docs/demo.md) is a
+five-minute walkthrough of it.
+
+```bash
+cd backend && uv run python -m demo.seed --fresh   # builds it: about 10 minutes, needs GEMINI_API_KEY
+cd .. && ./dev.sh --demo                           # log in as demo@example.com / recall-demo
+```
 
 ### Troubleshooting
 

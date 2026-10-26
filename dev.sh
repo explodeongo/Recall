@@ -4,6 +4,12 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# ./dev.sh --demo runs on the demo library (backend/demo/seed.py builds it) instead of yours.
+if [ "${1:-}" = "--demo" ]; then
+  export DATABASE_URL="${DEMO_DATABASE_URL:-postgresql+psycopg://recall:recall@localhost:5432/recall_demo}"
+  export UPLOAD_DIR="data/demo-uploads"
+fi
+
 say() { printf '\033[1m%s\033[0m\n' "$*"; }
 
 say "Checking the database…"
@@ -29,4 +35,5 @@ say "Starting the API and worker on :8000 and the web app on :3000…"
 (cd frontend && npm run dev -- --port 3000) &
 sleep 6
 say "Recall is running: http://localhost:3000  (Ctrl+C to stop)"
+[ "${1:-}" = "--demo" ] && say "Demo library: log in as demo@example.com / recall-demo"
 wait
