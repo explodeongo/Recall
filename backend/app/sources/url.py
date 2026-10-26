@@ -1,4 +1,5 @@
 import ipaddress
+import logging
 import re
 import socket
 from collections.abc import Callable
@@ -10,6 +11,7 @@ import trafilatura
 from app.config import get_settings
 from app.errors import PermanentError
 from app.models import Item
+from app.services.images import ExtractedImage
 from app.sources import ExtractedDoc, PageText
 from app.sources.pdf import extract_pdf_bytes
 
@@ -60,6 +62,60 @@ def _strip_site_name(title: str, site: str | None, host: str | None = None) -> s
     return title or None
 
 
+log = logging.getLogger("recall.sources")
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
+
+
+def _article_images(body: bytes, url: str, limit: int = 12) -> list[ExtractedImage]:
+    """Pictures inside the article (not the site's chrome), in order, each with the paragraph
+    before it, from trafilatura's XML view of the page."""
+    try:
+        xml = trafilatura.extract(
+            body,
+            url=url,
+            output_format="xml",
+            include_images=True,
+            include_comments=False,
+            include_tables=False,
+            favor_recall=True,
+        )
+        if not xml:
+            return []
+        from lxml import etree
+
+        root = etree.fromstring(xml.encode())
+    except Exception:
+        return []
+    found: list[ExtractedImage] = []
+    previous = None
+    for el in root.iter():
+        if el.tag in ("p", "head", "item", "quote"):
+            text = " ".join("".join(el.itertext()).split())
+            previous = text or previous
+        elif el.tag == "graphic":
+            src = (el.get("src") or "").strip()
+            if not src or src.startswith("data:") or src.lower().split("?")[0].endswith(".svg"):
+                continue
+            found.append(
+                ExtractedImage(
+                    role="figure",
+                    url=_larger(urljoin(url, src)),
+                    alt=(el.get("alt") or el.get("title") or "").strip() or None,
+                    anchor=previous,
+                )
+            )
+            if len(found) == limit:
+                break
+    return found
+
+
+def _larger(src: str) -> str:
+    """Wikimedia serves article pictures as small thumbnails; ask for one big enough to read."""
+    if "wikimedia.org/" in src and "/thumb/" in src:
+        return re.sub(r"/\d{2,4}px-", "/960px-", src)
+    return src
+
+
 class UrlSource:
     """Fetches a web page and pulls out the article text with trafilatura.
 
@@ -101,7 +157,24 @@ class UrlSource:
             getattr(doc, "sitename", None),
             urlsplit(final_url).hostname,
         )
-        return ExtractedDoc(title=title, pages=[PageText(page=None, text="\n\n".join(paragraphs))])
+        images = _article_images(body, final_url)
+        if cover := (getattr(doc, "image", None) or "").strip():
+            images.insert(0, ExtractedImage(role="cover", url=urljoin(final_url, cover)))
+        return ExtractedDoc(
+            title=title, pages=[PageText(page=None, text="\n\n".join(paragraphs))], images=images
+        )
+
+    def fetch_image(self, url: str) -> bytes | None:
+        """An image's bytes, fetched with the same address checks as pages; None if it isn't
+        an image or can't be fetched."""
+        try:
+            _, content_type, body = self._fetch(url)
+        except (PermanentError, httpx.HTTPError) as exc:
+            log.info("couldn't fetch image %s: %s", url, exc)
+            return None
+        if not content_type.startswith("image/") or "svg" in content_type:
+            return None
+        return body if len(body) <= MAX_IMAGE_BYTES else None
 
     def _fetch(self, url: str) -> tuple[str, str, bytes]:
         """GET with redirects followed by hand, so every hop gets the private-address check."""

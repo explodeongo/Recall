@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { type Mark, Reader } from "@/components/Reader";
 import { Button } from "@/components/ui/button";
-import { api, type Highlight, type Page } from "@/lib/api";
+import { api, type Highlight, type LinkedIdea, type Page, type Picture } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface Selection {
@@ -30,7 +30,19 @@ function offsetOf(node: Node, offset: number): number | null {
  * The reader with highlighting: select text to highlight it (with an optional note), click a
  * highlight to edit or remove it. Highlights are listed beside the text.
  */
-export function HighlightReader({ itemId, pages, cited }: { itemId: number; pages: Page[]; cited: Mark[] }) {
+export function HighlightReader({
+  itemId,
+  pages,
+  cited,
+  figures,
+  links,
+}: {
+  itemId: number;
+  pages: Page[];
+  cited: Mark[];
+  figures?: Picture[];
+  links?: LinkedIdea[];
+}) {
   const queryClient = useQueryClient();
   const container = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -104,6 +116,8 @@ export function HighlightReader({ itemId, pages, cited }: { itemId: number; page
         <Reader
           pages={pages}
           marks={marks}
+          figures={figures}
+          links={links}
           focus={focus}
           onMarkClick={(mark) => {
             const h = highlights.data?.find((x) => `h-${x.id}` === mark.id);

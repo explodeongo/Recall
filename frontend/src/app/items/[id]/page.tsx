@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Connections } from "@/components/Connections";
+import { Cover, NotePictures, NoteView, PictureButton, pictureIds, usePictureInsert, withoutPicture } from "@/components/Pictures";
 import { HighlightReader } from "@/components/HighlightReader";
 import { type Mark, joinPages } from "@/components/Reader";
 import { toast } from "sonner";
@@ -79,7 +80,8 @@ function ItemView() {
   return (
     <article className="mx-auto max-w-4xl space-y-8">
       <BackLink />
-      <header className="space-y-3">
+      <header className="flex items-start gap-6">
+        <div className="min-w-0 flex-1 space-y-3">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
           <SourceIcon type={data.source_type} />
           <span>{sourceLabel(data)}</span>
@@ -112,6 +114,10 @@ function ItemView() {
           <ItemMenu item={data} onRename={() => setRenaming(true)} />
         </div>
         {data.status !== "queued" && data.status !== "processing" && <TagEditor item={data} />}
+        </div>
+        {data.cover_url && (
+          <Cover item={data} className="hidden shrink-0 rounded-xl border shadow-sm sm:block" shape={{ tall: "aspect-[3/4] w-28", wide: "aspect-video w-56" }} />
+        )}
       </header>
 
       {isBusy(data.status) && <Processing status={data.status} />}
@@ -240,6 +246,10 @@ function ItemNote({ item }: { item: Item }) {
   const [note, setNote] = useState(item.note ?? "");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const box = useRef<HTMLTextAreaElement>(null);
+  const pictures = usePictureInsert({ itemId: item.id, textarea: box, value: note, onChange: change });
+  // A note with pictures reads as a note, pictures in place; it turns into the editor on demand.
+  const [editing, setEditing] = useState(() => pictureIds(item.note ?? "").length === 0);
 
   function change(value: string) {
     setNote(value);
@@ -266,15 +276,50 @@ function ItemNote({ item }: { item: Item }) {
           {state === "saving" ? "Saving…" : state === "saved" ? "Saved. Ask can use these now." : state === "error" ? "Couldn't save. Keep typing to retry." : ""}
         </span>
       </div>
-      <textarea
-        value={note}
-        onChange={(e) => change(e.target.value)}
-        rows={note ? Math.min(12, note.split("\n").length + 2) : 3}
-        maxLength={50000}
-        placeholder="What you think about this, how it connects to other things you've read…"
-        aria-labelledby="notes-title"
-        className="block w-full resize-y rounded-xl border bg-card shadow-xs px-4 py-3 text-[15px] leading-relaxed outline-none transition focus:border-brand/60 focus:ring-3 focus:ring-brand/15"
-      />
+      {!editing ? (
+        <div className="group relative rounded-xl border bg-card px-4 py-3 text-[15px] leading-relaxed shadow-xs">
+          <NoteView text={note} />
+          <Button
+            size="sm"
+            variant="outline"
+            className="absolute top-2 right-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+            onClick={() => {
+              setEditing(true);
+              requestAnimationFrame(() => box.current?.focus());
+            }}
+          >
+            <Pencil /> Edit
+          </Button>
+        </div>
+      ) : (
+        <textarea
+          ref={box}
+          autoFocus={pictureIds(note).length > 0}
+          onBlur={(e) => {
+            // Back to the read view when leaving the editor, unless going to its own buttons.
+            if (pictureIds(note).length && !e.currentTarget.closest("section")?.contains(e.relatedTarget as Node)) setEditing(false);
+          }}
+          value={note}
+          onChange={(e) => change(e.target.value)}
+          {...pictures.handlers}
+          rows={note ? Math.min(12, note.split("\n").length + 2) : 3}
+          maxLength={50000}
+          placeholder="What you think about this, how it connects to other things you've read… Paste or drop pictures too."
+          aria-labelledby="notes-title"
+          className="block w-full resize-y rounded-xl border bg-card shadow-xs px-4 py-3 text-[15px] leading-relaxed outline-none transition focus:border-brand/60 focus:ring-3 focus:ring-brand/15"
+        />
+      )}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        {editing && <NotePictures text={note} onRemove={(id) => change(withoutPicture(note, id))} />}
+        <PictureButton
+          onFiles={(files) => {
+            setEditing(true);
+            pictures.add(files);
+          }}
+          busy={pictures.uploading}
+          className="ml-auto"
+        />
+      </div>
     </section>
   );
 }
@@ -392,6 +437,8 @@ function TagEditor({ item }: { item: Item }) {
 function DocumentText({ item, chunkId, range }: { item: Item; chunkId: number | null; range: { from: number; to: number } | null }) {
   const content = useQuery({ queryKey: ["content", item.id], queryFn: () => api.content(item.id), retry: false });
   const chunk = useQuery({ queryKey: ["chunk", chunkId], queryFn: () => api.chunk(chunkId!), enabled: chunkId !== null });
+  // Linked ideas are a bonus: the text shows without them while they load, or if they fail.
+  const links = useQuery({ queryKey: ["links", item.id], queryFn: () => api.links(item.id), staleTime: 60_000, retry: false });
 
   const marks = useMemo<Mark[]>(() => {
     if (content.data && range) {
@@ -436,7 +483,7 @@ function DocumentText({ item, chunkId, range }: { item: Item; chunkId: number | 
           {chunk.data?.page ? `, on page ${chunk.data.page}` : ""}.
         </p>
       )}
-      <HighlightReader itemId={item.id} pages={content.data.pages} cited={marks} />
+      <HighlightReader itemId={item.id} pages={content.data.pages} cited={marks} figures={content.data.images} links={links.data} />
     </div>
   );
 }

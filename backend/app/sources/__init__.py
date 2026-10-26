@@ -5,10 +5,13 @@ Adding a new source type (video, audio) means one new class implementing `Source
 and API don't change.
 """
 
-from dataclasses import dataclass
-from typing import Protocol
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Protocol
 
 from app.models import Item, SourceType
+
+if TYPE_CHECKING:
+    from app.services.images import ExtractedImage
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,8 @@ class PageText:
 class ExtractedDoc:
     title: str | None
     pages: list[PageText]
+    # A cover and figures, where the source has them (services/images.py places them).
+    images: list["ExtractedImage"] = field(default_factory=list)
 
 
 class Source(Protocol):

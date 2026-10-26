@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.errors import PermanentError
 from app.models import Chunk, Item, SourceType, Tag
+from app.services import images
 from app.services.embeddings import Embedder
 from app.services.enrich import enrich
 from app.services.llm import LLMClient, LLMError
@@ -35,6 +36,7 @@ def process_item(
     embedder: Embedder,
     llm: LLMClient | None,
     source: Source | None = None,
+    fetch_image: images.Fetch | None = None,
 ) -> None:
     """Process one item in place. With `llm=None` the summary and tags are skipped, which the
     retrieval evaluation uses so it can run without an API key."""
@@ -88,6 +90,12 @@ def process_item(
         for i, (c, v, start) in enumerate(zip(chunks, vectors, offsets, strict=True))
     )
     item.content = [{"page": p.page, "text": p.text} for p in pages]
+    page_starts, offset = {}, 0
+    for p in pages:
+        if p.page is not None:
+            page_starts.setdefault(p.page, offset)
+        offset += len(p.text) + 2
+    images.attach(session, item, doc.images, full_text, page_starts, fetch_image or _fetch_image)
     if enrichment is not None:
         item.summary = enrichment.summary
         item.details = enrichment.details
@@ -95,6 +103,12 @@ def process_item(
             item.tags = get_or_create_tags(session, enrichment.tags, item.user_id)
         item.summary_embedding = embedder.embed_documents([about_text(item)])[0]
     session.flush()
+
+
+def _fetch_image(url: str) -> bytes | None:
+    from app.sources.url import UrlSource
+
+    return UrlSource().fetch_image(url)
 
 
 def about_text(item: Item) -> str:

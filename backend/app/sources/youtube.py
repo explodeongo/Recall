@@ -13,6 +13,7 @@ import httpx
 from app.config import get_settings
 from app.errors import PermanentError
 from app.models import Item
+from app.services.images import ExtractedImage
 from app.sources import ExtractedDoc, PageText
 from app.sources.url import user_agent
 
@@ -97,8 +98,11 @@ class YoutubeSource:
             paragraphs.append(f"[{timestamp(started or 0)}] {' '.join(current)}")
         if not paragraphs:
             raise PermanentError("This video's captions are empty.")
+        thumbnail = f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"
         return ExtractedDoc(
-            title=self._title(item.source), pages=[PageText(None, "\n\n".join(paragraphs))]
+            title=self._title(item.source),
+            pages=[PageText(None, "\n\n".join(paragraphs))],
+            images=[ExtractedImage(role="cover", url=thumbnail)],
         )
 
     def _title(self, url: str) -> str | None:

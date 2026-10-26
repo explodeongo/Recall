@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useId, useState } from "react";
 import { SourceIcon } from "@/components/ItemBits";
 import { Skeleton } from "@/components/ui/skeleton";
-import { passageHref, siteOf, sourceHref, sourceName, type Source } from "@/lib/api";
+import { imageSrc, passageHref, siteOf, sourceHref, sourceName, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export function Thinking({ searching, status }: { searching: boolean; status?: string | null }) {
@@ -43,6 +43,48 @@ export function NotFound({ searchedWeb = false }: { searchedWeb?: boolean }) {
         </p>
       </div>
     </div>
+  );
+}
+
+/** Figures from the documents an answer cites, placed beside the cited passages. Each opens
+ * the passage, figure included. */
+export function AnswerFigures({ sources, cited }: { sources: Source[]; cited: number[] }) {
+  const seen = new Set<number>();
+  const figures: { id: number; alt: string | null; width: number; height: number; source: Source; n: number }[] = [];
+  for (const n of cited) {
+    const source = sources[n - 1];
+    for (const image of source?.images ?? []) {
+      if (seen.has(image.id)) continue;
+      seen.add(image.id);
+      figures.push({ ...image, source, n });
+    }
+  }
+  if (!figures.length) return null;
+  return (
+    <ul className="flex gap-3 overflow-x-auto pb-1" aria-label="Figures from the sources">
+      {figures.slice(0, 4).map((f, i) => (
+        <li key={f.id} className={cn("shrink-0 animate-enter", figures.length === 1 ? "w-full max-w-md" : "w-56")} style={{ "--i": i } as React.CSSProperties}>
+          <Link href={passageHref(f.source)} className="group block">
+            {/* eslint-disable-next-line @next/next/no-img-element -- served by the API */}
+            <img
+              src={imageSrc(`/images/${f.id}`)}
+              alt={f.alt ?? `Figure from ${f.source.title}`}
+              width={f.width}
+              height={f.height}
+              loading="lazy"
+              className={cn(
+                "w-full rounded-xl border bg-muted object-contain shadow-xs transition-[border-color] duration-150 group-hover:border-brand/50",
+                figures.length === 1 ? "h-64" : "h-36",
+              )}
+            />
+            <span className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+              <span className="mt-px inline-grid h-4 min-w-4 place-items-center rounded bg-brand-soft px-1 text-[10px] font-semibold text-brand tabular-nums">{f.n}</span>
+              <span className="line-clamp-2">{f.alt || f.source.title}</span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 

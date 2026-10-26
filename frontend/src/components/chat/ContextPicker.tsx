@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Globe, Library, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { SourceIcon, tagStyle } from "@/components/ItemBits";
 import { api, type AnswerSource, type MessageContext } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -38,19 +38,66 @@ export function useMentions(query: string, pinned: Pinned, open: boolean): Menti
 }
 
 /** The "@" menu, shown above the question box. Keyboard handling lives in the composer. */
-export function MentionMenu({ options, active, onPick, query }: { options: Mention[]; active: number; onPick: (m: Mention) => void; query: string }) {
+export function MentionMenu({
+  options,
+  active,
+  onPick,
+  query,
+  anchor,
+}: {
+  options: Mention[];
+  active: number;
+  onPick: (m: Mention) => void;
+  query: string;
+  /** The question box: the menu opens on whichever side of it has room. */
+  anchor: React.RefObject<HTMLElement | null>;
+}) {
   const tags = useQuery({ queryKey: ["tags"], queryFn: api.tags });
   const items = useQuery({ queryKey: ["mention-items"], queryFn: () => api.items(), staleTime: 60_000 });
   const colors = new Map((tags.data ?? []).map((t) => [t.name, t.color]));
   const kinds = new Map((items.data ?? []).map((i) => [i.id, i.source_type]));
+  const list = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<{ side: "above" | "below"; max: number }>({ side: "above", max: 320 });
+
+  // Open above the box when there's room under the nav bar, otherwise below it, and never
+  // taller than the space on that side (the rest scrolls).
+  useLayoutEffect(() => {
+    const measure = () => {
+      const rect = anchor.current?.getBoundingClientRect();
+      if (!rect) return;
+      const nav = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+      const above = rect.top - nav - 16;
+      const below = window.innerHeight - rect.bottom - 16;
+      const side = above >= 240 || above >= below ? "above" : "below";
+      setPlace({ side, max: Math.max(140, Math.min(360, side === "above" ? above : below)) });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [anchor]);
+
+  // Keep the highlighted option in view as the arrow keys move it.
+  useEffect(() => {
+    list.current?.querySelector(`#mention-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [active]);
+
   return (
     <div
+      ref={list}
       id="mention-menu"
       role="listbox"
       aria-label="Limit the answer to"
-      className="absolute right-2 bottom-full left-2 mb-2 animate-enter overflow-hidden rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg"
+      style={{ maxHeight: place.max }}
+      className={cn(
+        "absolute right-2 left-2 z-20 animate-enter overflow-y-auto overscroll-contain rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg",
+        place.side === "above" ? "bottom-full mb-2" : "top-full mt-2",
+      )}
     >
-      <p className="px-2.5 pt-1.5 pb-1 text-xs text-muted-foreground">Answer only from…</p>
+      <p className="sticky -top-1 z-10 -mx-1 -mt-1 bg-popover px-3.5 pt-2.5 pb-1 text-xs text-muted-foreground">Answer only from…</p>
       {options.length === 0 ? (
         <p className="px-2.5 py-2 text-sm text-muted-foreground">{query ? `Nothing in your library matches “${query}”.` : "Nothing to pin yet."}</p>
       ) : (

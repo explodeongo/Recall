@@ -36,6 +36,8 @@ export interface Item {
   details: ItemDetails | null;
   note: string | null;
   tags_edited: boolean;
+  /** The picture shown for it in lists: an article's preview, a video's thumbnail, a PDF's first page. */
+  cover_url: string | null;
   starred: boolean;
   archived: boolean;
   last_opened_at: string | null;
@@ -89,6 +91,43 @@ export interface Page {
   text: string;
 }
 
+/** A picture: a figure from the document, or one added to a note. `url` is an API path. */
+export interface Picture {
+  id: number;
+  url: string;
+  width: number;
+  height: number;
+  alt: string | null;
+  page?: number | null;
+  /** Where it sits in the full text (offsets as for passages); null when it isn't placed. */
+  position?: number | null;
+  role?: "cover" | "figure" | "upload";
+}
+
+/** A term in an item's text that other saved items are about ("linked ideas"). */
+export interface LinkedIdea {
+  term: string;
+  start: number;
+  end: number;
+  targets: {
+    item_id: number;
+    title: string;
+    cover_url: string | null;
+    snippet: string | null;
+    chunk_id: number | null;
+    start_char: number | null;
+    end_char: number | null;
+  }[];
+}
+
+/** Where to load an API image path from (cookies ride along: it's the app's own /api). */
+export function imageSrc(path: string) {
+  return `${API_URL}${path}`;
+}
+
+/** How notes refer to an added picture: ![what it shows](image:12) */
+export const IMAGE_TOKEN = /!\[([^\]\n]{0,300})\]\(image:(\d+)\)/g;
+
 /** One numbered passage given to the model; answers cite it as [n]. */
 export interface Source {
   n: number;
@@ -104,6 +143,8 @@ export interface Source {
   end_char?: number | null;
   /** "note": your own notes on the item. "web": a web page found for the question. */
   kind?: "text" | "note" | "web";
+  /** Figures beside the passage in its document (library sources only). */
+  images?: { id: number; alt: string | null; width: number; height: number }[];
 }
 
 /** How a source is named to the reader: a document's title, or "Your notes on …". */
@@ -342,7 +383,15 @@ export const api = {
   updateTag: (id: number, patch: { name?: string; color?: string }) => request<TagWithCount>(`/tags/${id}`, json("PATCH", patch)),
   deleteTag: (id: number) => request<void>(`/tags/${id}`, { method: "DELETE" }),
   chunk: (id: number) => request<Chunk>(`/chunks/${id}`),
-  content: (id: number) => request<{ pages: Page[] }>(`/items/${id}/content`),
+  content: (id: number) => request<{ pages: Page[]; images: Picture[] }>(`/items/${id}/content`),
+  links: (id: number) => request<LinkedIdea[]>(`/items/${id}/links`),
+  uploadImage: (file: File, itemId?: number, alt?: string) => {
+    const form = new FormData();
+    form.append("file", file);
+    if (itemId !== undefined) form.append("item_id", String(itemId));
+    if (alt) form.append("alt", alt);
+    return request<Picture>("/images", { method: "POST", body: form });
+  },
   setNote: (id: number, note: string) => request<Item>(`/items/${id}/note`, json("PUT", { note })),
   generateCards: (itemId: number) => request<Card[]>(`/items/${itemId}/cards`, { method: "POST" }),
   itemCards: (itemId: number) => request<Card[]>(`/items/${itemId}/cards`),

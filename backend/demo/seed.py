@@ -279,7 +279,7 @@ def use_the_library(client, items: dict) -> None:
 
     for name, note in ITEM_NOTES:
         if item := find(items, name):
-            client.put(f"/items/{item['id']}/note", json={"note": note})
+            client.put(f"/items/{item['id']}/note", json={"note": note + picture_for(client, item)})
 
     for name, phrase, note in HIGHLIGHTS:
         item = find(items, name)
@@ -313,6 +313,30 @@ def with_retries(attempt, what: str, tries: int = 4) -> bool:
         time.sleep(15 * (n + 1))
     print(f"  gave up on {what}; run `python -m demo.seed --fresh` again later")
     return False
+
+
+def picture_for(client, item: dict) -> str:
+    """For the note on "Spacing effect": the forgetting-curve graph from its article, added
+    the way a reader pastes a picture into a note. Empty for other notes."""
+    if "spacing" not in item["title"].lower():
+        return ""
+    curve = next(
+        (i for i in client.get("/items").json() if "forgetting" in i["title"].lower()), None
+    )
+    if curve is None:
+        return ""
+    figures = client.get(f"/items/{curve['id']}/content").json().get("images", [])
+    if not figures:
+        return ""
+    data = client.get(f"/images/{figures[0]['id']}").content
+    made = client.post(
+        "/images",
+        files={"file": ("forgetting-curve.jpg", data, "image/jpeg")},
+        data={"item_id": str(item["id"]), "alt": "The forgetting curve"},
+    )
+    if made.status_code != 201:
+        return ""
+    return f"\n\n![The forgetting curve](image:{made.json()['id']})"
 
 
 def ask(client, items: dict, chat: dict) -> None:

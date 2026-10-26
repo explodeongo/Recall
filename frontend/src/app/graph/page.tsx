@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { SourceIcon, sourceLabel, tagStyle, timeAgo } from "@/components/ItemBits";
+import { Cover } from "@/components/Pictures";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { api, passageHref, type Graph, type GraphCluster, type GraphNode } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -606,6 +607,7 @@ function NodePanel({
       aria-label={`About ${node.title}`}
       className="absolute inset-x-0 bottom-0 flex max-h-[50%] animate-enter flex-col overflow-hidden rounded-t-2xl border-t bg-background shadow-lg sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-84 sm:rounded-none sm:border-t-0 sm:border-l"
     >
+      {item.data?.cover_url && <Cover item={item.data} className="aspect-[16/7] w-full shrink-0 border-b" />}
       <div className="flex items-start gap-2 border-b p-4">
         <span className="mt-2 size-2.5 shrink-0 rounded-full" style={{ background: color }} aria-hidden />
         <div className="min-w-0 flex-1">

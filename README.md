@@ -14,8 +14,12 @@ only from your own library, with a citation to the exact passage.
   once, save the page you're on with the "Save to Recall" bookmark button, or share to Recall
   from your phone once it's installed. Each item is read in the background and gets a
   two-line summary, a page-long summary (overview, key points, section by section) and tags.
-- **Read and mark up:** read any item inside Recall, highlight passages, add notes to them or
-  to the whole item. Your notes become part of what Ask can answer from.
+- **Read and mark up:** read any item inside Recall, with its figures where they were in the
+  original, highlight passages, and add notes (with pictures: paste, drop or pick them) to
+  passages or the whole item. Your notes become part of what Ask can answer from.
+- **Linked ideas:** while you read, names that your other saved items are about (a method, a
+  chemical, a person) are underlined; hover one to see those items and the passage in each.
+  Concepts are picked out once when an item is saved; linking needs no AI call.
 - **Ask, like a chat assistant, but grounded:** answers come from your library first, with
   a numbered citation on every claim; click one to land on the exact passage, highlighted.
   What your library doesn't cover is answered from the web: Recall searches, reads the top
@@ -30,6 +34,9 @@ only from your own library, with a citation to the exact passage.
   about the same thing in other words. ⌘K jumps to any document, passage, highlight or chat.
 - **Connect:** every item lists the saved items closest to it in topic, with the passage that
   links them, and the Graph page draws the whole library as a map of related items.
+- **See it:** items have covers (an article's picture, a video's thumbnail, a PDF's first
+  page), the Library has a grid view, and answers show the figures beside the passages they
+  cite.
 - **Remember:** "Quiz me" turns a document into flashcards, multiple-choice and true/false
   questions with explanations, and Review brings them back with spaced repetition, from New
   to Mastered, tracking a daily streak. Things saved a while ago and never reopened

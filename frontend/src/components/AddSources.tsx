@@ -5,6 +5,7 @@ import { FileUp, Link2, Loader2, NotebookPen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { NotePictures, PictureButton, usePictureInsert, withoutPicture } from "@/components/Pictures";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -196,6 +197,9 @@ function NoteForm({ busy, onNote }: { busy: boolean; onNote: (text: string, titl
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const id = useId();
+  const box = useRef<HTMLTextAreaElement>(null);
+  // Pictures are uploaded as they're added and attached to the note when it's saved.
+  const pictures = usePictureInsert({ textarea: box, value: text, onChange: setText });
   return (
     <form
       className="space-y-3 rounded-2xl border bg-card shadow-xs p-6"
@@ -216,16 +220,20 @@ function NoteForm({ busy, onNote }: { busy: boolean; onNote: (text: string, titl
         </label>
         <textarea
           id={`${id}-text`}
+          ref={box}
           rows={8}
           value={text}
           maxLength={200000}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Paste or write anything: lecture notes, an email, a passage from a book…"
+          {...pictures.handlers}
+          placeholder="Paste or write anything: lecture notes, an email, a passage from a book… Paste or drop pictures too."
           className="block w-full resize-y rounded-lg border bg-background px-3 py-2 text-[15px] leading-relaxed outline-none focus:border-brand/60 focus:ring-3 focus:ring-brand/15"
         />
+        <NotePictures text={text} onRemove={(pid) => setText(withoutPicture(text, pid))} />
       </div>
-      <div className="flex justify-end">
-        <Button type="submit" size="lg" className="h-10" disabled={busy || !text.trim()}>
+      <div className="flex items-center justify-between gap-3">
+        <PictureButton onFiles={pictures.add} busy={pictures.uploading} />
+        <Button type="submit" size="lg" className="h-10" disabled={busy || pictures.uploading || !text.trim()}>
           {busy && <Loader2 className="animate-spin" />} Save note
         </Button>
       </div>

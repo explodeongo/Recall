@@ -12,6 +12,7 @@ from app.config import get_settings
 from app.models import Chunk, Item
 from app.pipeline import embedding_text
 from app.services.embeddings import Embedder
+from app.services.images import strip_tokens
 from app.services.text import chunk_pages
 from app.sources import PageText
 
@@ -19,7 +20,7 @@ from app.sources import PageText
 def notes_text(item: Item) -> str:
     parts = []
     if item.note and item.note.strip():
-        parts.append(item.note.strip())
+        parts.append(strip_tokens(item.note).strip())
     for h in item.highlights:
         if h.note and h.note.strip():
             parts.append(f'On the passage "{h.quote.strip()}": {h.note.strip()}')

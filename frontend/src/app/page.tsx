@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Layers, Loader2, Plus, RotateCw, Search, Settings2, Sparkles, X } from "lucide-react";
+import { Layers, LayoutGrid, Loader2, Plus, RotateCw, Rows3, Search, Settings2, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { AddSources } from "@/components/AddSources";
+import { Cover } from "@/components/Pictures";
 import { StarButton } from "@/components/StarButton";
 import { useTagManager } from "@/components/tags/TagManager";
 import { TagPicker } from "@/components/tags/TagPicker";
@@ -44,6 +45,7 @@ function Library() {
     if (next.toString() !== params.toString()) router.replace(next.size ? `/?${next}` : "/", { scroll: false });
   }, [q, params, router]);
 
+  const [layout, setLayout] = useLayout();
   const items = useQuery({
     queryKey: ["items", selected.join(","), selected.length > 1 ? match : "all", q, view],
     queryFn: () => api.items({ tags: selected, match, q: q || undefined, view }),
@@ -81,7 +83,12 @@ function Library() {
 
       {browsing && <Resurface />}
 
-      {!isEmptyLibrary && !q && <ViewSwitch view={view} />}
+      {!isEmptyLibrary && !q && (
+        <div className="flex items-center justify-between gap-3">
+          <ViewSwitch view={view} />
+          <LayoutSwitch layout={layout} onChange={setLayout} />
+        </div>
+      )}
 
       {tags.data && tags.data.length > 0 && !isEmptyLibrary && <TagFilter tags={tags.data} filter={filter} />}
 
@@ -130,11 +137,19 @@ function Library() {
           </p>
         )
       ) : (
-        <ul className="divide-y rounded-xl border bg-card shadow-xs">
-          {items.data.map((item) => (
-            <ItemRow key={item.id} item={item} filter={filter} />
-          ))}
-        </ul>
+        layout === "grid" && !q ? (
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {items.data.map((item, i) => (
+              <ItemCard key={item.id} item={item} index={i} />
+            ))}
+          </ul>
+        ) : (
+          <ul className="divide-y rounded-xl border bg-card shadow-xs">
+            {items.data.map((item) => (
+              <ItemRow key={item.id} item={item} filter={filter} />
+            ))}
+          </ul>
+        )
       )}
     </div>
   );
@@ -248,6 +263,90 @@ function MatchSnippet({ item }: { item: Item }) {
   );
 }
 
+type Layout = "list" | "grid";
+
+/** List or grid, remembered in this browser. */
+function useLayout(): [Layout, (l: Layout) => void] {
+  const [layout, setLayoutState] = useState<Layout>("list");
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("recall-layout") === "grid") setLayoutState("grid");
+    } catch {}
+  }, []);
+  return [
+    layout,
+    (next) => {
+      setLayoutState(next);
+      try {
+        localStorage.setItem("recall-layout", next);
+      } catch {}
+    },
+  ];
+}
+
+function LayoutSwitch({ layout, onChange }: { layout: Layout; onChange: (l: Layout) => void }) {
+  return (
+    <div role="radiogroup" aria-label="Layout" className="flex rounded-lg border p-0.5">
+      {(
+        [
+          { id: "list", label: "List", icon: Rows3 },
+          { id: "grid", label: "Grid", icon: LayoutGrid },
+        ] as const
+      ).map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          role="radio"
+          aria-checked={layout === id}
+          aria-label={label}
+          title={label}
+          onClick={() => onChange(id)}
+          className={cn(
+            "grid size-7 place-items-center rounded-md transition-colors duration-150",
+            layout === id ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Icon className="size-4" aria-hidden />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** A library item as a card with its cover, for the grid. */
+function ItemCard({ item, index }: { item: Item; index: number }) {
+  return (
+    <li className="group relative animate-enter" style={{ "--i": Math.min(index, 8) } as React.CSSProperties}>
+      <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-xs transition-[border-color,box-shadow,transform] duration-200 ease-(--ease-out) group-hover:-translate-y-0.5 group-hover:border-brand/40 group-hover:shadow-md">
+        <Cover item={item} className="aspect-[16/9] w-full border-b" />
+        <div className="flex flex-1 flex-col p-4">
+          <div className="flex items-start justify-between gap-2">
+            <Link href={`/items/${item.id}`} className="font-medium leading-snug after:absolute after:inset-0 focus-visible:outline-none">
+              <span className="line-clamp-2 break-words">{item.title}</span>
+            </Link>
+            <div className="relative z-10 -mt-1 -mr-1 flex shrink-0 items-center">
+              {item.status !== "ready" && <StatusBadge status={item.status} />}
+              <StarButton item={item} />
+            </div>
+          </div>
+          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <SourceIcon type={item.source_type} className="size-3.5" />
+            {sourceLabel(item)} · {timeAgo(item.created_at)}
+          </p>
+          {item.summary && <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{item.summary}</p>}
+          {item.tags.length > 0 && (
+            <div className="relative z-10 mt-auto flex flex-wrap gap-1 pt-3">
+              {item.tags.slice(0, 3).map((t) => (
+                <TagLink key={t.id} tag={t} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
 function ViewSwitch({ view }: { view: "all" | "starred" | "archived" }) {
   const views = [
     { id: "all", label: "All", href: "/" },
@@ -308,13 +407,16 @@ function Resurface() {
         <ul className="grid gap-2 sm:grid-cols-3">
           {items.map((item) => (
             <li key={item.id}>
-              <Link href={`/items/${item.id}`} className="flex h-full flex-col rounded-xl border bg-card shadow-xs p-4 transition-colors duration-150 hover:border-brand/40">
-                <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <SourceIcon type={item.source_type} className="size-3.5" />
-                  Saved {timeAgo(item.created_at)}
+              <Link href={`/items/${item.id}`} className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-xs transition-colors duration-150 hover:border-brand/40">
+                <Cover item={item} className="aspect-[16/7] w-full border-b" />
+                <span className="flex flex-1 flex-col p-4">
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <SourceIcon type={item.source_type} className="size-3.5" />
+                    Saved {timeAgo(item.created_at)}
+                  </span>
+                  <span className="mt-1.5 line-clamp-2 font-medium leading-snug">{item.title}</span>
+                  {item.summary && <span className="mt-1.5 line-clamp-3 text-sm text-muted-foreground">{item.summary}</span>}
                 </span>
-                <span className="mt-1.5 line-clamp-2 font-medium leading-snug">{item.title}</span>
-                {item.summary && <span className="mt-1.5 line-clamp-3 text-sm text-muted-foreground">{item.summary}</span>}
               </Link>
             </li>
           ))}
@@ -328,7 +430,11 @@ function ItemRow({ item, filter }: { item: Item; filter: TagFilterState }) {
   return (
     <li className="group relative px-4 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-muted/40 sm:px-5">
       <div className="flex items-start gap-3">
-        <SourceIcon type={item.source_type} className="mt-1" />
+        {item.cover_url ? (
+          <Cover item={item} className="mt-0.5 size-14 shrink-0 rounded-lg border sm:h-16 sm:w-20" />
+        ) : (
+          <SourceIcon type={item.source_type} className="mt-1" />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <Link href={`/items/${item.id}`} className="font-medium leading-snug after:absolute after:inset-0 focus-visible:outline-none">

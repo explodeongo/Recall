@@ -41,6 +41,10 @@ this document is about. The library already uses these tags: {existing}. Reuse o
 truly describes this document's subject (for spelling consistency); otherwise make new ones. \
 Never add a tag just because it exists, and never add personal labels like "to read" or \
 "exam prep".
+- concepts: 8 to 20 specific things this text names that other documents might also \
+mention: methods, algorithms, models, theories, effects, laws, chemicals, diseases, people, \
+organisations, products, places. Each one copied exactly as it's written in the text, 1 to 4 \
+words. No generic words like "data", "model", "study", "system" or "people".
 
 Aim for about one page in total. Write plain text with no markdown.{gap_note}
 
@@ -64,9 +68,18 @@ SCHEMA = {
             },
         },
         "tags": {"type": "ARRAY", "items": {"type": "STRING"}},
+        "concepts": {"type": "ARRAY", "items": {"type": "STRING"}},
     },
-    "required": ["title", "summary", "overview", "key_points", "sections", "tags"],
-    "propertyOrdering": ["title", "summary", "overview", "key_points", "sections", "tags"],
+    "required": ["title", "summary", "overview", "key_points", "sections", "tags", "concepts"],
+    "propertyOrdering": [
+        "title",
+        "summary",
+        "overview",
+        "key_points",
+        "sections",
+        "tags",
+        "concepts",
+    ],
 }
 
 
@@ -113,6 +126,8 @@ def enrich(
             for s in data.get("sections") or []
             if isinstance(s, dict) and _clean(s.get("body"))
         ],
+        # Named things in the text, for linking items that mention them (services/links.py).
+        "concepts": _concepts(data.get("concepts") or [], text),
     }
     return Enrichment(
         title=_clean(data.get("title"))[:500],
@@ -120,6 +135,19 @@ def enrich(
         details=details,
         tags=normalize_tags(data.get("tags") or []),
     )
+
+
+def _concepts(raw: list, text: str) -> list[str]:
+    """The model's concepts that really occur in the text (case aside), deduplicated."""
+    lowered = text.lower()
+    seen, out = set(), []
+    for value in raw:
+        term = " ".join(str(value).split()).strip(" .,;:")
+        key = term.lower()
+        if 3 <= len(term) <= 60 and key not in seen and key in lowered:
+            seen.add(key)
+            out.append(term)
+    return out[:24]
 
 
 def normalize_tags(raw: list) -> list[str]:

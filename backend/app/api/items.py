@@ -11,10 +11,10 @@ from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.deps import CurrentUser, EmbedderDep, SessionDep
-from app.models import Card, Item, ItemStatus, SourceType, Tag, item_tags
+from app.models import Card, Item, ItemImage, ItemStatus, SourceType, Tag, item_tags
 from app.pipeline import get_or_create_tags
 from app.schemas import ContentOut, ItemOut, ItemPatch, ResurfaceOut, TagsIn
-from app.services import files, jobs, quota
+from app.services import files, images, jobs, quota
 from app.services.enrich import clean_tag
 from app.services.library_search import search_items
 from app.services.tags import has_tags, parse_tags
@@ -178,7 +178,12 @@ def get_item_content(item_id: int, session: SessionDep, user: CurrentUser) -> Co
         raise HTTPException(
             404, "This item's text isn't stored yet. Process it again to read it here."
         )
-    return ContentOut(pages=item.content)
+    placed = session.scalars(
+        select(ItemImage)
+        .where(ItemImage.item_id == item.id, ItemImage.role != "cover")
+        .order_by(ItemImage.position)
+    ).all()
+    return ContentOut(pages=item.content, images=placed)
 
 
 @router.get("/{item_id}/file")
@@ -230,12 +235,15 @@ def set_item_tags(item_id: int, body: TagsIn, session: SessionDep, user: Current
 def delete_item(item_id: int, session: SessionDep, user: CurrentUser) -> Response:
     item = _get_or_404(session, item_id, user.id)
     stored = item.source if item.source_type in (SourceType.pdf, SourceType.file) else None
+    pictures = images.delete_for_item(session, item.id)
     session.delete(item)
     session.flush()
     delete_unused_tags(session, user.id)
     session.commit()
     if stored is not None:
         files.delete(stored)
+    for key in pictures:
+        files.delete(key)
     return Response(status_code=204)
 
 

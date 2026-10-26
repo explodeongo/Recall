@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Network } from "lucide-react";
 import Link from "next/link";
 import { SourceIcon, tagStyle } from "@/components/ItemBits";
+import { Cover } from "@/components/Pictures";
 import { api, passageHref, type Item } from "@/lib/api";
 
 /** Other saved items on a related topic, each with the passage in it that connects them. */
@@ -27,7 +28,11 @@ export function Connections({ item }: { item: Item }) {
           <li key={c.item.id} className="animate-enter" style={{ "--i": i } as React.CSSProperties}>
             <div className="group relative rounded-xl border bg-card shadow-xs p-4 transition-colors duration-150 hover:border-brand/40">
               <div className="flex items-start gap-2.5">
-                <SourceIcon type={c.item.source_type} className="mt-0.5" />
+                {c.item.cover_url ? (
+                  <Cover item={c.item} className="size-12 shrink-0 rounded-lg border" />
+                ) : (
+                  <SourceIcon type={c.item.source_type} className="mt-0.5" />
+                )}
                 <div className="min-w-0 flex-1">
                   <Link href={`/items/${c.item.id}`} className="font-medium leading-snug after:absolute after:inset-0 focus-visible:outline-none">
                     {c.item.title}

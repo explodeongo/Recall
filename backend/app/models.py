@@ -97,6 +97,34 @@ class ApiToken(Base):
     user: Mapped[User] = relationship()
 
 
+class ItemImage(Base):
+    """A picture: an item's cover, a figure from its document, or one added to a note.
+
+    `position` is where it sits in the item's full text (offsets as in Chunk.start_char), so
+    the reader can show it in place and answers can show the figures beside a cited passage.
+    The bytes live in the file store (services/files.py), downscaled and re-encoded on save.
+    """
+
+    __tablename__ = "item_images"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # None for an image added to a note that isn't saved yet.
+    item_id: Mapped[int | None] = mapped_column(
+        ForeignKey("items.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[str] = mapped_column(String(12))  # "cover", "figure" or "upload"
+    key: Mapped[str] = mapped_column(Text)
+    mime: Mapped[str] = mapped_column(String(32))
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    alt: Mapped[str | None] = mapped_column(Text)
+    page: Mapped[int | None] = mapped_column(Integer)
+    position: Mapped[int | None] = mapped_column(Integer)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class Item(Base):
     __tablename__ = "items"
 
@@ -128,6 +156,8 @@ class Item(Base):
     tags_edited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     # A title the person typed when saving, or renamed to: kept when the item is read again.
     title_edited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # The picture shown for it in lists (an ItemImage; no foreign key, it's replaced freely).
+    cover_image_id: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[ItemStatus] = mapped_column(
         Enum(ItemStatus, name="item_status"), default=ItemStatus.queued
     )

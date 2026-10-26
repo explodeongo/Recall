@@ -191,7 +191,8 @@ def test_item_content_for_the_reader(client, session, user):
     session.add(item)
     session.commit()
     assert client.get(f"/items/{item.id}/content").json() == {
-        "pages": [{"page": None, "text": "First paragraph.\n\nSecond."}]
+        "pages": [{"page": None, "text": "First paragraph.\n\nSecond."}],
+        "images": [],
     }
     _seed(session, user)
     no_text = client.get("/items", params={"tag": "ml"}).json()[0]["id"]

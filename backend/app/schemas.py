@@ -76,6 +76,13 @@ class ItemOut(BaseModel):
     tags: list[TagOut]
     # Only on search results: where in the document the search matched.
     match: MatchOut | None = None
+    cover_image_id: int | None = Field(default=None, exclude=True)
+
+    @computed_field
+    @property
+    def cover_url(self) -> str | None:
+        """The picture shown for it in lists, if it has one."""
+        return f"/images/{self.cover_image_id}" if self.cover_image_id else None
 
 
 class TagsIn(BaseModel):
@@ -103,11 +110,29 @@ class PageOut(BaseModel):
     text: str
 
 
+class ImageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    width: int
+    height: int
+    alt: str | None = None
+    page: int | None = None
+    position: int | None = None  # where it sits in the full text
+    role: str = "figure"
+
+    @computed_field
+    @property
+    def url(self) -> str:
+        return f"/images/{self.id}"
+
+
 class ContentOut(BaseModel):
     """The item's full text, split into pages; offsets count across pages joined by a blank
-    line."""
+    line. `images` are the figures and note pictures placed in it."""
 
     pages: list[PageOut]
+    images: list[ImageOut] = []
 
 
 class AskIn(BaseModel):
@@ -134,6 +159,8 @@ class SourceOut(BaseModel):
     start_char: int | None = None
     end_char: int | None = None
     kind: str = "text"  # "text", "note" (your notes) or "web"
+    # Figures beside the passage in its document: [{"id", "alt", "width", "height"}]
+    images: list[dict] = []
 
 
 class AskOut(BaseModel):
@@ -359,6 +386,34 @@ class ConnectionOut(BaseModel):
     similarity: float
     shared_tags: list[str]
     passage: ConnectionPassage | None
+
+
+class LinkTargetOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    item_id: int
+    title: str
+    cover_image_id: int | None = Field(default=None, exclude=True)
+    snippet: str | None
+    chunk_id: int | None
+    start_char: int | None
+    end_char: int | None
+
+    @computed_field
+    @property
+    def cover_url(self) -> str | None:
+        return f"/images/{self.cover_image_id}" if self.cover_image_id else None
+
+
+class LinkOut(BaseModel):
+    """A term in the text (at start..end) that other saved items are about."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    term: str
+    start: int
+    end: int
+    targets: list[LinkTargetOut]
 
 
 class GraphNode(BaseModel):

@@ -2,8 +2,9 @@ from fastapi import APIRouter, HTTPException
 
 from app.deps import CurrentUser, SessionDep
 from app.models import Item
-from app.schemas import ConnectionOut, GraphOut
+from app.schemas import ConnectionOut, GraphOut, LinkOut
 from app.services import connections as service
+from app.services import links
 from app.services.tags import color_of
 
 router = APIRouter(tags=["connections"])
@@ -24,6 +25,16 @@ def item_connections(item_id: int, session: SessionDep, user: CurrentUser) -> li
         }
         for c in service.connections(session, item)
     ]
+
+
+@router.get("/items/{item_id}/links", response_model=list[LinkOut])
+def item_links(item_id: int, session: SessionDep, user: CurrentUser) -> list[links.Link]:
+    """Linked ideas: terms in this item's text that other saved items are about, each with
+    those items and the passage in them that mentions it. No model call."""
+    item = session.get(Item, item_id)
+    if item is None or item.user_id != user.id:
+        raise HTTPException(404, "Item not found")
+    return links.links_for(session, item)
 
 
 @router.get("/graph", response_model=GraphOut)

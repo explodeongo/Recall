@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerText } from "@/components/AnswerText";
-import { FromTheWeb, NotFound, SourcesList, Thinking } from "@/components/chat/AnswerParts";
+import { AnswerFigures, FromTheWeb, NotFound, SourcesList, Thinking } from "@/components/chat/AnswerParts";
 import { ChatList } from "@/components/chat/ChatList";
 import { MentionMenu, PinnedChips, SourceSwitch, mentionAt, useAnswerSource, useMentions, type Mention, type Pinned } from "@/components/chat/ContextPicker";
 import { Button } from "@/components/ui/button";
@@ -267,6 +267,7 @@ function Exchange({ question, context, searchQuery, answer }: { question: string
         <>
           {fromWeb && context?.source !== "web" && <FromTheWeb partly={cited.some((s) => s.kind !== "web")} />}
           <AnswerText text={answer.content} sources={sources} />
+          <AnswerFigures sources={sources} cited={answer.cited ?? []} />
           {sources.length > 0 && <SourcesList sources={sources} cited={answer.cited ?? []} />}
         </>
       )}
@@ -346,6 +347,7 @@ function Composer({
 }) {
   const [question, setQuestion] = useState("");
   const box = useRef<HTMLTextAreaElement>(null);
+  const form = useRef<HTMLFormElement>(null);
   // The "@" being typed, if any, and the highlighted option in its menu.
   const [mention, setMention] = useState<{ start: number; query: string } | null>(null);
   const [active, setActive] = useState(0);
@@ -388,6 +390,14 @@ function Composer({
   const openMenu = () => {
     const el = box.current!;
     const caret = el.selectionStart ?? question.length;
+    el.focus();
+    // Already typing an @ (or the menu's open): just show the menu for it, don't add another.
+    if (mention) return;
+    if (question[caret - 1] === "@") {
+      setMention({ start: caret - 1, query: "" });
+      setActive(0);
+      return;
+    }
     const spacer = caret > 0 && !/\s/.test(question[caret - 1]) ? " " : "";
     const next = question.slice(0, caret) + spacer + "@" + question.slice(caret);
     setQuestion(next);
@@ -404,13 +414,14 @@ function Composer({
     // Pinned to the bottom of the window, over a fade so the conversation slides under it.
     <div className="sticky bottom-0 -mx-2 bg-gradient-to-t from-background from-70% to-transparent px-2 pt-6 pb-4">
       <form
+        ref={form}
         onSubmit={(e) => {
           e.preventDefault();
           send();
         }}
         className="relative rounded-2xl border bg-card p-2 shadow-sm transition focus-within:border-brand/60 focus-within:ring-3 focus-within:ring-brand/15"
       >
-        {mention && <MentionMenu options={options} active={active} onPick={pick} query={mention.query} />}
+        {mention && <MentionMenu options={options} active={active} onPick={pick} query={mention.query} anchor={form} />}
         {pinnedAny && (
           <div className="px-2 pt-1">
             <PinnedChips pinned={pinned} onRemove={unpin} />

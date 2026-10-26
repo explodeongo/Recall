@@ -5,7 +5,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from app.api import ask, auth, cards, chats, chunks, connections, highlights, items, search, tags
+from app.api import (
+    ask,
+    auth,
+    cards,
+    chats,
+    chunks,
+    connections,
+    highlights,
+    images,
+    items,
+    search,
+    tags,
+)
 from app.config import get_settings
 from app.db import engine
 from app.mcp_server import app as mcp_app
@@ -52,6 +64,7 @@ app.include_router(highlights.router)
 app.include_router(search.router)
 app.include_router(cards.router)
 app.include_router(connections.router)
+app.include_router(images.router)
 
 
 @app.get("/health", tags=["meta"])

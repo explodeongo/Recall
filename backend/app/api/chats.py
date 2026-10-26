@@ -125,7 +125,7 @@ def send_message(
                 library=source != "web",
             ):
                 if kind == "sources":
-                    yield _sse("sources", {"sources": sources_json(payload)})
+                    yield _sse("sources", {"sources": sources_json(payload, session)})
                 elif kind == "status":
                     yield _sse("status", {"text": payload})
                 elif kind == "delta":
@@ -136,7 +136,7 @@ def send_message(
             yield _sse("error", {"message": str(exc), "retryable": exc.retryable})
             return
 
-        sources = sources_json(answer.sources)
+        sources = sources_json(answer.sources, session)
         asked = ChatMessage(
             chat_id=chat.id,
             role="user",
