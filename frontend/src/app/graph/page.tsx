@@ -104,11 +104,21 @@ function layout(data: Graph, width: number, height: number): { nodes: SimNode[];
     degree.set(e.source, (degree.get(e.source) ?? 0) + 1);
     degree.set(e.target, (degree.get(e.target) ?? 0) + 1);
   }
-  // Start on a spiral, so the result is the same on every load.
-  const nodes: SimNode[] = data.nodes.map((n, i) => {
-    const angle = i * 2.39996;
-    const r = 14 * Math.sqrt(i + 1);
-    return { ...n, x: width / 2 + r * Math.cos(angle), y: height / 2 + r * Math.sin(angle), vx: 0, vy: 0, degree: degree.get(n.id) ?? 0, pinned: false };
+  // Each group starts in its own spot on a ring around the middle, its items on a small
+  // spiral there; unlinked items start further out. Deterministic, so it's the same every load.
+  const groups = data.clusters.map((c) => c.id);
+  const ring = groups.length > 1 ? Math.min(width, height) * 0.28 : 0;
+  const placed = new Map<number | null, number>();
+  const nodes: SimNode[] = data.nodes.map((n) => {
+    const k = placed.get(n.cluster) ?? 0;
+    placed.set(n.cluster, k + 1);
+    const g = n.cluster === null ? -1 : groups.indexOf(n.cluster);
+    const home = g === -1 ? { r: ring + 160, a: k * 0.9 } : { r: ring, a: (g / groups.length) * 2 * Math.PI };
+    const cx = width / 2 + home.r * Math.cos(home.a);
+    const cy = height / 2 + home.r * Math.sin(home.a);
+    const spin = k * 2.39996;
+    const r = g === -1 ? 0 : 12 * Math.sqrt(k + 1);
+    return { ...n, x: cx + r * Math.cos(spin), y: cy + r * Math.sin(spin), vx: 0, vy: 0, degree: degree.get(n.id) ?? 0, pinned: false };
   });
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const links = data.edges.flatMap((e) => {
@@ -132,8 +142,10 @@ function tick(nodes: SimNode[], links: [SimNode, SimNode, number][], width: numb
         dy = Math.random() - 0.5;
         d2 = 0.5;
       }
-      if (d2 > 250_000) continue;
-      const force = (2400 * alpha) / d2;
+      // Items in different groups push apart harder and from further away, so groups don't overlap.
+      const apart = a.cluster === null || a.cluster !== b.cluster;
+      if (d2 > (apart ? 640_000 : 250_000)) continue;
+      const force = ((apart ? 5000 : 2400) * alpha) / d2;
       const d = Math.sqrt(d2);
       a.vx -= (dx / d) * force;
       a.vy -= (dy / d) * force;
@@ -146,11 +158,26 @@ function tick(nodes: SimNode[], links: [SimNode, SimNode, number][], width: numb
     const dy = b.y - a.y;
     const d = Math.sqrt(dx * dx + dy * dy) || 1;
     const rest = 70 + (1 - similarity) * 160;
-    const pull = ((d - rest) / d) * 0.06 * alpha;
+    // Links across groups pull gently: they show the relation without dragging groups together.
+    const across = a.cluster === null || a.cluster !== b.cluster;
+    const pull = ((d - rest) / d) * (across ? 0.012 : 0.06) * alpha;
     a.vx += dx * pull;
     a.vy += dy * pull;
     b.vx -= dx * pull;
     b.vy -= dy * pull;
+  }
+  // Each item is drawn towards the middle of its group.
+  const centres = new Map<number, { x: number; y: number; n: number }>();
+  for (const n of nodes) {
+    if (n.cluster === null) continue;
+    const c = centres.get(n.cluster) ?? { x: 0, y: 0, n: 0 };
+    centres.set(n.cluster, { x: c.x + n.x, y: c.y + n.y, n: c.n + 1 });
+  }
+  for (const n of nodes) {
+    const c = n.cluster === null ? undefined : centres.get(n.cluster);
+    if (!c || n.pinned) continue;
+    n.vx += (c.x / c.n - n.x) * 0.02 * alpha;
+    n.vy += (c.y / c.n - n.y) * 0.02 * alpha;
   }
   for (const n of nodes) {
     // A gentle pull to the middle keeps items from drifting off; weaker for unlinked ones,
@@ -182,6 +209,8 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
   const [orphansOnly, setOrphansOnly] = useState(false);
   const clusterById = useMemo(() => new Map(data.clusters.map((c) => [c.id, c])), [data.clusters]);
   const sim = useRef<ReturnType<typeof layout> | null>(null);
+  const touched = useRef(false); // the reader has panned or zoomed: stop framing for them
+  const fitRef = useRef(() => {});
   const alpha = useRef(1);
   const raf = useRef(0);
 
@@ -213,6 +242,7 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
       }
       setFrame((f) => f + 1);
       if (alpha.current > 0.005) raf.current = requestAnimationFrame(step);
+      else if (!touched.current) fitRef.current(); // frame it again once it has come to rest
     };
     raf.current = requestAnimationFrame(step);
   };
@@ -227,7 +257,6 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
 
   // Frame the whole graph, with room for labels. Done on load and resize until the reader
   // pans or zooms themselves.
-  const touched = useRef(false);
   const fit = () => {
     // Groups' halos and their names count too, so nothing is cut off at the edges.
     const xs = [...nodes.map((n) => n.x), ...halos.flatMap((h) => [h.cx - h.r, h.cx + h.r])];
@@ -236,10 +265,20 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
     const k = Math.min(1.8, Math.max(0.3, Math.min((size.width - 120) / (maxX - minX || 1), (size.height - 80) / (maxY - minY || 1))));
     setView({ k, x: size.width / 2 - ((minX + maxX) / 2) * k, y: size.height / 2 - ((minY + maxY) / 2) * k });
   };
+  fitRef.current = fit;
   useEffect(() => {
     if (!touched.current) fit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size.width, size.height]);
+  const hubs = useMemo(() => {
+    const best = new Map<number, SimNode>();
+    for (const n of nodes) {
+      if (n.cluster === null) continue;
+      const current = best.get(n.cluster);
+      if (!current || n.degree > current.degree) best.set(n.cluster, n);
+    }
+    return new Set([...best.values()].map((n) => n.id));
+  }, [nodes]);
   const neighbours = useMemo(() => {
     const map = new Map<number, Set<number>>();
     for (const [a, b] of links) {
@@ -353,7 +392,10 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
 
 
   const radius = (n: SimNode) => 5 + Math.sqrt(n.degree) * 2.2;
-  const showLabel = (n: SimNode) => active === n.id || (active !== null && lit(n.id)) || view.k >= 1.4 || n.degree >= 3 || nodes.length <= 12;
+  // Names only where they help: around what's hovered or selected, everywhere once zoomed in
+  // or in a small library, and otherwise just each group's best-connected item.
+  const showLabel = (n: SimNode) =>
+    active === n.id || (active !== null && lit(n.id)) || view.k >= 1.6 || nodes.length <= 15 || hubs.has(n.id);
   const hovered = hover !== selected ? nodes.find((n) => n.id === hover) : undefined;
   const chosen = nodes.find((n) => n.id === selected);
 
@@ -623,9 +665,9 @@ function NodePanel({
                   {c.passage && (
                     <Link
                       href={passageHref({ item_id: c.item.id, chunk_id: c.passage.chunk_id, start_char: c.passage.start_char, end_char: c.passage.end_char, kind: "text" })}
-                      className="mt-2 line-clamp-3 rounded-md bg-muted/50 px-2 py-1.5 text-xs text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                      className="mt-2 block rounded-md bg-muted/50 px-2 py-1.5 text-xs text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
                     >
-                      {c.passage.text}
+                      <span className="line-clamp-3">{c.passage.text}</span>
                     </Link>
                   )}
                 </li>

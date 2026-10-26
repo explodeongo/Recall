@@ -45,10 +45,13 @@ export function Connections({ item }: { item: Item }) {
               {c.passage && (
                 <Link
                   href={passageHref({ item_id: c.item.id, chunk_id: c.passage.chunk_id, start_char: c.passage.start_char, end_char: c.passage.end_char, kind: "text" })}
-                  className="relative z-10 mt-3 line-clamp-3 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                  className="relative z-10 mt-3 block rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
                 >
-                  {c.passage.page !== null && <span className="mr-1.5 text-xs tabular-nums">p. {c.passage.page} ·</span>}
-                  {c.passage.text}
+                  {/* Clamped inside the padding, so no sliver of a fourth line shows. */}
+                  <span className="line-clamp-3">
+                    {c.passage.page !== null && <span className="mr-1.5 text-xs tabular-nums">p. {c.passage.page} ·</span>}
+                    {c.passage.text}
+                  </span>
                 </Link>
               )}
             </div>

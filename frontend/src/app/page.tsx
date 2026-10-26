@@ -223,24 +223,26 @@ function MatchSnippet({ item }: { item: Item }) {
       ? passageHref({ item_id: item.id, chunk_id: match.chunk_id, start_char: match.start_char, end_char: match.end_char })
       : `/items/${item.id}`;
   return (
-    <Link href={href} className="relative z-10 mt-2 line-clamp-3 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted">
-      {match.kind === "related" ? (
-        <span className="mr-1.5 inline-flex items-center gap-1 rounded-full bg-brand-soft px-1.5 text-[11px] font-medium text-brand">
-          <Sparkles className="size-3" aria-hidden /> Related
-        </span>
-      ) : (
-        match.page !== null && <span className="mr-1.5 text-xs tabular-nums">p. {match.page} ·</span>
-      )}
-      <span>
-        {parts.map((p, i) =>
-          p.hit ? (
-            <mark key={i} className="rounded-sm bg-amber-200/70 px-0.5 text-foreground dark:bg-amber-400/25">
-              {p.text}
-            </mark>
-          ) : (
-            <span key={i}>{p.text}</span>
-          ),
+    <Link href={href} className="relative z-10 mt-2 block rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted">
+      <span className="line-clamp-3">
+        {match.kind === "related" ? (
+          <span className="mr-1.5 inline-flex items-center gap-1 rounded-full bg-brand-soft px-1.5 text-[11px] font-medium text-brand">
+            <Sparkles className="size-3" aria-hidden /> Related
+          </span>
+        ) : (
+          match.page !== null && <span className="mr-1.5 text-xs tabular-nums">p. {match.page} ·</span>
         )}
+        <span>
+          {parts.map((p, i) =>
+            p.hit ? (
+              <mark key={i} className="rounded-sm bg-amber-200/70 px-0.5 text-foreground dark:bg-amber-400/25">
+                {p.text}
+              </mark>
+            ) : (
+              <span key={i}>{p.text}</span>
+            ),
+          )}
+        </span>
       </span>
     </Link>
   );

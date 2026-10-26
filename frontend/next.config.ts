@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // Streamed answers must not be buffered for compression on their way through the proxy.
   compress: false,
+  // No Next.js badge in the corner: the app is demoed from the dev server. Build errors
+  // still show as an overlay.
+  devIndicators: false,
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${API_TARGET}/:path*` }];
   },
