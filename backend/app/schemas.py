@@ -325,6 +325,42 @@ class ItemPatch(BaseModel):
     archived: bool | None = None
 
 
+class ConnectionPassage(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    chunk_id: int
+    text: str
+    page: int | None
+    start_char: int | None
+    end_char: int | None
+
+
+class ConnectionOut(BaseModel):
+    item: ItemOut
+    similarity: float
+    shared_tags: list[str]
+    passage: ConnectionPassage | None
+
+
+class GraphNode(BaseModel):
+    id: int
+    title: str
+    source_type: SourceType
+    tags: list[TagOut]
+    created_at: datetime
+
+
+class GraphEdge(BaseModel):
+    source: int
+    target: int
+    similarity: float
+
+
+class GraphOut(BaseModel):
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+
+
 class ResurfaceOut(BaseModel):
     items: list[ItemOut]
     cards_due: int

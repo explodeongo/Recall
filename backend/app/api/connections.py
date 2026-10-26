@@ -1,0 +1,45 @@
+from fastapi import APIRouter, HTTPException
+
+from app.deps import CurrentUser, SessionDep
+from app.models import Item
+from app.schemas import ConnectionOut, GraphOut
+from app.services import connections as service
+from app.services.tags import color_of
+
+router = APIRouter(tags=["connections"])
+
+
+@router.get("/items/{item_id}/connections", response_model=list[ConnectionOut])
+def item_connections(item_id: int, session: SessionDep, user: CurrentUser) -> list[dict]:
+    """Saved items on a related topic, each with the passage in it closest to this item."""
+    item = session.get(Item, item_id)
+    if item is None or item.user_id != user.id:
+        raise HTTPException(404, "Item not found")
+    return [
+        {
+            "item": c.item,
+            "similarity": round(c.similarity, 3),
+            "shared_tags": c.shared_tags,
+            "passage": c.passage,
+        }
+        for c in service.connections(session, item)
+    ]
+
+
+@router.get("/graph", response_model=GraphOut)
+def library_graph(session: SessionDep, user: CurrentUser) -> dict:
+    """The library as a graph: items, and links between items on related topics."""
+    items, edges = service.graph(session, user.id)
+    return {
+        "nodes": [
+            {
+                "id": i.id,
+                "title": i.title,
+                "source_type": i.source_type,
+                "tags": [{"id": t.id, "name": t.name, "color": color_of(t)} for t in i.tags],
+                "created_at": i.created_at,
+            }
+            for i in items
+        ],
+        "edges": [{"source": a, "target": b, "similarity": s} for a, b, s in edges],
+    }

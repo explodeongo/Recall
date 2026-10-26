@@ -181,6 +181,27 @@ export function passageHref(source: Pick<Source, "item_id" | "chunk_id" | "start
   return `/items/${source.item_id}?chunk=${source.chunk_id}`;
 }
 
+export interface Connection {
+  item: Item;
+  similarity: number;
+  shared_tags: string[];
+  /** The passage in the connected item closest to this one. */
+  passage: { chunk_id: number; text: string; page: number | null; start_char: number | null; end_char: number | null } | null;
+}
+
+export interface GraphNode {
+  id: number;
+  title: string;
+  source_type: SourceType;
+  tags: Tag[];
+  created_at: string;
+}
+
+export interface Graph {
+  nodes: GraphNode[];
+  edges: { source: number; target: number; similarity: number }[];
+}
+
 export interface Timings {
   retrieval_ms: number;
   llm_ms: number;
@@ -273,6 +294,8 @@ export const api = {
     return request<Item[]>(params.size ? `/items?${params}` : "/items");
   },
   item: (id: number) => request<Item>(`/items/${id}`),
+  connections: (id: number) => request<Connection[]>(`/items/${id}/connections`),
+  graph: () => request<Graph>("/graph"),
   tags: () => request<TagWithCount[]>("/tags"),
   createTag: (name: string, color?: string) => request<TagWithCount>("/tags", json("POST", { name, color })),
   updateTag: (id: number, patch: { name?: string; color?: string }) => request<TagWithCount>(`/tags/${id}`, json("PATCH", patch)),

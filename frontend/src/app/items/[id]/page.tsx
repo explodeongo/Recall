@@ -5,6 +5,7 @@ import { AlignLeft, Archive, ArrowLeft, BookOpen, ExternalLink, Layers, Loader2,
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Connections } from "@/components/Connections";
 import { HighlightReader } from "@/components/HighlightReader";
 import { type Mark, joinPages } from "@/components/Reader";
 import { toast } from "sonner";
@@ -133,6 +134,7 @@ function ItemView() {
                 <ItemNote item={data} />
                 <Flashcards item={data} />
                 {data.details ? <Details details={data.details} /> : <NoDetails item={data} />}
+                <Connections item={data} />
               </div>
             )}
           </TabsContent>

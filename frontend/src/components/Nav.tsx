@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Highlighter, Layers, Library, LogOut, MessageSquareText, Moon, Plus, Search, Settings, Sun } from "lucide-react";
+import { Highlighter, Layers, Library, LogOut, MessageSquareText, Moon, Network, Plus, Search, Settings, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -22,6 +22,7 @@ const links = [
   { href: "/", label: "Library", icon: Library },
   { href: "/ask", label: "Ask", icon: MessageSquareText },
   { href: "/review", label: "Review", icon: Layers },
+  { href: "/graph", label: "Graph", icon: Network },
   { href: "/add", label: "Add", icon: Plus },
 ];
 
