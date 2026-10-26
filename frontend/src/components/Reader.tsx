@@ -164,7 +164,9 @@ export function Reader({
 function LinkedTerm({ idea, text }: { idea: LinkedIdea; text: string }) {
   return (
     <Popover>
+      {/* A span, not a button: the term sits inside a sentence. Base UI adds the keyboard handling. */}
       <PopoverTrigger
+        nativeButton={false}
         openOnHover
         delay={250}
         render={
