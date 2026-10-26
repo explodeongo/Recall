@@ -66,7 +66,8 @@ def process_item(
                 raise
             raise PermanentError(str(exc)) from exc
 
-    item.title = doc.title or (enrichment and enrichment.title) or item.title
+    if not item.title_edited:  # a title the person gave wins over the page's or the model's
+        item.title = doc.title or (enrichment and enrichment.title) or item.title
     # Each chunk is embedded with its document's title in front, so a passage deep inside a
     # long article still carries what the article is about (measured in eval/results.md).
     vectors = embedder.embed_documents([embedding_text(item.title, c.text) for c in chunks])

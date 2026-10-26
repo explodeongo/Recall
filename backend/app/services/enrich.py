@@ -28,7 +28,9 @@ SYSTEM = (
 PROMPT = """Write a catalogue entry for this {kind}. Describe it as a {kind}.
 
 - title: a short, specific title (keep the document's own title if it has one)
-- summary: 2 to 3 plain sentences on what the document is and covers, for a list view
+- summary: 2 to 3 plain sentences for a list view that get straight to the subject: start \
+with what it explains or argues ("Transformers are a neural network architecture that…"), \
+never with "This document", "This page", "This video" or similar
 - overview: two or three paragraphs explaining the document's subject, purpose and main argument \
 or findings, written so someone who hasn't read it understands it
 - key_points: 5 to 8 of the most important facts, ideas or conclusions, one sentence each

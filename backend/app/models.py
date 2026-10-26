@@ -126,6 +126,8 @@ class Item(Base):
     note: Mapped[str | None] = mapped_column(Text)
     # Set when the user edits the tags by hand, so reprocessing keeps their choice.
     tags_edited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # A title the person typed when saving, or renamed to: kept when the item is read again.
+    title_edited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     status: Mapped[ItemStatus] = mapped_column(
         Enum(ItemStatus, name="item_status"), default=ItemStatus.queued
     )

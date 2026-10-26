@@ -53,6 +53,7 @@ def create_item(
         kind, path = _store_upload(file)
         name = title.strip() if title and title.strip() else _title_from_filename(file.filename)
         item = Item(user_id=user.id, title=name, source_type=kind, source=path)
+        item.title_edited = bool(title and title.strip())
     elif url is not None:
         try:
             clean = str(_url_adapter.validate_python(url.strip()))
@@ -69,6 +70,7 @@ def create_item(
         first_line = body.splitlines()[0].strip().lstrip("# ")
         name = title.strip() if title and title.strip() else first_line[:80] or "Note"
         item = Item(user_id=user.id, title=name, source_type=SourceType.note, source=body)
+        item.title_edited = bool(title and title.strip())
 
     session.add(item)
     session.flush()
@@ -142,6 +144,7 @@ def update_item(item_id: int, body: ItemPatch, session: SessionDep, user: Curren
     item = _get_or_404(session, item_id, user.id)
     if body.title is not None:
         item.title = body.title.strip()
+        item.title_edited = True
     if body.starred is not None:
         item.starred = body.starred
     if body.archived is not None:

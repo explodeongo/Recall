@@ -63,3 +63,17 @@ def test_login_is_rate_limited(client, anon_client):
         for _ in range(12)
     ]
     assert codes[-1] == 429
+
+
+def test_a_stale_session_cookie_is_cleared(anon_client):
+    # e.g. the session expired, or the database was reset since the browser logged in
+    anon_client.cookies.set("recall_session", "no-such-session")
+    resp = anon_client.get("/items")
+    assert resp.status_code == 401
+    assert (
+        "recall_session=;" in resp.headers["set-cookie"]
+        and "Max-Age=0" in resp.headers["set-cookie"]
+    )
+    # Requests without a cookie aren't told to delete one.
+    anon_client.cookies.clear()
+    assert "set-cookie" not in anon_client.get("/items").headers

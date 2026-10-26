@@ -106,6 +106,8 @@ copied exactly; true_false: "True" or "False"
 - quote: a short exact quote (5 to 25 words) copied word for word from the text, where the \
 answer comes from
 
+Never let a question give its answer away: no question names or quotes its own answer \
+(not "Who devised the Leitner system?" when the answer is Leitner).
 Prefer understanding (why, how, what's the difference) over trivia like dates and names, \
 unless they matter. Don't repeat these existing questions: {existing}
 

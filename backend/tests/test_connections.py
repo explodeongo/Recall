@@ -111,3 +111,16 @@ def test_graph_reports_clusters(client, session, user):
     assert by_title["Tax law"] is None
     assert by_title["Melatonin"] == by_title["Circadian rhythm"] == by_title["Sleep journal"]
     assert graph["clusters"][0]["label"] == "sleep" and graph["clusters"][0]["color"]
+
+
+def test_reference_lists_are_not_shown_as_the_linking_passage():
+    from app.services.connections import _looks_like_references
+
+    assert _looks_like_references(
+        "Robertson, S. (1994). Okapi at TREC-3. doi:10.1016/0306-4573(88)90021-0. Retrieved 2 May"
+    )
+    assert _looks_like_references("Information Processing & Management. 24 (5): 513-523. doi:10.1")
+    assert not _looks_like_references(
+        "BM25 ranks documents by how often the query terms appear, scaled by document length."
+    )
+    assert not _looks_like_references("The transformer was introduced in 2017 by Vaswani et al.")

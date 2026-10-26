@@ -5,6 +5,7 @@ Topic closeness compares items' summary embeddings (title, summary and tags; see
 pipeline.embedding_text). Shared tags count a little extra. No LLM is involved.
 """
 
+import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
@@ -72,25 +73,38 @@ def connections(session: Session, item: Item, limit: int = 6) -> list[Connection
 
 
 def _closest_passage(session: Session, item_id: int, vector) -> Passage | None:
-    """The passage in item `item_id` that's closest to `vector` (the other item's topic)."""
+    """The passage in item `item_id` that's closest to `vector` (the other item's topic),
+    passing over reference lists, which match a topic well but say nothing."""
     distance = Chunk.embedding.cosine_distance(vector)
-    row = session.execute(
+    rows = session.execute(
         select(Chunk, distance)
         .where(Chunk.item_id == item_id, Chunk.kind == "text", Chunk.embedding.is_not(None))
         .order_by(distance)
-        .limit(1)
-    ).first()
-    if row is None or 1 - row[1] < PASSAGE_FLOOR:
-        return None
-    chunk = row[0]
-    text = " ".join(chunk.chunk_text.split())
-    return Passage(
-        chunk.id,
-        text[:280] + ("…" if len(text) > 280 else ""),
-        chunk.page,
-        chunk.start_char,
-        chunk.end_char,
-    )
+        .limit(5)
+    ).all()
+    for chunk, d in rows:
+        if 1 - d < PASSAGE_FLOOR:
+            return None
+        text = " ".join(chunk.chunk_text.split())
+        if _looks_like_references(text):
+            continue
+        return Passage(
+            chunk.id,
+            text[:280] + ("…" if len(text) > 280 else ""),
+            chunk.page,
+            chunk.start_char,
+            chunk.end_char,
+        )
+    return None
+
+
+_CITATION = re.compile(r"doi:|ISBN|arXiv:|Retrieved \d|pp\. \d|\(\d{4}\)|\bvol\. \d", re.IGNORECASE)
+
+
+def _looks_like_references(text: str) -> bool:
+    """A bibliography or reference list: citation markers, and more digits than prose has."""
+    digits = sum(c.isdigit() for c in text) / max(len(text), 1)
+    return len(_CITATION.findall(text)) >= 2 or (digits > 0.12 and bool(_CITATION.search(text)))
 
 
 def graph(session: Session, user_id: int) -> tuple[list[Item], list[tuple[int, int, float]]]:

@@ -71,6 +71,30 @@ def test_source_title_wins_over_model_title(session):
     assert item.title == "Indexing 101"
 
 
+def test_a_title_the_person_gave_is_kept(session, client):
+    note = client.post(
+        "/items", data={"text": "B-trees keep keys sorted.", "title": "My index notes"}
+    )
+    item = session.get(Item, note.json()["id"])
+    doc = ExtractedDoc(title="Indexing 101", pages=DOC.pages)
+    process_item(session, item, embedder=HashingEmbedder(), llm=FakeLLM(), source=StubSource(doc))
+    assert item.title == "My index notes"
+
+    # Without one, the source's (or the model's) title is used; a rename then sticks.
+    untitled = session.get(Item, client.post("/items", data={"text": "Hash maps."}).json()["id"])
+    process_item(
+        session, untitled, embedder=HashingEmbedder(), llm=FakeLLM(), source=StubSource(doc)
+    )
+    session.commit()
+    assert untitled.title == "Indexing 101"
+    client.patch(f"/items/{untitled.id}", json={"title": "Renamed"})
+    session.refresh(untitled)
+    process_item(
+        session, untitled, embedder=HashingEmbedder(), llm=FakeLLM(), source=StubSource(doc)
+    )
+    assert untitled.title == "Renamed"
+
+
 def test_reprocessing_replaces_chunks(session):
     item = _item(session)
     for _ in range(2):
