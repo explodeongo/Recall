@@ -305,6 +305,16 @@ def use_the_library(client, items: dict) -> None:
         client.post(f"/items/{item['id']}/opened")
 
 
+def with_retries(attempt, what: str, tries: int = 4) -> bool:
+    """Run `attempt` until it succeeds; the free Gemini tier is often briefly overloaded."""
+    for n in range(tries):
+        if attempt():
+            return True
+        time.sleep(15 * (n + 1))
+    print(f"  gave up on {what}; run `python -m demo.seed --fresh` again later")
+    return False
+
+
 def ask(client, items: dict, chat: dict) -> None:
     chat_id = client.post("/chats", json={}).json()["id"]
     pinned = find(items, chat["pin"]) if chat.get("pin") else None
@@ -312,9 +322,13 @@ def ask(client, items: dict, chat: dict) -> None:
         body = {"question": question, "source": "both"}
         if pinned:
             body |= {"item_ids": [pinned["id"]], "source": "library"}
-        resp = client.post(f"/chats/{chat_id}/messages", json=body)
-        if "event: done" not in resp.text:
-            print(f"  no answer for “{question}”: {resp.text[-200:]}")
+
+        def attempt(body=body) -> bool:
+            resp = client.post(f"/chats/{chat_id}/messages", json=body)
+            return "event: done" in resp.text
+
+        if not with_retries(attempt, f"“{question}”"):
+            return  # a follow-up without its question would read oddly
         time.sleep(4)  # stay under the free tier's per-minute limit
 
 
@@ -323,12 +337,17 @@ def quiz(client, items: dict) -> None:
         item = find(items, name)
         if item is None:
             continue
-        resp = client.post(f"/items/{item['id']}/cards")
-        if resp.status_code != 201:
-            print(f"  no quiz for {name}: {resp.text[:200]}")
+        made: list = []
+
+        def attempt(item=item, made=made) -> bool:
+            resp = client.post(f"/items/{item['id']}/cards")
+            made[:] = resp.json() if resp.status_code == 201 else []
+            return resp.status_code == 201
+
+        if not with_retries(attempt, f"the quiz for {name}"):
             continue
         # A few already reviewed, so cards show more than one stage.
-        for card in resp.json()[:3]:
+        for card in made[:3]:
             client.post(f"/cards/{card['id']}/review", json={"grade": "good"})
         time.sleep(4)
 
