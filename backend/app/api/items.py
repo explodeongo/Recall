@@ -17,6 +17,7 @@ from app.schemas import ContentOut, ItemOut, ItemPatch, ResurfaceOut, TagsIn
 from app.services import files, jobs, quota
 from app.services.enrich import clean_tag
 from app.services.library_search import search_items
+from app.services.tags import has_tags, parse_tags
 from app.sources.files import EXTENSIONS as FILE_EXTENSIONS
 from app.sources.youtube import video_id
 
@@ -83,22 +84,25 @@ def list_items(
     user: CurrentUser,
     embedder: EmbedderDep,
     tag: str | None = None,
+    tags: str | None = None,
+    match: Literal["all", "any"] = "all",
     q: str | None = None,
     view: Literal["all", "starred", "archived"] = "all",
 ) -> list[Item]:
-    """List items, newest first (FR-6), or search them. `tag` filters by tag (no LLM). `q`
+    """List items, newest first (FR-6), or search them. `tags=a,b` filters by tags, items
+    having all of them or, with `match=any`, any of them (no LLM; `tag` is the one-tag form). `q`
     matches each word anywhere: titles, tags, summaries, notes and full text, best first, with
     the matching passage; documents close in meaning follow as "related"
     (services/library_search.py)."""
+    names = parse_tags(tags, tag)
     if q and q.strip():
         # Search covers everything, archived included: finding things is the point.
-        return search_items(session, user.id, q, tag=tag, embedder=embedder)
+        return search_items(session, user.id, q, tags=names, match=match, embedder=embedder)
     query = select(Item).where(Item.user_id == user.id).options(selectinload(Item.tags))
     if view == "starred":
         query = query.where(Item.starred.is_(True))
     query = query.where(Item.archived.is_(view == "archived"))
-    if tag:
-        query = query.where(Item.tags.any(Tag.name == tag.lower()))
+    query = query.where(has_tags(names, match))
     return list(session.scalars(query.order_by(Item.created_at.desc())))
 
 
@@ -269,5 +273,8 @@ def _store_upload(file: UploadFile) -> tuple[SourceType, str]:
 
 
 def delete_unused_tags(session, user_id: int) -> None:
+    """Tags no item uses any more go, except ones the person made in the tag manager."""
     used = select(item_tags.c.tag_id)
-    session.execute(sa_delete(Tag).where(Tag.user_id == user_id, Tag.id.not_in(used)))
+    session.execute(
+        sa_delete(Tag).where(Tag.user_id == user_id, Tag.user_made.is_(False), Tag.id.not_in(used))
+    )

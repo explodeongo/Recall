@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.config import get_settings
 from app.models import Chunk, Item, Tag
 from app.services.embeddings import Embedder
+from app.services.tags import has_tags
 
 MAX_WORDS = 8
 MAX_RESULTS = 50
@@ -50,7 +51,8 @@ def search_items(
     user_id: int,
     q: str,
     *,
-    tag: str | None = None,
+    tags: list[str] | None = None,
+    match: str = "all",
     embedder: Embedder | None = None,
     limit: int = MAX_RESULTS,
 ) -> list[Item]:
@@ -112,8 +114,7 @@ def search_items(
         )
         .limit(limit)
     )
-    if tag:
-        stmt = stmt.where(Item.tags.any(Tag.name == tag.lower()))
+    stmt = stmt.where(has_tags(tags or [], match))
     items = [item for item, _ in session.execute(stmt).all()]
     snippets = _snippets(session, [i.id for i in items], words)
     for item in items:
@@ -121,7 +122,13 @@ def search_items(
 
     if embedder is not None and len(q.strip()) >= 3 and len(items) < limit:
         items += _related(
-            session, embedder, user_id, q, tag, {i.id for i in items}, limit - len(items)
+            session,
+            embedder,
+            user_id,
+            q,
+            has_tags(tags or [], match),
+            {i.id for i in items},
+            limit - len(items),
         )
     return items
 
@@ -152,7 +159,9 @@ def _snippets(session: Session, item_ids: list[int], words: list[str]) -> dict[i
     }
 
 
-def _related(session, embedder, user_id, q, tag, exclude: set[int], limit: int) -> list[Item]:
+def _related(
+    session, embedder, user_id, q, tag_filter, exclude: set[int], limit: int
+) -> list[Item]:
     """Items whose topic is close to the query, compared on their summary embeddings."""
     threshold = get_settings().related_min_similarity
     vector = embedder.embed_query(q)
@@ -166,10 +175,9 @@ def _related(session, embedder, user_id, q, tag, exclude: set[int], limit: int) 
             Item.id.not_in(exclude or {-1}),
         )
         .order_by(similarity.desc())
+        .where(tag_filter)
         .limit(limit)
     )
-    if tag:
-        stmt = stmt.where(Item.tags.any(Tag.name == tag.lower()))
     related = []
     for item, score in session.execute(stmt).all():
         if score < threshold:

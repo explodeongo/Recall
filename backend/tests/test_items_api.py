@@ -94,9 +94,9 @@ def test_get_item_and_404(client, session, user):
 
 def test_tags_with_counts(client, session, user):
     _seed(session, user)
-    assert client.get("/tags").json() == [
-        {"id": 1, "name": "databases", "item_count": 2},
-        {"id": 2, "name": "ml", "item_count": 2},
+    assert [(t["name"], t["item_count"]) for t in client.get("/tags").json()] == [
+        ("databases", 2),
+        ("ml", 2),
     ]
 
 
@@ -307,3 +307,62 @@ def test_resurface_brings_back_old_unopened_items(client, session, user):
         if item["title"].startswith("Old"):
             assert client.post(f"/items/{item['id']}/opened").status_code == 204
     assert client.get("/items/resurface").json()["items"] == []  # all opened just now
+
+
+def test_filter_by_several_tags(client, session, user):
+    _seed(session, user)
+
+    def titles(**params):
+        return {i["title"] for i in client.get("/items", params=params).json()}
+
+    assert titles(tags="databases,ml") == {"Vector DBs"}
+    assert titles(tags="databases,ml", match="any") == {"Indexing", "Transformers", "Vector DBs"}
+    assert titles(tags="databases,ml", q="vector") == {"Vector DBs"}
+    assert titles(tags="ml", q="indexing") == set()
+
+
+def test_tags_have_colors_and_can_be_managed(client, session, user):
+    _seed(session, user)
+    tags = {t["name"]: t for t in client.get("/tags").json()}
+    assert all(t["color"].startswith("#") and len(t["color"]) == 7 for t in tags.values())
+    # The default color is stable, so it doesn't change between loads.
+    assert client.get("/tags").json()[0]["color"] == tags["databases"]["color"]
+
+    made = client.post("/tags", json={"name": "To Read", "color": "#FF0080"})
+    assert made.status_code == 201
+    assert made.json() | {"id": 0} == {
+        "id": 0,
+        "name": "to read",
+        "color": "#ff0080",
+        "item_count": 0,
+        "user_made": True,
+    }
+    # A tag made by hand stays even though nothing uses it yet, also after other edits.
+    item = client.get("/items").json()[0]
+    client.put(f"/items/{item['id']}/tags", json={"tags": ["ml"]})
+    assert "to read" in {t["name"] for t in client.get("/tags").json()}
+
+    recolored = client.patch(f"/tags/{tags['ml']['id']}", json={"color": "#00aa55"}).json()
+    assert recolored["color"] == "#00aa55"
+    item_tags = client.get(f"/items/{item['id']}").json()["tags"]
+    assert item_tags == [{"id": tags["ml"]["id"], "name": "ml", "color": "#00aa55"}]
+
+    renamed = client.patch(f"/tags/{tags['ml']['id']}", json={"name": "Machine learning"})
+    assert renamed.json()["name"] == "machine learning"
+
+    # Renaming onto an existing name merges: every item ends up with one of it, no doubles.
+    merged = client.patch(f"/tags/{tags['databases']['id']}", json={"name": "machine learning"})
+    assert merged.json()["item_count"] == 3
+    names = {t["name"] for t in client.get("/tags").json()}
+    assert names == {"machine learning", "to read"}
+
+    assert client.delete(f"/tags/{merged.json()['id']}").status_code == 204
+    assert all(i["tags"] == [] for i in client.get("/items").json())
+    assert len(client.get("/items").json()) == 3  # the items themselves stay
+
+
+def test_tag_endpoints_check_input_and_owner(client, session, user):
+    assert client.post("/tags", json={"name": "x", "color": "red"}).status_code == 422
+    assert client.post("/tags", json={"name": "!!!"}).status_code == 422
+    assert client.patch("/tags/999", json={"color": "#000000"}).status_code == 404
+    assert client.delete("/tags/999").status_code == 404

@@ -8,10 +8,23 @@ export type SearchMode = "hybrid" | "vector" | "keyword";
 export interface Tag {
   id: number;
   name: string;
+  /** "#rrggbb": chosen in the tag manager, or a stable default picked from the name. */
+  color: string;
 }
 
 export interface TagWithCount extends Tag {
   item_count: number;
+  /** Made in the tag manager, so it stays even when no item uses it. */
+  user_made: boolean;
+}
+
+export type TagMatch = "all" | "any";
+
+export interface ItemFilter {
+  tags?: string[];
+  match?: TagMatch;
+  q?: string;
+  view?: "all" | "starred" | "archived";
 }
 
 export interface Item {
@@ -251,15 +264,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  items: (tag?: string, q?: string, view?: "all" | "starred" | "archived") => {
+  items: ({ tags, match, q, view }: ItemFilter = {}) => {
     const params = new URLSearchParams();
-    if (tag) params.set("tag", tag);
+    if (tags?.length) params.set("tags", tags.join(","));
+    if (tags && tags.length > 1 && match === "any") params.set("match", "any");
     if (q) params.set("q", q);
     if (view && view !== "all") params.set("view", view);
     return request<Item[]>(params.size ? `/items?${params}` : "/items");
   },
   item: (id: number) => request<Item>(`/items/${id}`),
   tags: () => request<TagWithCount[]>("/tags"),
+  createTag: (name: string, color?: string) => request<TagWithCount>("/tags", json("POST", { name, color })),
+  updateTag: (id: number, patch: { name?: string; color?: string }) => request<TagWithCount>(`/tags/${id}`, json("PATCH", patch)),
+  deleteTag: (id: number) => request<void>(`/tags/${id}`, { method: "DELETE" }),
   chunk: (id: number) => request<Chunk>(`/chunks/${id}`),
   content: (id: number) => request<{ pages: Page[] }>(`/items/${id}/content`),
   setNote: (id: number, note: string) => request<Item>(`/items/${id}/note`, json("PUT", { note })),

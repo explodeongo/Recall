@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 from app.models import ItemStatus, SourceType
 from app.services.review import Grade
@@ -12,10 +12,33 @@ class TagOut(BaseModel):
 
     id: int
     name: str
+    color: str  # "#rrggbb"
+
+    @model_validator(mode="before")
+    @classmethod
+    def _color(cls, value):
+        # ORM tags may have no color stored; give them their default one.
+        from app.models import Tag
+        from app.services.tags import color_of
+
+        if isinstance(value, Tag):
+            return {"id": value.id, "name": value.name, "color": color_of(value)}
+        return value
 
 
 class TagWithCount(TagOut):
     item_count: int
+    user_made: bool = False
+
+
+class TagCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
+
+
+class TagPatch(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=40)
+    color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
 
 
 class MatchOut(BaseModel):

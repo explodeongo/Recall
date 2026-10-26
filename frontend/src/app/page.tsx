@@ -1,16 +1,21 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Layers, Loader2, Plus, RotateCw, Search, Sparkles, X } from "lucide-react";
+import { Layers, Loader2, Plus, RotateCw, Search, Settings2, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { AddSources } from "@/components/AddSources";
 import { StarButton } from "@/components/StarButton";
+import { useTagManager } from "@/components/tags/TagManager";
+import { TagPicker } from "@/components/tags/TagPicker";
+import { tagList, useTagFilter } from "@/components/tags/useTagFilter";
 import { SourceIcon, StatusBadge, TagLink, sourceLabel, timeAgo } from "@/components/ItemBits";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MARK_END, MARK_START, api, isBusy, passageHref, type Item } from "@/lib/api";
+import { MARK_END, MARK_START, api, isBusy, passageHref, type Item, type TagWithCount } from "@/lib/api";
+
+type TagFilterState = ReturnType<typeof useTagFilter>;
 import { cn } from "@/lib/utils";
 
 export default function LibraryPage() {
@@ -24,7 +29,9 @@ export default function LibraryPage() {
 function Library() {
   const router = useRouter();
   const params = useSearchParams();
-  const tag = params.get("tag") ?? undefined;
+  const filter = useTagFilter();
+  const { selected, match } = filter;
+  const tagged = tagList(selected, match);
   const view = (["starred", "archived"].includes(params.get("view") ?? "") ? params.get("view") : "all") as "all" | "starred" | "archived";
   // The search box is live: it filters as you type, and the text is kept in the URL (?q=) so a
   // search survives a refresh and the back button.
@@ -38,16 +45,16 @@ function Library() {
   }, [q, params, router]);
 
   const items = useQuery({
-    queryKey: ["items", tag ?? null, q, view],
-    queryFn: () => api.items(tag, q || undefined, view),
+    queryKey: ["items", selected.join(","), selected.length > 1 ? match : "all", q, view],
+    queryFn: () => api.items({ tags: selected, match, q: q || undefined, view }),
     placeholderData: (previous) => previous, // keep the list while a new search loads
     // Keep polling while anything is still being read, so statuses update by themselves.
     refetchInterval: (query) => (query.state.data?.some((i) => isBusy(i.status)) ? 2000 : false),
   });
   const tags = useQuery({ queryKey: ["tags"], queryFn: api.tags, refetchInterval: items.data?.some((i) => isBusy(i.status)) ? 4000 : false });
 
-  const isEmptyLibrary = !tag && !q && view === "all" && items.data?.length === 0;
-  const browsing = !tag && !q && view === "all";
+  const isEmptyLibrary = !selected.length && !q && view === "all" && items.data?.length === 0;
+  const browsing = !selected.length && !q && view === "all";
   const count = items.data?.length ?? 0;
 
   return (
@@ -58,8 +65,8 @@ function Library() {
           <p className="mt-1 text-sm text-muted-foreground">
             {items.data
               ? q
-                ? `${count} ${count === 1 ? "result" : "results"} for “${q}”${tag ? ` in #${tag}` : ""}`
-                : `${count} ${view === "starred" ? "starred " : view === "archived" ? "archived " : ""}${count === 1 ? "item" : "items"}${tag ? ` tagged #${tag}` : ""}`
+                ? `${count} ${count === 1 ? "result" : "results"} for “${q}”${tagged ? ` in ${tagged}` : ""}`
+                : `${count} ${view === "starred" ? "starred " : view === "archived" ? "archived " : ""}${count === 1 ? "item" : "items"}${tagged ? ` tagged ${tagged}` : ""}`
               : " "}
           </p>
         </div>
@@ -76,13 +83,7 @@ function Library() {
 
       {!isEmptyLibrary && !q && <ViewSwitch view={view} />}
 
-      {tags.data && tags.data.length > 0 && (
-        <nav aria-label="Filter by tag" className="flex flex-wrap gap-1.5">
-          {tags.data.map((t) => (
-            <TagLink key={t.id} tag={t} count={t.item_count} active={tag === t.name} />
-          ))}
-        </nav>
-      )}
+      {tags.data && tags.data.length > 0 && !isEmptyLibrary && <TagFilter tags={tags.data} filter={filter} />}
 
       {items.isPending ? (
         <ListSkeleton />
@@ -102,7 +103,7 @@ function Library() {
           </p>
         ) : q ? (
           <div className="rounded-xl border border-dashed p-6 text-center">
-            <p className="font-medium">No documents match “{q}”{tag ? ` in #${tag}` : ""}</p>
+            <p className="font-medium">No documents match “{q}”{tagged ? ` in ${tagged}` : ""}</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Search looks for each word in titles, tags, summaries, your notes and the full text. Ask can also find things
               phrased differently.
@@ -113,20 +114,96 @@ function Library() {
           </div>
         ) : (
           <p className="text-muted-foreground">
-            Nothing tagged #{tag}.{" "}
-            <Link href="/" className="text-brand underline-offset-4 hover:underline">
-              Show everything
+            Nothing is tagged {tagged}.{" "}
+            {selected.length > 1 && match === "all" && (
+              <>
+                <Link href={filter.hrefWith(selected, "any")} className="text-brand underline-offset-4 hover:underline">
+                  Show items with any of them
+                </Link>{" "}
+                or{" "}
+              </>
+            )}
+            <Link href={filter.hrefWith([])} className="text-brand underline-offset-4 hover:underline">
+              {selected.length > 1 && match === "all" ? "clear the tags" : "Clear the tags"}
             </Link>
+            .
           </p>
         )
       ) : (
         <ul className="divide-y rounded-xl border bg-card">
           {items.data.map((item) => (
-            <ItemRow key={item.id} item={item} activeTag={tag} />
+            <ItemRow key={item.id} item={item} filter={filter} />
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+/** Tags to filter by. Clicking several narrows the list to items with all of them, or with
+ * any of them; the choice is kept in the URL. */
+function TagFilter({ tags, filter }: { tags: TagWithCount[]; filter: TagFilterState }) {
+  const { selected, match } = filter;
+  const openManager = useTagManager();
+  const [expanded, setExpanded] = useState(false);
+  const limit = 12;
+  const collapsible = tags.length > limit + 2;
+  const shown = expanded || !collapsible ? tags : tags.filter((t, i) => i < limit || selected.includes(t.name));
+  const hidden = tags.length - shown.length;
+
+  return (
+    <section aria-label="Filter by tags" className="space-y-2.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {shown.map((t) => (
+          <TagLink key={t.id} tag={t} count={t.item_count} active={selected.includes(t.name)} href={filter.toggleHref(t.name)} />
+        ))}
+        {collapsible && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            className="rounded-full px-2 py-0.5 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
+          >
+            {expanded ? "Show fewer" : `+${hidden} more`}
+          </button>
+        )}
+        <Button size="xs" variant="ghost" onClick={openManager} className="text-muted-foreground">
+          <Settings2 /> Manage tags
+        </Button>
+      </div>
+      {selected.length > 0 && (
+        <div className="flex animate-enter flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
+          {selected.length > 1 ? (
+            <div role="group" aria-label="Show items with" className="inline-flex items-center gap-2">
+              <span>Items with</span>
+              <span className="inline-flex rounded-md bg-muted p-0.5">
+                {(["all", "any"] as const).map((m) => (
+                  <Link
+                    key={m}
+                    href={filter.hrefWith(selected, m)}
+                    aria-pressed={match === m}
+                    replace
+                    scroll={false}
+                    className={cn(
+                      "rounded px-2 py-0.5 transition-[color,background-color,box-shadow] duration-150",
+                      match === m ? "bg-background font-medium text-foreground shadow-xs" : "hover:text-foreground",
+                    )}
+                  >
+                    {m === "all" ? "all" : "any"}
+                  </Link>
+                ))}
+              </span>
+              <span>of these tags</span>
+            </div>
+          ) : (
+            <span>Pick another tag to combine them.</span>
+          )}
+          <Link href={filter.hrefWith([])} className="inline-flex items-center gap-1 text-brand underline-offset-4 hover:underline">
+            <X className="size-3" aria-hidden /> Clear
+          </Link>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -245,7 +322,7 @@ function Resurface() {
   );
 }
 
-function ItemRow({ item, activeTag }: { item: Item; activeTag?: string }) {
+function ItemRow({ item, filter }: { item: Item; filter: TagFilterState }) {
   return (
     <li className="group relative px-4 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-muted/40 sm:px-5">
       <div className="flex items-start gap-3">
@@ -269,12 +346,26 @@ function ItemRow({ item, activeTag }: { item: Item; activeTag?: string }) {
             item.summary && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{item.summary}</p>
           )}
           {item.status === "failed" && item.error && <p className="mt-2 line-clamp-2 text-sm text-destructive">{item.error}</p>}
-          {item.tags.length > 0 && (
-            // Above the row's full-size link, so the tags stay clickable.
-            <div className="relative z-10 mt-2.5 flex flex-wrap gap-1">
+          {!isBusy(item.status) && (
+            // Above the row's full-size link, so the tags stay clickable. Clicking a tag adds
+            // it to the filter (or takes it out).
+            <div className="relative z-10 mt-2.5 flex flex-wrap items-center gap-1">
               {item.tags.map((t) => (
-                <TagLink key={t.id} tag={t} active={activeTag === t.name} />
+                <TagLink key={t.id} tag={t} active={filter.selected.includes(t.name)} href={filter.toggleHref(t.name)} />
               ))}
+              <TagPicker
+                item={item}
+                trigger={
+                  <button
+                    type="button"
+                    aria-label={`Edit tags of ${item.title}`}
+                    className="inline-flex h-[22px] items-center gap-1 rounded-full border border-dashed px-2 text-xs text-muted-foreground opacity-0 transition-[opacity,color,border-color] duration-150 group-hover:opacity-100 hover:border-brand/60 hover:text-foreground focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100"
+                  >
+                    <Plus className="size-3" aria-hidden />
+                    {item.tags.length ? "" : "Tag"}
+                  </button>
+                }
+              />
             </div>
           )}
         </div>

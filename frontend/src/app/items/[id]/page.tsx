@@ -1,10 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlignLeft, Archive, ArrowLeft, BookOpen, ExternalLink, Layers, Loader2, MessageSquareText, MoreHorizontal, Pencil, Plus, Quote, RotateCw, Trash2, X } from "lucide-react";
+import { AlignLeft, Archive, ArrowLeft, BookOpen, ExternalLink, Layers, Loader2, MessageSquareText, MoreHorizontal, Pencil, Plus, Quote, RotateCw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { HighlightReader } from "@/components/HighlightReader";
 import { type Mark, joinPages } from "@/components/Reader";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StarButton } from "@/components/StarButton";
+import { TagChip, TagPicker, useSetItemTags } from "@/components/tags/TagPicker";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -363,79 +364,24 @@ function NoDetails({
 
 /** The item's tags: click a tag to filter the library, × to remove it, or type to add one. */
 function TagEditor({ item }: { item: Item }) {
-  const queryClient = useQueryClient();
-  const allTags = useQuery({ queryKey: ["tags"], queryFn: api.tags });
-  const [draft, setDraft] = useState("");
-  const listId = useId();
-  const save = useMutation({
-    mutationFn: (names: string[]) => api.setTags(item.id, names),
-    onMutate: (names) => {
-      const previous = queryClient.getQueryData<Item>(["item", item.id]);
-      queryClient.setQueryData<Item>(["item", item.id], (old) => old && { ...old, tags: names.map((name, id) => ({ id: -id - 1, name })) });
-      return { previous };
-    },
-    onError: (err, _names, context) => {
-      queryClient.setQueryData(["item", item.id], context?.previous);
-      toast.error(err.message);
-    },
-    onSuccess: (updated) => queryClient.setQueryData(["item", item.id], updated),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
-    },
-  });
+  const save = useSetItemTags(item);
   const names = item.tags.map((t) => t.name);
-
-  function add() {
-    const name = draft.trim().toLowerCase().replace(/\s+/g, " ");
-    setDraft("");
-    if (!name || names.includes(name)) return;
-    if (names.length >= 12) {
-      toast.error("An item can have up to 12 tags.");
-      return;
-    }
-    save.mutate([...names, name]);
-  }
-
   return (
     <div className="flex flex-wrap items-center gap-1.5 pt-2" aria-label="Tags">
       {item.tags.map((t) => (
-        <span key={t.name} className="inline-flex animate-pop items-center rounded-full border bg-background text-xs text-muted-foreground">
-          <Link href={`/?tag=${encodeURIComponent(t.name)}`} className="py-0.5 pr-1 pl-2.5 hover:text-foreground">
-            #{t.name}
-          </Link>
-          <button
-            onClick={() => save.mutate(names.filter((n) => n !== t.name))}
-            aria-label={`Remove tag ${t.name}`}
-            className="mr-0.5 grid size-5 place-items-center rounded-full hover:bg-muted hover:text-foreground"
-          >
-            <X className="size-3" />
-          </button>
-        </span>
+        <TagChip key={t.name} tag={t} href={`/?tags=${encodeURIComponent(t.name)}`} onRemove={() => save.mutate(names.filter((n) => n !== t.name))} />
       ))}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          add();
-        }}
-      >
-        <label htmlFor={`${listId}-input`} className="sr-only">
-          Add a tag
-        </label>
-        <input
-          id={`${listId}-input`}
-          list={listId}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => draft.trim() && add()}
-          placeholder="+ Add tag"
-          maxLength={40}
-          className="h-6 w-28 rounded-full border border-dashed bg-transparent px-2.5 text-xs outline-none placeholder:text-muted-foreground focus:w-40 focus:border-brand/60 focus:border-solid motion-safe:transition-[width,border-color] motion-safe:duration-200"
-        />
-        <datalist id={listId}>
-          {allTags.data?.filter((t) => !names.includes(t.name)).map((t) => <option key={t.id} value={t.name} />)}
-        </datalist>
-      </form>
+      <TagPicker
+        item={item}
+        trigger={
+          <button
+            type="button"
+            className="inline-flex h-6 items-center gap-1 rounded-full border border-dashed px-2.5 text-xs text-muted-foreground transition-[color,border-color] duration-150 hover:border-brand/60 hover:text-foreground data-popup-open:border-brand/60 data-popup-open:text-foreground"
+          >
+            <Plus className="size-3" /> {item.tags.length ? "Tag" : "Add tags"}
+          </button>
+        }
+      />
     </div>
   );
 }

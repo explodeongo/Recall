@@ -230,7 +230,7 @@ function Welcome({ scoped, onPick }: { scoped: boolean; onPick: (q: string) => v
         <div className="space-y-2">
           <h2 className="text-sm text-muted-foreground">Try one of these, or ask your own:</h2>
           <div className="flex flex-wrap gap-2">
-            {tags.data.slice(0, 4).map((t) => {
+            {tags.data.filter((t) => t.item_count > 0).slice(0, 4).map((t) => {
               const q = `What have I saved about ${t.name}?`;
               return (
                 <button

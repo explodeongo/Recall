@@ -161,6 +161,11 @@ class Tag(Base):
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     name: Mapped[str] = mapped_column(String(64))
+    # "#rrggbb". Null means "pick one from the name" (services/tags.py), so every tag has one.
+    color: Mapped[str | None] = mapped_column(String(7))
+    # Made in the tag manager: kept even when no item uses it. Tags the model or the item
+    # editor create disappear when their last item goes.
+    user_made: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     items: Mapped[list[Item]] = relationship(secondary=item_tags, back_populates="tags")
 

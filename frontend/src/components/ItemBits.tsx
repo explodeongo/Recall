@@ -1,6 +1,7 @@
 import { AlertCircle, CheckCircle2, FileText, FileType, Globe, Loader2, NotebookPen, Play } from "lucide-react";
 import Link from "next/link";
 import type { Item, ItemStatus, SourceType, Tag } from "@/lib/api";
+import { inkFor } from "@/lib/color";
 import { cn } from "@/lib/utils";
 
 const statusMeta: Record<ItemStatus, { label: string; className: string; icon: React.ElementType; spin?: boolean }> = {
@@ -50,17 +51,30 @@ export function sourceLabel(item: Pick<Item, "source_type" | "source">) {
   }
 }
 
-export function TagLink({ tag, active, count }: { tag: Pick<Tag, "name">; active?: boolean; count?: number }) {
+/** The CSS variables a `tag-chip` reads its colors from. */
+export function tagStyle(color: string): React.CSSProperties {
+  return { "--tag": color, "--tag-ink": inkFor(color) } as React.CSSProperties;
+}
+
+/** A tag in its color. `href` defaults to the Library filtered to just this tag. */
+export function TagLink({
+  tag,
+  active,
+  count,
+  href,
+}: {
+  tag: Pick<Tag, "name" | "color">;
+  active?: boolean;
+  count?: number;
+  href?: string;
+}) {
   return (
     <Link
-      href={active ? "/" : `/?tag=${encodeURIComponent(tag.name)}`}
+      href={href ?? `/?tags=${encodeURIComponent(tag.name)}`}
       aria-pressed={active}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-[color,background-color,border-color,transform] duration-150 ease-(--ease-out) active:scale-[0.97]",
-        active
-          ? "border-brand bg-brand text-brand-foreground"
-          : "border-border bg-background text-muted-foreground hover:border-brand/50 hover:text-foreground",
-      )}
+      data-active={active || undefined}
+      style={tagStyle(tag.color)}
+      className="tag-chip inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-[color,background-color,border-color,transform] duration-150 ease-(--ease-out) active:scale-[0.97]"
     >
       #{tag.name}
       {count !== undefined && <span className={cn("tabular-nums", active ? "opacity-80" : "opacity-60")}>{count}</span>}

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 import { SearchPalette } from "@/components/SearchPalette";
+import { TagManagerProvider } from "@/components/tags/TagManager";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -18,8 +19,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={client}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <TooltipProvider delay={150}>
-          {children}
-          <SearchPalette />
+          <TagManagerProvider>
+            {children}
+            <SearchPalette />
+          </TagManagerProvider>
           <Toaster position="bottom-right" />
         </TooltipProvider>
       </ThemeProvider>
