@@ -34,8 +34,11 @@ or findings, written so someone who hasn't read it understands it
 - key_points: 5 to 8 of the most important facts, ideas or conclusions, one sentence each
 - sections: the document's main parts in order, 3 to 8 of them, each with a short heading and \
 2 to 4 sentences on what that part says. Follow the document's own structure where it has one.
-- tags: {min_tags} to {max_tags} lowercase topic tags, one to three words each. Prefer reusing \
-these existing tags when they fit: {existing}
+- tags: {min_tags} to {max_tags} lowercase topic tags, one to three words each, describing what \
+this document is about. The library already uses these tags: {existing}. Reuse one only if it \
+truly describes this document's subject (for spelling consistency); otherwise make new ones. \
+Never add a tag just because it exists, and never add personal labels like "to read" or \
+"exam prep".
 
 Aim for about one page in total. Write plain text with no markdown.{gap_note}
 

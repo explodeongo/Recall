@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.deps import CurrentUser, LLMDep, SessionDep
-from app.models import Card, Item, ItemStatus, Review
+from app.models import Card, Chunk, Item, ItemStatus, Review
 from app.pipeline import KINDS
 from app.schemas import CardEdit, CardOut, DueCard, GradeIn, ReviewStats
 from app.services import quota
@@ -22,15 +22,18 @@ def generate_cards(
     item_id: int, request: Request, session: SessionDep, user: CurrentUser, llm: LLMDep
 ) -> list[Card]:
     """Make flashcards from an item ("quiz me"). Asking again adds new ones, not repeats."""
-    limit(request, "cards", per_minute=6, key=f"user:{user.id}")
-    quota.check(session, user.id, "quizzes", get_settings().daily_quizzes)
     item = session.get(Item, item_id)
     if item is None or item.user_id != user.id:
         raise HTTPException(404, "Item not found")
-    if item.status != ItemStatus.ready or not item.content:
-        raise HTTPException(409, "This item isn't ready yet, or its text isn't stored.")
+    if item.status != ItemStatus.ready:
+        raise HTTPException(409, "Recall is still reading this item. Try again in a moment.")
+    text = _item_text(session, item)
+    if not text:
+        raise HTTPException(409, "This item has no text to make questions from.")
+    # Limits count real attempts only, so a refused request doesn't block the next one.
+    limit(request, "cards", per_minute=6, key=f"user:{user.id}")
+    quota.check(session, user.id, "quizzes", get_settings().daily_quizzes)
     existing = list(session.scalars(select(Card.question).where(Card.item_id == item.id)))
-    text = "\n\n".join(p["text"] for p in item.content)
     try:
         made = make_cards(
             llm, text, kind=KINDS.get(item.source_type, "document"), existing=existing
@@ -146,6 +149,19 @@ def review_stats(session: SessionDep, user: CurrentUser, tz_offset: int = 0) -> 
         streak_days=streak,
         next_due_at=next_due,
     )
+
+
+def _item_text(session, item: Item) -> str:
+    """The item's full text; for items saved before it was stored, their passages in order
+    (overlapping a little, which is harmless here)."""
+    if item.content:
+        return "\n\n".join(p["text"] for p in item.content)
+    chunks = session.scalars(
+        select(Chunk.chunk_text)
+        .where(Chunk.item_id == item.id, Chunk.kind == "text")
+        .order_by(Chunk.chunk_index)
+    )
+    return "\n\n".join(chunks)
 
 
 def _schedule(card: Card) -> Schedule:

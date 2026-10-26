@@ -124,3 +124,30 @@ def test_unready_items_cant_be_quizzed(client, session, user):
     session.add(item)
     session.commit()
     assert client.post(f"/items/{item.id}/cards").status_code == 409
+
+
+def test_items_saved_before_full_text_can_still_be_quizzed(client, session, user):
+    from app.models import Chunk
+
+    item = Item(
+        user_id=user.id,
+        title="Old",
+        source_type=SourceType.url,
+        source="https://o",
+        status=ItemStatus.ready,
+    )
+    session.add(item)
+    session.flush()
+    session.add(Chunk(item_id=item.id, chunk_index=0, chunk_text=TEXT))
+    session.commit()
+    assert client.post(f"/items/{item.id}/cards").status_code == 201
+
+
+def test_refused_requests_dont_use_up_the_rate_limit(client, session, user):
+    busy = Item(user_id=user.id, title="Busy", source_type=SourceType.url, source="https://b")
+    session.add(busy)
+    session.commit()
+    for _ in range(8):
+        assert client.post(f"/items/{busy.id}/cards").status_code == 409
+    ready = _ready_item(session, user)
+    assert client.post(f"/items/{ready.id}/cards").status_code == 201

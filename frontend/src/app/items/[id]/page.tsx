@@ -614,6 +614,16 @@ function ItemMenu({ item, onRename }: { item: Item; onRename: () => void }) {
     },
     onError: (err) => toast.error(err.message),
   });
+  const reread = useMutation({
+    mutationFn: () => api.reprocess(item.id),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["item", item.id], updated);
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.removeQueries({ queryKey: ["content", item.id] });
+      toast.success("Reading it again. The summary and tags will update in a few seconds.");
+    },
+    onError: (err) => toast.error(err.message),
+  });
   const remove = useMutation({
     mutationFn: () => api.remove(item.id),
     onSuccess: () => {
@@ -633,6 +643,9 @@ function ItemMenu({ item, onRename }: { item: Item; onRename: () => void }) {
         <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuItem onClick={onRename}>
             <Pencil /> Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => reread.mutate()} disabled={item.status === "queued" || item.status === "processing"}>
+            <RotateCw /> Read again
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => archive.mutate(!item.archived)}>
             <Archive /> {item.archived ? "Unarchive" : "Archive"}
