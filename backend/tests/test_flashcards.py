@@ -151,3 +151,56 @@ def test_refused_requests_dont_use_up_the_rate_limit(client, session, user):
         assert client.post(f"/items/{busy.id}/cards").status_code == 409
     ready = _ready_item(session, user)
     assert client.post(f"/items/{ready.id}/cards").status_code == 201
+
+
+def test_choice_questions_are_checked_and_kept(client, session, user, fake_llm):
+    item = _ready_item(session, user)
+    fake_llm.cards = [
+        {
+            "type": "multiple_choice",
+            "question": "What do hash indexes make fast?",
+            "answer": "exact-match lookups",
+            "options": ["Range scans", "Exact-match lookups", "Sorting", "Joins"],
+            "explanation": "Hashing jumps straight to one key.",
+            "quote": "exact-match lookups are very fast",
+        },
+        {
+            "type": "true_false",
+            "question": "True or false: A B-tree keeps its keys sorted.",
+            "answer": "true.",
+            "quote": "A B-tree keeps keys sorted",
+        },
+        # The answer isn't among the options: dropped rather than kept broken.
+        {
+            "type": "multiple_choice",
+            "question": "Which is fastest?",
+            "answer": "Teleporting",
+            "options": ["Walking", "Running", "Cycling"],
+            "quote": "",
+        },
+    ]
+    cards = client.post(f"/items/{item.id}/cards").json()
+    assert [c["kind"] for c in cards] == ["multiple_choice", "true_false"]
+    choice, verdict = cards
+    assert choice["answer"] == "Exact-match lookups"
+    assert sorted(choice["options"]) == ["Exact-match lookups", "Joins", "Range scans", "Sorting"]
+    assert choice["explanation"] == "Hashing jumps straight to one key."
+    assert verdict["answer"] == "True" and verdict["options"] == ["True", "False"]
+    assert verdict["question"] == "A B-tree keeps its keys sorted."
+    assert choice["stage"] == "new"
+
+    # Editing keeps a choice answer one of the options.
+    bad = client.patch(f"/cards/{choice['id']}", json={"answer": "Something else"})
+    assert bad.status_code == 422
+    good = client.patch(f"/cards/{choice['id']}", json={"answer": "joins"})
+    assert good.json()["answer"] == "Joins"
+
+    # Stages follow the run of correct answers.
+    assert (
+        client.post(f"/cards/{verdict['id']}/review", json={"grade": "good"}).json()["stage"]
+        == "practiced"
+    )
+    assert (
+        client.post(f"/cards/{verdict['id']}/review", json={"grade": "again"}).json()["stage"]
+        == "learning"
+    )

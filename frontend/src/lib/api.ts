@@ -139,17 +139,27 @@ export interface SearchResults {
 
 export type Grade = "again" | "hard" | "good" | "easy";
 
+export type CardKind = "flashcard" | "multiple_choice" | "true_false";
+export type CardStage = "new" | "learning" | "practiced" | "confident" | "mastered";
+
 export interface Card {
   id: number;
   item_id: number;
+  /** Flashcards are recalled and self-graded; the other kinds are answered by picking an option. */
+  kind: CardKind;
   question: string;
+  /** For choice questions, the right option word for word. */
   answer: string;
+  options: string[] | null;
+  explanation: string | null;
   start_char: number | null;
   end_char: number | null;
   due_at: string;
   interval_days: number;
   reps: number;
   lapses: number;
+  last_reviewed_at: string | null;
+  stage: CardStage;
 }
 
 export interface DueCard extends Card {

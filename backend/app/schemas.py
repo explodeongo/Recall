@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, computed_field, model_validator
 
 from app.models import ItemStatus, SourceType
 from app.services.review import Grade
@@ -286,14 +286,26 @@ class CardOut(BaseModel):
 
     id: int
     item_id: int
+    kind: str
     question: str
     answer: str
+    options: list[str] | None
+    explanation: str | None
     start_char: int | None
     end_char: int | None
     due_at: datetime
     interval_days: float
     reps: int
     lapses: int
+    last_reviewed_at: datetime | None
+
+    @computed_field
+    @property
+    def stage(self) -> str:
+        """new, learning, practiced, confident or mastered."""
+        from app.services.review import stage
+
+        return stage(self.reps, self.last_reviewed_at is not None)
 
 
 class DueCard(CardOut):

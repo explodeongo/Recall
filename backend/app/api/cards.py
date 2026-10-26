@@ -46,8 +46,11 @@ def generate_cards(
         Card(
             user_id=user.id,
             item_id=item.id,
+            kind=c.kind,
             question=c.question,
             answer=c.answer,
+            options=c.options,
+            explanation=c.explanation,
             start_char=c.start_char,
             end_char=c.end_char,
         )
@@ -73,7 +76,14 @@ def edit_card(card_id: int, body: CardEdit, session: SessionDep, user: CurrentUs
     if body.question is not None:
         card.question = body.question.strip()
     if body.answer is not None:
-        card.answer = body.answer.strip()
+        answer = body.answer.strip()
+        if card.options:
+            # A choice question's answer has to stay one of its options.
+            match = [o for o in card.options if o.lower() == answer.lower().rstrip(".")]
+            if not match:
+                raise HTTPException(422, "The answer has to be one of the options.")
+            answer = match[0]
+        card.answer = answer
     session.commit()
     return card
 

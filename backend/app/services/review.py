@@ -6,6 +6,8 @@ sends the card back to the start. Cards come back just before they'd likely be f
 """
 
 import json
+import random
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
@@ -16,6 +18,21 @@ from app.services.llm import LLMClient, LLMError
 
 MIN_EASE = 1.3
 RELEARN = timedelta(minutes=10)
+
+
+class CardKind(StrEnum):
+    flashcard = "flashcard"
+    multiple_choice = "multiple_choice"
+    true_false = "true_false"
+
+
+def stage(reps: int, reviewed: bool) -> str:
+    """Where a card is in learning, from its run of correct answers (a miss resets it)."""
+    if not reviewed:
+        return "new"
+    if reps == 0:
+        return "learning"
+    return "practiced" if reps <= 2 else "confident" if reps <= 4 else "mastered"
 
 
 class Grade(StrEnum):
@@ -75,10 +92,17 @@ SYSTEM = (
     "guess anyone's pronouns."
 )
 
-PROMPT = """Write {count} flashcards that test the most important ideas in this {kind}.
+PROMPT = """Write {count} quiz questions that test the most important ideas in this {kind}. \
+Mix the types: about half "flashcard", a third "multiple_choice", the rest "true_false".
 
-- question: one clear question that has a single, specific answer
-- answer: the answer in one or two sentences
+- type: "flashcard", "multiple_choice" or "true_false"
+- question: for flashcard and multiple_choice, one clear question with a single, specific \
+answer; for true_false, a statement that is clearly true or clearly false according to the text
+- answer: flashcard: the answer in one or two sentences; multiple_choice: the correct option, \
+copied exactly; true_false: "True" or "False"
+- options: multiple_choice only: 4 short options, one correct and three plausible but wrong \
+(wrong by the text, not by trickery); empty for the other types
+- explanation: one or two sentences on why the answer is right
 - quote: a short exact quote (5 to 25 words) copied word for word from the text, where the \
 answer comes from
 
@@ -97,11 +121,17 @@ SCHEMA = {
             "items": {
                 "type": "OBJECT",
                 "properties": {
+                    "type": {
+                        "type": "STRING",
+                        "enum": ["flashcard", "multiple_choice", "true_false"],
+                    },
                     "question": {"type": "STRING"},
                     "answer": {"type": "STRING"},
+                    "options": {"type": "ARRAY", "items": {"type": "STRING"}},
+                    "explanation": {"type": "STRING"},
                     "quote": {"type": "STRING"},
                 },
-                "required": ["question", "answer", "quote"],
+                "required": ["type", "question", "answer", "explanation", "quote"],
             },
         }
     },
@@ -115,6 +145,26 @@ class NewCard:
     answer: str
     start_char: int | None
     end_char: int | None
+    kind: CardKind = CardKind.flashcard
+    options: list[str] | None = None
+    explanation: str | None = None
+
+
+def checked_choice(kind: str, answer: str, options: list) -> tuple[CardKind, str, list[str] | None]:
+    """The card's type, answer and options, made consistent; flashcard if they can't be.
+    A multiple-choice answer must be one of 3 to 6 distinct options; true/false answers are
+    "True" or "False"."""
+    if kind == CardKind.true_false:
+        verdict = answer.strip().rstrip(".").lower()
+        if verdict in ("true", "false"):
+            return CardKind.true_false, verdict.capitalize(), ["True", "False"]
+    if kind == CardKind.multiple_choice:
+        cleaned = list(dict.fromkeys(str(o).strip() for o in options if str(o).strip()))
+        right = [o for o in cleaned if o.lower() == answer.strip().lower()]
+        if right and 3 <= len(cleaned) <= 6:
+            random.shuffle(cleaned)  # models tend to put the right answer first
+            return CardKind.multiple_choice, right[0], cleaned
+    return CardKind.flashcard, answer, None
 
 
 def make_cards(
@@ -145,9 +195,17 @@ def make_cards(
         if not question or not answer or question.lower() in seen:
             continue
         seen.add(question.lower())
+        if card.get("type") == CardKind.true_false:
+            question = re.sub(r"^(true or false|t/f)\s*[:?\-–]\s*", "", question, flags=re.I)
+        kind, answer, options = checked_choice(
+            str(card.get("type", "flashcard")), answer, card.get("options") or []
+        )
+        if kind == CardKind.flashcard and card.get("type") not in (None, "flashcard"):
+            continue  # a broken choice question; its "answer" won't read as a flashcard
         start = locate_quote(full_text, str(card.get("quote", "")))
         end = None if start is None else start + len(str(card["quote"]).strip())
-        made.append(NewCard(question, answer, start, end))
+        explanation = str(card.get("explanation") or "").strip() or None
+        made.append(NewCard(question, answer, start, end, kind, options, explanation))
     return made
 
 

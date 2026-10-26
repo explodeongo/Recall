@@ -62,7 +62,7 @@ class FakeLLM:
         self.prompts.append(prompt)
         if self.error:
             raise self.error
-        if "flashcards" in prompt and json_schema:
+        if "quiz questions" in prompt and json_schema:
             return json.dumps({"cards": self.cards})
         if "Follow-up question:" in prompt:
             return self.rewrite or prompt.split("Follow-up question: ", 1)[1].split("\n", 1)[0]

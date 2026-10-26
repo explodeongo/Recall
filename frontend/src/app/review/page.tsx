@@ -1,14 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Flame, Layers } from "lucide-react";
+import { BookOpen, Check, Flame, Layers, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api, type DueCard, type Grade } from "@/lib/api";
+import { api, type CardStage, type DueCard, type Grade } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const GRADES: { grade: Grade; label: string; key: string; tone: string }[] = [
@@ -17,6 +17,14 @@ const GRADES: { grade: Grade; label: string; key: string; tone: string }[] = [
   { grade: "good", label: "Good", key: "3", tone: "hover:border-emerald-400/60 hover:bg-emerald-500/5" },
   { grade: "easy", label: "Easy", key: "4", tone: "hover:border-sky-400/60 hover:bg-sky-500/5" },
 ];
+
+const STAGES: Record<CardStage, { label: string; className: string }> = {
+  new: { label: "New", className: "bg-brand-soft text-brand" },
+  learning: { label: "Learning", className: "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200" },
+  practiced: { label: "Practiced", className: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
+  confident: { label: "Confident", className: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200" },
+  mastered: { label: "Mastered", className: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200" },
+};
 
 export default function ReviewPage() {
   return (
@@ -76,8 +84,12 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
   const queryClient = useQueryClient();
   const [queue, setQueue] = useState(cards);
   const [revealed, setRevealed] = useState(false);
+  // For choice questions: the option picked. Picking reveals the answer.
+  const [picked, setPicked] = useState<string | null>(null);
   const [done, setDone] = useState(0);
   const card = queue[0];
+  const choice = !!card?.options?.length && card.kind !== "flashcard";
+  const correct = picked !== null && picked === card?.answer;
 
   const review = useMutation({
     mutationFn: ({ id, grade }: { id: number; grade: Grade }) => api.reviewCard(id, grade),
@@ -90,6 +102,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
       if (!card || !revealed) return;
       review.mutate({ id: card.id, grade: g });
       setRevealed(false);
+      setPicked(null);
       setDone((n) => n + 1);
       // A missed card comes back at the end of this session, as in Anki's learning steps.
       setQueue(([first, ...rest]) => (g === "again" ? [...rest, first] : rest));
@@ -97,9 +110,29 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
     [card, revealed, review],
   );
 
+  // A choice question grades itself: right is "good", wrong comes back soon.
+  const pick = useCallback(
+    (option: string) => {
+      if (!card || revealed) return;
+      setPicked(option);
+      setRevealed(true);
+    },
+    [card, revealed],
+  );
+  const next = useCallback(() => grade(correct ? "good" : "again"), [grade, correct]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === "TEXTAREA" || (e.target as HTMLElement).tagName === "INPUT") return;
+      if (choice && card) {
+        const n = Number(e.key);
+        if (!revealed && n >= 1 && n <= card.options!.length) pick(card.options![n - 1]);
+        if (revealed && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          next();
+        }
+        return;
+      }
       if (e.key === " " && !revealed && card) {
         e.preventDefault();
         setRevealed(true);
@@ -109,7 +142,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [revealed, card, grade]);
+  }, [revealed, card, grade, choice, pick, next]);
 
   if (!card) {
     return <AllDone reviewed={done} hasCards={(totalCards ?? cards.length) > 0} nextDue={nextDue} />;
@@ -133,10 +166,48 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
       </div>
 
       <div key={`${card.id}-${done}`} className="animate-enter rounded-2xl border bg-card p-8 shadow-xs">
+        <div className="mb-4 flex items-center gap-2 text-xs">
+          <span className={cn("rounded-full px-2 py-0.5 font-medium", STAGES[card.stage].className)}>{STAGES[card.stage].label}</span>
+          <span className="text-muted-foreground">{card.kind === "true_false" ? "True or false?" : card.kind === "multiple_choice" ? "Pick one" : "Recall it"}</span>
+        </div>
         <p className="font-heading text-2xl leading-snug text-balance">{card.question}</p>
+        {choice && (
+          <div className={cn("mt-6 grid gap-2", card.kind === "true_false" && "grid-cols-2")} role="group" aria-label="Answers">
+            {card.options!.map((option, i) => {
+              const isAnswer = option === card.answer;
+              const isPicked = option === picked;
+              return (
+                <button
+                  key={option}
+                  onClick={() => pick(option)}
+                  disabled={revealed}
+                  aria-pressed={isPicked}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-[15px] transition-[background-color,border-color,opacity,transform] duration-150 ease-(--ease-out) enabled:hover:border-brand/50 enabled:hover:bg-muted/50 enabled:active:scale-[0.99]",
+                    revealed && isAnswer && "border-emerald-500/70 bg-emerald-500/10",
+                    revealed && isPicked && !isAnswer && "border-red-500/70 bg-red-500/10",
+                    revealed && !isAnswer && !isPicked && "opacity-50",
+                  )}
+                >
+                  <kbd className="grid size-6 shrink-0 place-items-center rounded-md border bg-muted font-sans text-xs text-muted-foreground">{i + 1}</kbd>
+                  <span className="flex-1">{option}</span>
+                  {revealed && isAnswer && <Check className="size-4 animate-pop text-emerald-600 dark:text-emerald-400" aria-label="Right answer" />}
+                  {revealed && isPicked && !isAnswer && <X className="size-4 animate-pop text-red-600 dark:text-red-400" aria-label="Your answer" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
         {revealed ? (
           <div className="mt-6 animate-enter border-t pt-6">
-            <p className="text-[17px] leading-relaxed">{card.answer}</p>
+            {choice ? (
+              <p className={cn("font-medium", correct ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400")} role="status">
+                {correct ? "Right." : `Not quite. The answer is “${card.answer}”.`}
+              </p>
+            ) : (
+              <p className="text-[17px] leading-relaxed">{card.answer}</p>
+            )}
+            {card.explanation && <p className="mt-2 leading-relaxed text-muted-foreground">{card.explanation}</p>}
             {card.start_char !== null && card.end_char !== null && (
               <Link
                 href={`/items/${card.item_id}?from=${card.start_char}&to=${card.end_char}`}
@@ -146,14 +217,21 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
               </Link>
             )}
           </div>
-        ) : (
+        ) : choice ? null : (
           <Button className="mt-8 w-full" size="lg" variant="outline" onClick={() => setRevealed(true)}>
             Show answer <kbd className="ml-2 rounded border bg-muted px-1.5 font-sans text-[11px] text-muted-foreground">Space</kbd>
           </Button>
         )}
       </div>
 
-      {revealed && (
+      {revealed && choice && (
+        <Button className="w-full animate-enter" size="lg" onClick={next} autoFocus>
+          Next <span className="ml-1 text-xs opacity-70">· back in {card.next[correct ? "good" : "again"]}</span>
+          <kbd className="ml-2 rounded border border-current/20 px-1.5 font-sans text-[11px] opacity-70">Enter</kbd>
+        </Button>
+      )}
+
+      {revealed && !choice && (
         <div className="grid animate-enter grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="How well did you remember it?">
           {GRADES.map(({ grade: g, label, key, tone }) => (
             <button

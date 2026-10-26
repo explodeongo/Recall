@@ -255,8 +255,14 @@ class Card(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"), index=True)
+    # "flashcard" (recall the answer), "multiple_choice" or "true_false" (pick from `options`;
+    # `answer` is the right option, word for word).
+    kind: Mapped[str] = mapped_column(String(16), default="flashcard", server_default="flashcard")
     question: Mapped[str] = mapped_column(Text)
     answer: Mapped[str] = mapped_column(Text)
+    options: Mapped[list[str] | None] = mapped_column(JSONB)
+    # Why the answer is right, shown after answering.
+    explanation: Mapped[str | None] = mapped_column(Text)
     # The passage the card was made from, in the item's full text.
     start_char: Mapped[int | None] = mapped_column(Integer)
     end_char: Mapped[int | None] = mapped_column(Integer)
