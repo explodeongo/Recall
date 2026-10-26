@@ -46,6 +46,18 @@ def session():
         yield s
 
 
+@pytest.fixture(autouse=True)
+def web(monkeypatch):
+    """No test reaches the real web: searches return what the test sets, pages read as ''."""
+    from app.services import web as web_module
+    from tests.helpers import FakeSearcher
+
+    searcher = FakeSearcher()
+    monkeypatch.setattr(web_module, "get_web_searcher", lambda: searcher)
+    monkeypatch.setattr(web_module, "_read_page", lambda result: "")
+    return searcher
+
+
 @pytest.fixture
 def fake_llm():
     from tests.helpers import FakeLLM

@@ -5,6 +5,7 @@ description = "Recall API: save PDFs and articles, ask questions with cited answ
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.1",
+    "ddgs>=9.16.1",
     "fastapi>=0.162.0",
     "fastembed>=0.9.1",
     "httpx>=0.28.1",

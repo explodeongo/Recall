@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     fetch_timeout_s: float = 20.0
     max_fetch_mb: int = 15
     fetch_contact: str | None = None  # put in the User-Agent; some sites require one
+    tavily_api_key: str | None = None  # optional: reliable web search (free plan available)
     allow_private_urls: bool = False  # only for local testing; blocks SSRF in a hosted demo
 
     # Characters of a document the LLM sees when writing its summaries (sampled from start,

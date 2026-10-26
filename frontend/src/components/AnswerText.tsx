@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { passageHref, sourceName, type Source } from "@/lib/api";
+import { passageHref, siteOf, sourceName, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const CITATION = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
@@ -92,15 +92,22 @@ function Bold({ text }: { text: string }) {
 
 function Citation({ source, n }: { source: Source | undefined; n: number }) {
   if (!source) return null; // a number the model made up; the server strips these too
+  const web = source.kind === "web";
+  const chip = cn(
+    "mx-0.5 inline-grid h-[1.15rem] animate-pop min-w-[1.15rem] -translate-y-0.5 place-items-center rounded-md px-1 align-middle font-sans text-[11px] font-semibold text-brand tabular-nums no-underline transition-colors duration-150 hover:bg-brand hover:text-brand-foreground",
+    // Web sources look different from library ones: an outline instead of a fill.
+    web ? "border border-brand/40" : "bg-brand-soft",
+  );
+  const label = `Source ${n}: ${sourceName(source)}${web ? `, ${siteOf(source.source)}` : source.page ? `, page ${source.page}` : ""}`;
   return (
     <Tooltip>
       <TooltipTrigger
         render={
-          <Link
-            href={passageHref(source)}
-            className="mx-0.5 inline-grid h-[1.15rem] animate-pop min-w-[1.15rem] -translate-y-0.5 place-items-center rounded-md bg-brand-soft px-1 align-middle font-sans text-[11px] font-semibold text-brand tabular-nums no-underline transition-colors duration-150 hover:bg-brand hover:text-brand-foreground"
-            aria-label={`Source ${n}: ${sourceName(source)}${source.page ? `, page ${source.page}` : ""}`}
-          />
+          web ? (
+            <a href={source.source} target="_blank" rel="noreferrer" className={chip} aria-label={label} />
+          ) : (
+            <Link href={passageHref(source)} className={chip} aria-label={label} />
+          )
         }
       >
         {n}
@@ -108,7 +115,7 @@ function Citation({ source, n }: { source: Source | undefined; n: number }) {
       <TooltipContent className="block max-w-sm p-3 text-left">
         <span className="block font-medium">
           {sourceName(source)}
-          {source.page ? ` · p. ${source.page}` : ""}
+          {web ? ` · ${siteOf(source.source)}` : source.page ? ` · p. ${source.page}` : ""}
         </span>
         <span className="mt-1 line-clamp-5 opacity-80">{source.text}</span>
       </TooltipContent>

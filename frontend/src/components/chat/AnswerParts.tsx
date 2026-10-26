@@ -1,19 +1,23 @@
 "use client";
 
-import { ChevronDown, ExternalLink, FileQuestion, Loader2 } from "lucide-react";
+import { ChevronDown, ExternalLink, FileQuestion, Globe, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useId, useState } from "react";
 import { SourceIcon } from "@/components/ItemBits";
 import { Skeleton } from "@/components/ui/skeleton";
-import { passageHref, sourceHref, sourceName, type Source } from "@/lib/api";
+import { passageHref, siteOf, sourceHref, sourceName, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-export function Thinking({ searching }: { searching: boolean }) {
+export function Thinking({ searching, status }: { searching: boolean; status?: string | null }) {
   return (
     <div className="space-y-3">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
-        {searching ? "Searching your library…" : "Writing an answer from the best passages…"}
+      <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
+        {status?.toLowerCase().includes("web") ? (
+          <Globe className="size-4 animate-pulse text-brand motion-reduce:animate-none" aria-hidden />
+        ) : (
+          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+        )}
+        {status ?? (searching ? "Searching your library…" : "Writing an answer from the best passages…")}
       </p>
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-5/6" />
@@ -21,14 +25,17 @@ export function Thinking({ searching }: { searching: boolean }) {
   );
 }
 
-export function NotFound() {
+export function NotFound({ searchedWeb = false }: { searchedWeb?: boolean }) {
   return (
     <div className="flex gap-4 rounded-xl border bg-card p-5">
       <FileQuestion className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
       <div>
-        <p className="font-medium">Not found in your library</p>
+        <p className="font-medium">{searchedWeb ? "Not found in your library or on the web" : "Not found in your library"}</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Nothing you&apos;ve saved answers this, so Recall won&apos;t guess. Try different words, or{" "}
+          {searchedWeb
+            ? "Recall looked in your library and on the web and found nothing that answers this, so it won't guess. "
+            : "Nothing you've saved answers this, so Recall won't guess. "}
+          Try different words, or{" "}
           <Link href="/add" className="text-brand underline-offset-4 hover:underline">
             add a source
           </Link>{" "}
@@ -83,7 +90,19 @@ export function SourcesList({ sources, cited }: { sources: Source[]; cited: numb
   );
 }
 
+/** Shown above an answer that came (at least partly) from the web, so it's never mistaken for
+ *  something from the user's own library. */
+export function FromTheWeb({ partly }: { partly: boolean }) {
+  return (
+    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <Globe className="size-3.5 text-brand" aria-hidden />
+      {partly ? "Partly from your library, partly from the web" : "Not in your library. Answered from the web"}
+    </p>
+  );
+}
+
 export function SourceCard({ source, index = 0, animate = true }: { source: Source; index?: number; animate?: boolean }) {
+  if (source.kind === "web") return <WebSourceCard source={source} index={index} animate={animate} />;
   return (
     <li
       style={{ "--i": Math.min(index, 5) } as React.CSSProperties}
@@ -97,7 +116,7 @@ export function SourceCard({ source, index = 0, animate = true }: { source: Sour
         </Link>
         {source.page && <span className="shrink-0 text-muted-foreground">p. {source.page}</span>}
         <a
-          href={sourceHref(source, source.item_id, source.page, source.text) ?? passageHref(source)}
+          href={sourceHref(source, source.item_id ?? 0, source.page, source.text) ?? passageHref(source)}
           target="_blank"
           rel="noreferrer"
           className="relative z-10 ml-auto shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -105,6 +124,26 @@ export function SourceCard({ source, index = 0, animate = true }: { source: Sour
         >
           <ExternalLink className="size-3.5" />
         </a>
+      </div>
+      <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{source.text}</p>
+    </li>
+  );
+}
+
+function WebSourceCard({ source, index, animate }: { source: Source; index: number; animate: boolean }) {
+  return (
+    <li
+      style={{ "--i": Math.min(index, 5) } as React.CSSProperties}
+      className={cn("group relative rounded-xl border border-dashed bg-card p-4 transition-colors duration-150 hover:border-brand/40", animate && "animate-enter")}
+    >
+      <div className="flex items-center gap-2 text-sm">
+        <span className="grid size-5 shrink-0 place-items-center rounded-md border border-brand/30 text-xs font-semibold text-brand tabular-nums">{source.n}</span>
+        <Globe className="size-3.5 shrink-0 text-muted-foreground" aria-label="Web page" />
+        <a href={source.source} target="_blank" rel="noreferrer" className="min-w-0 truncate font-medium after:absolute after:inset-0">
+          {source.title}
+        </a>
+        <span className="ml-auto shrink-0 text-xs text-muted-foreground">{siteOf(source.source)}</span>
+        <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </div>
       <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{source.text}</p>
     </li>

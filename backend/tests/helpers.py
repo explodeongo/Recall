@@ -42,6 +42,7 @@ class FakeLLM:
         self.answer = answer
         self.error = error
         self.rewrite = rewrite  # reply to a follow-up rewrite request
+        self.replies: list[str] = []  # answers for successive streamed calls, then `answer`
         self.cards = [
             {
                 "question": "What do hash indexes make fast?",
@@ -55,6 +56,7 @@ class FakeLLM:
             },
         ]
         self.prompts: list[str] = []
+        self.systems: list[str | None] = []
 
     def generate(self, prompt, *, system=None, json_schema=None):
         self.prompts.append(prompt)
@@ -68,7 +70,23 @@ class FakeLLM:
 
     def stream(self, prompt, *, system=None):
         self.prompts.append(prompt)
+        self.systems.append(system)
         if self.error:
             raise self.error
-        for i in range(0, len(self.answer), 7):
-            yield self.answer[i : i + 7]
+        answer = self.replies.pop(0) if self.replies else self.answer
+        for i in range(0, len(answer), 7):
+            yield answer[i : i + 7]
+
+
+class FakeSearcher:
+    """Web search with canned results; pages are 'read' as their snippets."""
+
+    def __init__(self, results=None):
+        self.results = list(results or [])  # (title, url, snippet) tuples
+        self.queries: list[str] = []
+
+    def search(self, query, n):
+        from app.services.web import WebResult
+
+        self.queries.append(query)
+        return [WebResult(*r) for r in self.results[:n]]

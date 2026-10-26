@@ -28,8 +28,8 @@ class SearchMode(StrEnum):
 
 @dataclass(frozen=True)
 class Passage:
-    chunk_id: int
-    item_id: int
+    chunk_id: int | None  # None for web passages
+    item_id: int | None
     title: str
     source_type: SourceType
     source: str

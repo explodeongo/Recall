@@ -115,9 +115,12 @@ def send_message(
                 history=history,
                 item_ids=item_ids,
                 user_id=user.id,
+                web=body.web,
             ):
                 if kind == "sources":
                     yield _sse("sources", {"sources": sources_json(payload)})
+                elif kind == "status":
+                    yield _sse("status", {"text": payload})
                 elif kind == "delta":
                     yield _sse("delta", {"text": payload})
                 else:
@@ -146,6 +149,7 @@ def send_message(
             {
                 "answer": answer.text,
                 "not_found": answer.not_found,
+                "web_used": answer.web_used,
                 "cited": answer.cited,
                 "timings": answer.timings.as_dict(),
                 "message_ids": [asked.id, reply.id],
@@ -164,7 +168,10 @@ def _turns(messages: list[ChatMessage]) -> list[Turn]:
     turns = []
     for question, answer in zip(messages[::2], messages[1::2], strict=False):
         if question.role == "user" and answer.role == "assistant":
-            turns.append(Turn(question.content, answer.content))
+            sources = answer.sources or []
+            cited = [sources[n - 1] for n in answer.cited or [] if 0 < n <= len(sources)]
+            from_library = any(s.get("kind", "text") != "web" for s in cited)
+            turns.append(Turn(question.content, answer.content, from_library))
     return turns
 
 

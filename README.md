@@ -14,10 +14,14 @@ only from your own library, with a citation to the exact passage.
   two-line summary, a page-long summary (overview, key points, section by section) and tags.
 - **Read and mark up:** read any item inside Recall, highlight passages, add notes to them or
   to the whole item. Your notes become part of what Ask can answer from.
-- **Ask:** questions in plain English get answers built only from your library, with a
-  numbered citation on every claim; click one to land on the exact passage, highlighted.
-  When your library doesn't cover it, Recall says "Not found in your library" instead of
-  guessing. Chats are saved and understand follow-ups, and can be limited to one document.
+- **Ask, like a chat assistant, but grounded:** answers come from your library first, with
+  a numbered citation on every claim; click one to land on the exact passage, highlighted.
+  What your library doesn't cover is answered from the web: Recall searches, reads the top
+  pages and answers only from them, citing each page and labelling the answer "from the
+  web". It never answers from the model's memory, which is where made-up answers come from;
+  if neither your library nor the web has it, it says so. Chats are saved and handle
+  follow-ups ("tell me more", "summarize that", "explain it simply"). The web can be turned
+  off per chat, and a chat can be limited to one document.
 - **Find:** the Library's search matches each word anywhere (titles, tags, summaries, your
   notes and the full text), shows the passage where it matched, and adds documents that are
   about the same thing in other words. ⌘K jumps to any document, passage, highlight or chat.
@@ -86,7 +90,15 @@ export GEMINI_API_KEY=your-key
 docker compose up --build
 ```
 
-**For development**, run the pieces yourself as below, so code changes reload instantly.
+**For development**, after the one-time setup below (steps 1 to 4), one command runs it all:
+
+```bash
+./dev.sh
+```
+
+It checks the database, applies migrations, and starts the API (with the background worker
+inside it) and the web app, reloading on code changes. Ctrl+C stops everything. Steps 4 to 6
+show how to run the pieces separately instead.
 
 Recall runs as three processes: the **API** (FastAPI), the **worker** that reads saved items in
 the background, and the **web app** (Next.js). All three talk to one Postgres database.
@@ -144,6 +156,7 @@ Open `backend/.env` and set:
 | `DATABASE_URL` | the URL from step 2 |
 | `GEMINI_API_KEY` | your key from Google AI Studio |
 | `FETCH_CONTACT` | optional: your repo URL or email. Wikipedia blocks article fetches without one |
+| `TAVILY_API_KEY` | optional: makes web answers faster and more reliable ([free plan](https://tavily.com), 1,000 searches a month). Without it Recall uses free search engines, which rate-limit under heavy use |
 
 `.env` is git-ignored. Never commit it.
 

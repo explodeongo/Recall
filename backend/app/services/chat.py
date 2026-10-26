@@ -21,9 +21,10 @@ PROMPT = """Conversation so far:
 
 Follow-up question: {question}
 
-Rewrite the follow-up as one standalone question that names what "it", "they", "that" and \
-similar words refer to, using the conversation. Keep the user's meaning and wording where you \
-can. If it already stands on its own, return it unchanged. Reply with the question only."""
+Rewrite the follow-up as one standalone question that will be used to search the user's saved \
+documents. Name what "it", "they", "that", "the first one" and similar words refer to, using \
+the conversation. Keep it short and natural, like a question a person would ask. If it already \
+stands on its own, return it unchanged. Reply with the question only."""
 
 
 def standalone_question(llm: LLMClient, history: list[Turn], question: str) -> str:

@@ -79,8 +79,9 @@ export interface Page {
 /** One numbered passage given to the model; answers cite it as [n]. */
 export interface Source {
   n: number;
-  chunk_id: number;
-  item_id: number;
+  /** Null for web passages, whose `source` is the page's address. */
+  chunk_id: number | null;
+  item_id: number | null;
   title: string;
   source_type: SourceType;
   source: string;
@@ -88,13 +89,22 @@ export interface Source {
   text: string;
   start_char?: number | null;
   end_char?: number | null;
-  /** "note" when the passage comes from your own notes on the item. */
-  kind?: "text" | "note";
+  /** "note": your own notes on the item. "web": a web page found for the question. */
+  kind?: "text" | "note" | "web";
 }
 
 /** How a source is named to the reader: a document's title, or "Your notes on …". */
 export const sourceName = (source: Pick<Source, "title" | "kind">) =>
   source.kind === "note" ? `Your notes on ${source.title}` : source.title;
+
+/** "en.wikipedia.org" from a URL, for labelling web sources. */
+export function siteOf(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
 export interface Highlight {
   id: number;
@@ -149,7 +159,8 @@ export interface HighlightWithItem extends Highlight {
 
 /** Where a citation opens: the item's reader, at the passage. The character range survives the
  *  item being processed again; the chunk id is the fallback for answers saved before ranges. */
-export function passageHref(source: Pick<Source, "item_id" | "chunk_id" | "start_char" | "end_char" | "kind">) {
+export function passageHref(source: Pick<Source, "item_id" | "chunk_id" | "start_char" | "end_char" | "kind"> & { source?: string }) {
+  if (source.kind === "web") return source.source ?? "#";
   if (source.kind === "note") return `/items/${source.item_id}?view=summary#notes`;
   if (source.start_char != null && source.end_char != null) {
     return `/items/${source.item_id}?from=${source.start_char}&to=${source.end_char}`;
@@ -202,6 +213,8 @@ export interface Chat {
 export interface MessageDone extends AskDone {
   message_ids: [number, number];
   title: string;
+  /** Whether part of the answer came from web pages rather than the library. */
+  web_used: boolean;
 }
 
 export class ApiError extends Error {
@@ -336,6 +349,8 @@ export const isBusy = (status: ItemStatus) => status === "queued" || status === 
 
 export interface StreamHandlers<Done> {
   onQuery?: (query: string) => void;
+  /** Progress, such as "Searching the web…". */
+  onStatus?: (text: string) => void;
   onSources: (sources: Source[]) => void;
   onDelta: (text: string) => void;
   onDone: (done: Done) => void;
@@ -343,8 +358,8 @@ export interface StreamHandlers<Done> {
 }
 
 /** Ask the next question in a saved chat; the answer streams back as Server-Sent Events. */
-export function sendChatMessage(chatId: number, question: string, handlers: StreamHandlers<MessageDone>, signal?: AbortSignal) {
-  return postStream(`/chats/${chatId}/messages`, { question }, handlers, signal);
+export function sendChatMessage(chatId: number, question: string, web: boolean, handlers: StreamHandlers<MessageDone>, signal?: AbortSignal) {
+  return postStream(`/chats/${chatId}/messages`, { question, web }, handlers, signal);
 }
 
 /** POST and parse Server-Sent Events (EventSource can't send a POST body). */
@@ -386,6 +401,7 @@ async function postStream<Done>(path: string, body: unknown, handlers: StreamHan
       if (!data) continue;
       const payload = JSON.parse(data);
       if (event === "query") handlers.onQuery?.(payload.query);
+      else if (event === "status") handlers.onStatus?.(payload.text);
       else if (event === "sources") handlers.onSources(payload.sources);
       else if (event === "delta") handlers.onDelta(payload.text);
       else if (event === "done") handlers.onDone(payload);

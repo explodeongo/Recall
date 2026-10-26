@@ -1,12 +1,12 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, FileText, History, Search, Square } from "lucide-react";
+import { ArrowUp, FileText, Globe, History, Search, Square } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerText } from "@/components/AnswerText";
-import { NotFound, SourcesList, Thinking } from "@/components/chat/AnswerParts";
+import { FromTheWeb, NotFound, SourcesList, Thinking } from "@/components/chat/AnswerParts";
 import { ChatList } from "@/components/chat/ChatList";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,7 @@ interface Pending {
   sources: Source[] | null;
   text: string;
   error: string | null;
+  status: string | null;
 }
 
 export function ChatView({ chatId: initialId }: { chatId: number | null }) {
@@ -34,6 +35,19 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
     setPendingState(pendingRef.current);
   }, []);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // Whether to search the web for what the library doesn't cover; remembered per browser.
+  const [web, setWebState] = useState(true);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("recall-web") === "off") setWebState(false);
+    } catch {}
+  }, []);
+  const setWeb = (on: boolean) => {
+    setWebState(on);
+    try {
+      localStorage.setItem("recall-web", on ? "on" : "off");
+    } catch {}
+  };
   const abort = useRef<AbortController | null>(null);
   const started = useRef(false);
   const bottom = useRef<HTMLDivElement>(null);
@@ -47,7 +61,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
     async (raw: string) => {
       const question = raw.trim();
       if (!question || busy) return;
-      setPending({ question, query: null, sources: null, text: "", error: null });
+      setPending({ question, query: null, sources: null, text: "", error: null, status: null });
 
       let id = chatId;
       if (id === null) {
@@ -70,8 +84,10 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
       await sendChatMessage(
         id,
         question,
+        web,
         {
           onQuery: (query) => setPending((p) => p && { ...p, query }),
+          onStatus: (status) => setPending((p) => p && { ...p, status }),
           onSources: (sources) => setPending((p) => p && { ...p, sources }),
           onDelta: (delta) => setPending((p) => p && { ...p, text: p.text + delta }),
           onDone: (done) => {
@@ -85,7 +101,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
         controller.signal,
       );
     },
-    [busy, chatId, itemId, queryClient, setPending],
+    [busy, chatId, itemId, queryClient, setPending, web],
   );
 
   // A question handed over from the Library's search bar (?q=) is asked once on arrival.
@@ -178,6 +194,8 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
             busy={busy}
             onAsk={ask}
             onStop={stop}
+            web={web}
+            onWebChange={setWeb}
             placeholder={!empty ? "Ask a follow-up…" : itemId !== null ? "Ask anything about this document…" : undefined}
           />
           {/* Below the pinned question box, so scrolling here shows the newest text above it. */}
@@ -233,13 +251,16 @@ function Welcome({ scoped, onPick }: { scoped: boolean; onPick: (q: string) => v
 
 function Exchange({ question, searchQuery, answer }: { question: string; searchQuery: string | null; answer: ChatMessage }) {
   const sources = answer.sources ?? [];
+  const cited = (answer.cited ?? []).map((n) => sources[n - 1]).filter(Boolean);
+  const fromWeb = cited.some((s) => s.kind === "web");
   return (
     <section className="space-y-4">
       <Question text={question} searchQuery={searchQuery} />
       {answer.not_found ? (
-        <NotFound />
+        <NotFound searchedWeb={answer.content.includes("web")} />
       ) : (
         <>
+          {fromWeb && <FromTheWeb partly={cited.some((s) => s.kind !== "web")} />}
           <AnswerText text={answer.content} sources={sources} />
           {sources.length > 0 && <SourcesList sources={sources} cited={answer.cited ?? []} />}
         </>
@@ -258,9 +279,17 @@ function PendingExchange({ pending }: { pending: Pending }) {
           {pending.error === "Stopped." ? "Stopped. This question wasn't saved." : `Something went wrong: ${pending.error}. This question wasn't saved; try asking again.`}
         </p>
       ) : pending.sources === null || !pending.text ? (
-        <Thinking searching={pending.sources === null} />
+        <Thinking searching={pending.sources === null} status={pending.status} />
       ) : (
-        <AnswerText text={pending.text} sources={sources} streaming={pending.error === null} />
+        <>
+          <AnswerText text={pending.text} sources={sources} streaming={pending.error === null} />
+          {/* The library part has arrived and the web is being searched for the rest. */}
+          {pending.status && pending.error === null && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
+              <Globe className="size-4 animate-pulse text-brand motion-reduce:animate-none" aria-hidden /> {pending.status}
+            </p>
+          )}
+        </>
       )}
     </section>
   );
@@ -281,7 +310,21 @@ function Question({ text, searchQuery }: { text: string; searchQuery: string | n
   );
 }
 
-function Composer({ busy, onAsk, onStop, placeholder }: { busy: boolean; onAsk: (q: string) => void; onStop: () => void; placeholder?: string }) {
+function Composer({
+  busy,
+  onAsk,
+  onStop,
+  placeholder,
+  web,
+  onWebChange,
+}: {
+  busy: boolean;
+  onAsk: (q: string) => void;
+  onStop: () => void;
+  placeholder?: string;
+  web: boolean;
+  onWebChange: (on: boolean) => void;
+}) {
   const [question, setQuestion] = useState("");
   const send = () => {
     if (!question.trim() || busy) return;
@@ -318,7 +361,20 @@ function Composer({ busy, onAsk, onStop, placeholder }: { busy: boolean; onAsk: 
           className="block w-full resize-none bg-transparent px-3 py-2 text-[16px] outline-none placeholder:text-muted-foreground"
         />
         <div className="flex items-center justify-between px-2 pb-1">
-          <span className="hidden text-xs text-muted-foreground sm:inline">Enter to ask · Shift+Enter for a new line</span>
+          <button
+            type="button"
+            onClick={() => onWebChange(!web)}
+            aria-pressed={web}
+            title={web ? "Searching the web for what your library doesn't cover" : "Answers only from your library"}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97]",
+              web ? "border-brand/40 bg-brand-soft text-brand" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Globe className="size-3.5" aria-hidden />
+            {web ? "Web on" : "Library only"}
+          </button>
+          <span className="hidden text-xs text-muted-foreground md:inline">Enter to ask · Shift+Enter for a new line</span>
           {/* One button whose icon cross-fades between Ask and Stop, so it never jumps. */}
           <Button
             type={busy ? "button" : "submit"}

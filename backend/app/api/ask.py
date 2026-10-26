@@ -19,7 +19,9 @@ def ask(
 ) -> AskOut:
     """Answer a question from saved content only, citing the passages used (FR-5, NFR-1)."""
     try:
-        result = answer_question(session, embedder, llm, body.question, body.mode, user_id=user.id)
+        result = answer_question(
+            session, embedder, llm, body.question, body.mode, user_id=user.id, web=body.web
+        )
     except LLMError as exc:
         raise HTTPException(503 if exc.retryable else 502, str(exc)) from exc
     return _ask_out(result)
@@ -35,12 +37,14 @@ def ask_stream(
     def events() -> Iterator[str]:
         try:
             for kind, payload in stream_answer(
-                session, embedder, llm, body.question, body.mode, user_id=user.id
+                session, embedder, llm, body.question, body.mode, user_id=user.id, web=body.web
             ):
                 if kind == "sources":
                     yield _sse("sources", {"sources": sources_json(payload)})
                 elif kind == "delta":
                     yield _sse("delta", {"text": payload})
+                elif kind == "status":
+                    yield _sse("status", {"text": payload})
                 else:
                     yield _sse("done", _ask_out(payload).model_dump(exclude={"sources"}))
         except LLMError as exc:
@@ -68,6 +72,7 @@ def _ask_out(answer: Answer) -> AskOut:
     return AskOut(
         answer=answer.text,
         not_found=answer.not_found,
+        web_used=answer.web_used,
         sources=sources_json(answer.sources),
         cited=answer.cited,
         timings=answer.timings.as_dict(),

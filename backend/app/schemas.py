@@ -89,6 +89,9 @@ class ContentOut(BaseModel):
 class AskIn(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     mode: SearchMode | None = None  # None: the server's configured mode
+    # Off by default here: /ask is the proposal's library-only endpoint (NFR-1), and the
+    # evaluation measures it.
+    web: bool = False
 
 
 class SourceOut(BaseModel):
@@ -97,8 +100,8 @@ class SourceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     n: int
-    chunk_id: int
-    item_id: int
+    chunk_id: int | None  # web passages have no chunk or item; `source` is the page's URL
+    item_id: int | None
     title: str
     source_type: SourceType
     source: str
@@ -106,12 +109,13 @@ class SourceOut(BaseModel):
     text: str
     start_char: int | None = None
     end_char: int | None = None
-    kind: str = "text"
+    kind: str = "text"  # "text", "note" (your notes) or "web"
 
 
 class AskOut(BaseModel):
     answer: str
     not_found: bool
+    web_used: bool = False
     sources: list[SourceOut]
     cited: list[int]
     timings: dict[str, float | None]
@@ -127,6 +131,8 @@ class ChatRename(BaseModel):
 
 class MessageIn(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
+    # Search the web for what the library doesn't cover (answers stay cited, from pages).
+    web: bool = True
 
 
 class MessageOut(BaseModel):
