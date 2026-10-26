@@ -1,10 +1,10 @@
 """Uploaded documents other than PDFs: Word (.docx), Markdown and plain text."""
 
 import re
-from pathlib import Path
 
 from app.errors import PermanentError
 from app.models import Item
+from app.services import files
 from app.sources import ExtractedDoc, PageText
 
 EXTENSIONS = {".docx", ".md", ".markdown", ".txt"}
@@ -13,13 +13,13 @@ _LIST_ITEM = re.compile(r"^\s*(?:[-*+•]|\d+[.)])\s+")
 
 class FileSource:
     def extract(self, item: Item) -> ExtractedDoc:
-        path = Path(item.source)
-        if not path.exists():
+        data = files.read(item.source)
+        if data is None:
             raise PermanentError("The uploaded file is missing from storage")
-        suffix = path.suffix.lower()
+        suffix = files.suffix(item.source)
         if suffix == ".docx":
-            return _docx(path)
-        text = path.read_bytes().decode("utf-8", errors="replace")
+            return _docx(data)
+        text = data.decode("utf-8", errors="replace")
         if suffix in (".md", ".markdown"):
             return _markdown(text)
         return ExtractedDoc(
@@ -64,11 +64,13 @@ def _markdown(text: str) -> ExtractedDoc:
     )
 
 
-def _docx(path: Path) -> ExtractedDoc:
+def _docx(data: bytes) -> ExtractedDoc:
+    import io
+
     import docx
 
     try:
-        document = docx.Document(str(path))
+        document = docx.Document(io.BytesIO(data))
     except Exception as exc:  # python-docx raises several kinds for a damaged file
         raise PermanentError("This file couldn't be opened as a Word document") from exc
     paragraphs = [p.text.strip() for p in document.paragraphs if p.text.strip()]

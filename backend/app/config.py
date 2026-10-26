@@ -15,10 +15,18 @@ class Settings(BaseSettings):
     # Tried in order when the main model is rate-limited or overloaded.
     gemini_fallback_models: list[str] = ["gemini-3.1-flash-lite"]
     upload_dir: str = "data/uploads"
+    file_store: str = "local"  # "local" (UPLOAD_DIR) or "database" (survives disk wipes)
     max_upload_mb: int = 25
     cors_origins: list[str] = ["http://localhost:3000"]
     cookie_secure: bool = False  # set true when served over https
     ask_per_minute: int = 20  # questions per person per minute, to protect the LLM quota
+
+    # For a public deployment.
+    run_worker_in_api: bool = False  # run the job loop inside the API (no separate worker)
+    signup_code: str | None = None  # if set, signing up needs this invite code
+    daily_items: int = 200  # things one person can save per day
+    daily_questions: int = 300  # questions (Ask and chats) one person can ask per day
+    daily_quizzes: int = 50  # "quiz me" runs per person per day
     embedding_dim: int = 384
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     model_cache_dir: str = "data/models"

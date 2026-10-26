@@ -1,10 +1,9 @@
-import uuid
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Literal
+from urllib.parse import quote
 
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
-from fastapi.responses import FileResponse
 from pydantic import HttpUrl, TypeAdapter, ValidationError
 from sqlalchemy import delete as sa_delete
 from sqlalchemy import func, select
@@ -15,7 +14,7 @@ from app.deps import CurrentUser, EmbedderDep, SessionDep
 from app.models import Card, Item, ItemStatus, SourceType, Tag, item_tags
 from app.pipeline import get_or_create_tags
 from app.schemas import ContentOut, ItemOut, ItemPatch, ResurfaceOut, TagsIn
-from app.services import jobs
+from app.services import files, jobs, quota
 from app.services.enrich import clean_tag
 from app.services.library_search import search_items
 from app.sources.files import EXTENSIONS as FILE_EXTENSIONS
@@ -47,6 +46,7 @@ def create_item(
     article, a PDF, or a YouTube video), or typed text as a note. It's read in the background."""
     if sum(x is not None for x in (file, url, text)) != 1:
         raise HTTPException(422, "Send exactly one of: a file, a url, or text")
+    quota.check(session, user.id, "items", get_settings().daily_items)
 
     if file is not None:
         kind, path = _store_upload(file)
@@ -174,21 +174,23 @@ def get_item_content(item_id: int, session: SessionDep, user: CurrentUser) -> Co
     return ContentOut(pages=item.content)
 
 
-@router.get("/{item_id}/file", response_class=FileResponse)
-def get_item_file(item_id: int, session: SessionDep, user: CurrentUser) -> FileResponse:
+@router.get("/{item_id}/file")
+def get_item_file(item_id: int, session: SessionDep, user: CurrentUser) -> Response:
     """The original upload: PDFs open in the browser (a citation adds `#page=N`), other files
     download."""
     item = _get_or_404(session, item_id, user.id)
-    path = Path(item.source)
-    if item.source_type not in (SourceType.pdf, SourceType.file) or not path.exists():
+    data = (
+        files.read(item.source) if item.source_type in (SourceType.pdf, SourceType.file) else None
+    )
+    if data is None:
         raise HTTPException(404, "This item has no stored file")
-    suffix = path.suffix.lower()
-    filename = f"{item.title[:100]}{suffix}".replace('"', "")
-    return FileResponse(
-        path,
+    suffix = files.suffix(item.source)
+    filename = quote(f"{item.title[:100]}{suffix}")
+    disposition = "inline" if suffix == ".pdf" else "attachment"
+    return Response(
+        data,
         media_type=MEDIA_TYPES.get(suffix, "application/octet-stream"),
-        filename=filename,
-        content_disposition_type="inline" if suffix == ".pdf" else "attachment",
+        headers={"Content-Disposition": f"{disposition}; filename*=utf-8''{filename}"},
     )
 
 
@@ -220,13 +222,13 @@ def set_item_tags(item_id: int, body: TagsIn, session: SessionDep, user: Current
 @router.delete("/{item_id}", status_code=204)
 def delete_item(item_id: int, session: SessionDep, user: CurrentUser) -> Response:
     item = _get_or_404(session, item_id, user.id)
-    stored = Path(item.source) if item.source_type in (SourceType.pdf, SourceType.file) else None
+    stored = item.source if item.source_type in (SourceType.pdf, SourceType.file) else None
     session.delete(item)
     session.flush()
     delete_unused_tags(session, user.id)
     session.commit()
     if stored is not None:
-        stored.unlink(missing_ok=True)
+        files.delete(stored)
     return Response(status_code=204)
 
 
@@ -244,7 +246,7 @@ def _title_from_filename(name: str | None) -> str:
 
 
 def _store_upload(file: UploadFile) -> tuple[SourceType, str]:
-    """Check the type and size of an upload and save it. PDFs are recognised by their first
+    """Check the type and size of an upload and store it. PDFs are recognised by their first
     bytes, other documents by extension."""
     settings = get_settings()
     head = file.file.read(5)
@@ -258,20 +260,12 @@ def _store_upload(file: UploadFile) -> tuple[SourceType, str]:
             )
         kind = SourceType.file
     limit = settings.max_upload_mb * 1024 * 1024
-    upload_dir = Path(settings.upload_dir)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    dest = upload_dir / f"{uuid.uuid4().hex}{suffix}"
-    size = len(head)
-    with dest.open("wb") as out:
-        out.write(head)
-        while chunk := file.file.read(1024 * 1024):
-            size += len(chunk)
-            if size > limit:
-                out.close()
-                dest.unlink(missing_ok=True)
-                raise HTTPException(413, f"Files can be up to {settings.max_upload_mb} MB")
-            out.write(chunk)
-    return kind, str(dest)
+    data = bytearray(head)
+    while chunk := file.file.read(1024 * 1024):
+        data.extend(chunk)
+        if len(data) > limit:
+            raise HTTPException(413, f"Files can be up to {settings.max_upload_mb} MB")
+    return kind, files.save(bytes(data), suffix)
 
 
 def delete_unused_tags(session, user_id: int) -> None:

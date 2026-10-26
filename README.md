@@ -69,6 +69,16 @@ which is told to answer `NOT_FOUND` when the passages don't hold the answer.
 
 ## Run it locally
 
+**Quickest, with Docker:** set your key and start everything (database, API with the worker
+inside it, and the web app), then open http://localhost:3000 and create an account:
+
+```bash
+export GEMINI_API_KEY=your-key
+docker compose up --build
+```
+
+**For development**, run the pieces yourself as below, so code changes reload instantly.
+
 Recall runs as three processes: the **API** (FastAPI), the **worker** that reads saved items in
 the background, and the **web app** (Next.js). All three talk to one Postgres database.
 
@@ -101,7 +111,7 @@ brew services start postgresql@17
 **Docker:**
 
 ```bash
-docker compose up -d
+docker compose up -d db
 docker compose exec db createdb -U recall recall_test                 # only needed for tests
 ```
 
@@ -177,6 +187,35 @@ The web app expects the API at `http://localhost:8000`. To point it somewhere el
   worker, then retry the item.
 - **Gemini errors about the model**: models get retired. Set `GEMINI_MODEL` in `backend/.env`
   to a current one from [the model list](https://ai.google.dev/gemini-api/docs/models).
+
+## Deploy
+
+Recall is ready to put online for free, without anything else to run: the web app on
+[Vercel](https://vercel.com), the API on [Render](https://render.com) (the worker runs inside
+it), and the database on [Neon](https://neon.tech).
+
+1. **Database (Neon):** create a project and copy the connection string. Change the
+   `postgresql://` prefix to `postgresql+psycopg://`, and keep `?sslmode=require`.
+2. **API (Render):** New → Blueprint → this repository. It reads `render.yaml`, builds
+   `backend/Dockerfile` (the embedding model is baked in) and asks for:
+
+   | Setting | Value |
+   | --- | --- |
+   | `DATABASE_URL` | the Neon URL from step 1 |
+   | `GEMINI_API_KEY` | your key |
+   | `SIGNUP_CODE` | an invite code, so only people you give it to can sign up (leave empty for open sign-up) |
+   | `FETCH_CONTACT` | your repo URL (Wikipedia requires a contact in the User-Agent) |
+
+   `RUN_WORKER_IN_API`, `FILE_STORE=database` (uploads kept in Postgres, since free disks are
+   wiped on restart) and `COOKIE_SECURE` are set by the blueprint. Migrations run on every start.
+3. **Web app (Vercel):** import the repository with **Root Directory** `frontend`, and set
+   `API_PROXY_TARGET` to the Render URL (like `https://recall-api.onrender.com`). The browser
+   only ever talks to Vercel, which forwards `/api` to Render, so sign-in cookies are first-party.
+
+Limits that protect the Gemini quota on a public deployment, all settings: questions per person
+per minute (`ASK_PER_MINUTE`, 20) and per day (`DAILY_QUESTIONS`, 300), saved items per day
+(`DAILY_ITEMS`, 200), and "quiz me" runs per day (`DAILY_QUIZZES`, 50). Free Render services
+sleep when idle, so the first visit after a quiet spell takes about a minute.
 
 ## Tests
 

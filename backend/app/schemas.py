@@ -166,6 +166,7 @@ class SignupIn(BaseModel):
     email: str = Field(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: str = Field(min_length=8, max_length=200)
     name: str | None = Field(default=None, max_length=200)
+    invite_code: str | None = Field(default=None, max_length=200)
 
 
 class LoginIn(BaseModel):

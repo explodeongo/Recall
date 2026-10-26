@@ -1,0 +1,8 @@
+.venv
+.env
+.env.*
+data
+**/__pycache__
+.pytest_cache
+.ruff_cache
+eval/results-ci.*

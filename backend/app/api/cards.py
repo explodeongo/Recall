@@ -4,10 +4,12 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
+from app.config import get_settings
 from app.deps import CurrentUser, LLMDep, SessionDep
 from app.models import Card, Item, ItemStatus, Review
 from app.pipeline import KINDS
 from app.schemas import CardEdit, CardOut, DueCard, GradeIn, ReviewStats
+from app.services import quota
 from app.services.llm import LLMError
 from app.services.ratelimit import limit
 from app.services.review import Grade, Schedule, describe, due_after, make_cards, next_schedule
@@ -21,6 +23,7 @@ def generate_cards(
 ) -> list[Card]:
     """Make flashcards from an item ("quiz me"). Asking again adds new ones, not repeats."""
     limit(request, "cards", per_minute=6, key=f"user:{user.id}")
+    quota.check(session, user.id, "quizzes", get_settings().daily_quizzes)
     item = session.get(Item, item_id)
     if item is None or item.user_id != user.id:
         raise HTTPException(404, "Item not found")

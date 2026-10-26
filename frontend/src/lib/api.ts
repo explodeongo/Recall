@@ -288,7 +288,9 @@ export const api = {
   setTags: (id: number, tags: string[]) => request<Item>(`/items/${id}/tags`, json("PUT", { tags })),
 
   me: () => request<User>("/auth/me"),
-  signup: (email: string, password: string, name?: string) => request<User>("/auth/signup", json("POST", { email, password, name })),
+  signup: (email: string, password: string, name?: string, inviteCode?: string) =>
+    request<User>("/auth/signup", json("POST", { email, password, name, invite_code: inviteCode })),
+  authConfig: () => request<{ signup_requires_code: boolean }>("/auth/config"),
   login: (email: string, password: string) => request<User>("/auth/login", json("POST", { email, password })),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 

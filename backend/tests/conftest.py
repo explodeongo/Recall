@@ -32,7 +32,9 @@ def migrated_db():
 def clean_tables():
     yield
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE items, tags, jobs, chats, users RESTART IDENTITY CASCADE"))
+        conn.execute(
+            text("TRUNCATE items, tags, jobs, chats, users, stored_files RESTART IDENTITY CASCADE")
+        )
     from app.services import ratelimit
 
     ratelimit.reset()

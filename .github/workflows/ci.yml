@@ -67,6 +67,14 @@ jobs:
             backend/eval/results-ci.md
             backend/eval/results-ci.json
 
+  # The images build (they aren't pushed anywhere).
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -t recall-api backend
+      - run: docker build -t recall-web --build-arg API_PROXY_TARGET=http://api:8000 frontend
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

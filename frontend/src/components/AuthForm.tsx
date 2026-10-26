@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -16,6 +16,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const signup = mode === "signup";
+  const config = useQuery({ queryKey: ["auth-config"], queryFn: api.authConfig, enabled: signup });
 
   async function submit(form: FormData) {
     setBusy(true);
@@ -23,7 +24,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
     try {
-      const user = signup ? await api.signup(email, password, String(form.get("name") ?? "") || undefined) : await api.login(email, password);
+      const user = signup
+        ? await api.signup(email, password, String(form.get("name") ?? "") || undefined, String(form.get("invite") ?? "") || undefined)
+        : await api.login(email, password);
       queryClient.setQueryData(["me"], user);
       // A full navigation, so the server sees the new session cookie on the next page.
       window.location.assign(next && next.startsWith("/") && !next.startsWith("//") ? next : "/");
@@ -64,6 +67,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             className="h-10"
           />
         </Field>
+        {signup && config.data?.signup_requires_code && (
+          <Field label="Invite code" hint="This Recall is invite-only">
+            <Input name="invite" required autoComplete="off" className="h-10" />
+          </Field>
+        )}
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}

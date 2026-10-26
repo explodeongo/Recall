@@ -1,6 +1,7 @@
 """Background worker: python -m app.worker"""
 
 import logging
+import threading
 import time
 
 import httpx
@@ -55,17 +56,37 @@ def run_once(embedder: Embedder, llm: LLMClient | None = None) -> bool:
         return True
 
 
-def main(poll_seconds: float = 1.0) -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+def run_forever(stop: threading.Event | None = None, poll_seconds: float = 1.0) -> None:
     log.info("loading embedding model")
     embedder = get_embedder()
     with SessionLocal() as session:
         if filled := pipeline.backfill_summary_embeddings(session, embedder):
             log.info("embedded the summaries of %s older items", filled)
     log.info("worker started")
-    while True:
-        if not run_once(embedder):
-            time.sleep(poll_seconds)
+    while stop is None or not stop.is_set():
+        try:
+            busy = run_once(embedder)
+        except Exception:  # a database hiccup shouldn't kill the loop
+            log.exception("worker loop error")
+            busy = False
+        if not busy:
+            if stop is not None:
+                stop.wait(poll_seconds)
+            else:
+                time.sleep(poll_seconds)
+
+
+def start_in_background() -> threading.Event:
+    """Run the worker on a thread of the current process (RUN_WORKER_IN_API). Returns the event
+    that stops it."""
+    stop = threading.Event()
+    threading.Thread(target=run_forever, args=(stop,), name="recall-worker", daemon=True).start()
+    return stop
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    run_forever()
 
 
 if __name__ == "__main__":

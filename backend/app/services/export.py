@@ -6,12 +6,12 @@ import json
 import re
 import zipfile
 from datetime import UTC, datetime
-from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Card, Chat, Item, SourceType, User
+from app.services import files
 
 
 def _slug(text: str, fallback: str) -> str:
@@ -23,7 +23,7 @@ def item_markdown(item: Item, cards: list[Card]) -> str:
     lines = [f"# {item.title}", ""]
     source = "Note" if item.source_type == SourceType.note else item.source
     if item.source_type in (SourceType.pdf, SourceType.file):
-        source = f"Uploaded file ({Path(item.source).suffix.lstrip('.') or 'file'})"
+        source = f"Uploaded file ({files.suffix(item.source).lstrip('.') or 'file'})"
     lines += [f"- Source: {source}", f"- Saved: {item.created_at:%Y-%m-%d}"]
     if item.tags:
         lines.append("- Tags: " + ", ".join(f"#{t.name}" for t in item.tags))
@@ -98,10 +98,10 @@ def build_export(session: Session, user: User, include_files: bool = False) -> b
                 zf.writestr(f"text/{name}.txt", "\n\n".join(p["text"] for p in item.content))
             stored = None
             if include_files and item.source_type in (SourceType.pdf, SourceType.file):
-                path = Path(item.source)
-                if path.exists():
-                    stored = f"files/{name}{path.suffix}"
-                    zf.write(path, stored)
+                original = files.read(item.source)
+                if original is not None:
+                    stored = f"files/{name}{files.suffix(item.source)}"
+                    zf.writestr(stored, original)
             data["items"].append(
                 {
                     "title": item.title,

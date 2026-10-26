@@ -1,9 +1,8 @@
-from pathlib import Path
-
 import pymupdf
 
 from app.errors import PermanentError
 from app.models import Item
+from app.services import files
 from app.sources import ExtractedDoc, PageText
 
 # Metadata titles that word processors fill in for you and that mean nothing to a reader.
@@ -14,10 +13,10 @@ class PdfSource:
     """Extracts text page by page with PyMuPDF, keeping page numbers for citations."""
 
     def extract(self, item: Item) -> ExtractedDoc:
-        path = Path(item.source)
-        if not path.exists():
+        data = files.read(item.source)
+        if data is None:
             raise PermanentError("The uploaded file is missing from storage")
-        return extract_pdf_bytes(path.read_bytes())
+        return extract_pdf_bytes(data)
 
 
 def extract_pdf_bytes(data: bytes) -> ExtractedDoc:

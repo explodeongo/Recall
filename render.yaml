@@ -1,0 +1,25 @@
+# Render blueprint for the API (with the worker inside it). The web app goes on Vercel and the
+# database on Neon; see "Deploy" in the README.
+services:
+  - type: web
+    name: recall-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SIGNUP_CODE
+        sync: false
+      - key: FETCH_CONTACT
+        sync: false
+      - key: RUN_WORKER_IN_API
+        value: "true"
+      - key: FILE_STORE
+        value: database
+      - key: COOKIE_SECURE
+        value: "true"

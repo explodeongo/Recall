@@ -1,5 +1,5 @@
-# Optional: a local Postgres with pgvector, for anyone who prefers Docker or Podman
-# over a hosted database.  Run: docker compose up -d
+# The whole of Recall on one machine: docker compose up --build, then open http://localhost:3000
+# Needs GEMINI_API_KEY in your environment or in a .env file next to this one.
 services:
   db:
     image: pgvector/pgvector:pg16
@@ -11,6 +11,34 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "recall"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://recall:recall@db:5432/recall
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?set GEMINI_API_KEY}
+      FETCH_CONTACT: ${FETCH_CONTACT:-}
+      RUN_WORKER_IN_API: "true"
+      FILE_STORE: database
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        API_PROXY_TARGET: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
 
 volumes:
   pgdata:

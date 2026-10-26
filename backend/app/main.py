@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -6,7 +8,20 @@ from app.api import ask, auth, cards, chats, chunks, highlights, items, search, 
 from app.config import get_settings
 from app.db import engine
 
-app = FastAPI(title="Recall API", version="0.3.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    stop = None
+    if get_settings().run_worker_in_api:
+        from app.worker import start_in_background
+
+        stop = start_in_background()
+    yield
+    if stop is not None:
+        stop.set()
+
+
+app = FastAPI(title="Recall API", version="0.4.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,5 +1,5 @@
+import hmac
 from datetime import UTC, datetime
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from sqlalchemy import func, select
@@ -8,7 +8,7 @@ from app.config import get_settings
 from app.deps import SESSION_COOKIE, CurrentUser, SessionDep
 from app.models import Item, SourceType, User
 from app.schemas import LoginIn, PasswordChange, PasswordConfirm, SignupIn, UserOut
-from app.services import auth
+from app.services import auth, files
 from app.services.export import build_export
 from app.services.ratelimit import limit
 
@@ -18,6 +18,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/signup", response_model=UserOut, status_code=201)
 def signup(body: SignupIn, request: Request, response: Response, session: SessionDep) -> User:
     limit(request, "auth", per_minute=10)
+    code = get_settings().signup_code
+    if code and not hmac.compare_digest((body.invite_code or "").strip(), code):
+        raise HTTPException(403, "That invite code isn't right.")
     email = body.email.strip().lower()
     if session.scalar(select(User.id).where(User.email == email)) is not None:
         raise HTTPException(409, "An account with that email already exists. Try logging in.")
@@ -31,6 +34,12 @@ def signup(body: SignupIn, request: Request, response: Response, session: Sessio
     _set_cookie(response, auth.start_session(session, user))
     session.commit()
     return user
+
+
+@router.get("/config")
+def auth_config() -> dict:
+    """What the sign-up form needs to know before anyone is signed in."""
+    return {"signup_requires_code": bool(get_settings().signup_code)}
 
 
 @router.post("/login", response_model=UserOut)
@@ -76,8 +85,8 @@ def delete_account(
     limit(request, "auth", per_minute=10)
     if not auth.verify_password(body.password, user.password_hash):
         raise HTTPException(403, "That password isn't right.")
-    files = [
-        Path(i.source)
+    stored = [
+        i.source
         for i in session.scalars(
             select(Item).where(
                 Item.user_id == user.id, Item.source_type.in_([SourceType.pdf, SourceType.file])
@@ -86,8 +95,8 @@ def delete_account(
     ]
     session.delete(user)  # items, chats, tags, highlights, cards and sessions cascade
     session.commit()
-    for path in files:
-        path.unlink(missing_ok=True)
+    for key in stored:
+        files.delete(key)
     response = Response(status_code=204)
     response.delete_cookie(SESSION_COOKIE, path="/")
     return response

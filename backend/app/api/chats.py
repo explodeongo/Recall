@@ -11,6 +11,7 @@ from app.config import get_settings
 from app.deps import CurrentUser, EmbedderDep, LLMDep, SessionDep
 from app.models import Chat, ChatMessage, Item
 from app.schemas import ChatCreate, ChatOut, ChatRename, ChatSummary, MessageIn
+from app.services import quota
 from app.services.answer import Answer, Turn, stream_answer
 from app.services.chat import HISTORY_TURNS, chat_title, standalone_question
 from app.services.llm import LLMError
@@ -96,6 +97,7 @@ def send_message(
     the chat as it was."""
     limit(request, "ask", per_minute=get_settings().ask_per_minute, key=f"user:{user.id}")
     chat = _get_or_404(session, chat_id, user.id)
+    quota.check(session, user.id, "questions", get_settings().daily_questions)
     history = _turns(chat.messages)[-HISTORY_TURNS:]
     item_ids = [chat.item_id] if chat.item_id is not None else None
 
