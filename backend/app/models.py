@@ -277,6 +277,8 @@ class ChatMessage(Base):
     # On questions: what the answer was limited to, as asked ("@" items and tags, and the
     # source: library, both or web). {"items": [{"id", "title"}], "tags": [...], "source": ...}
     context: Mapped[dict | None] = mapped_column(JSONB)
+    # On answers saved to the library: the note they became.
+    saved_item_id: Mapped[int | None] = mapped_column(ForeignKey("items.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     chat: Mapped[Chat] = relationship(back_populates="messages")

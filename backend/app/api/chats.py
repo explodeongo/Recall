@@ -9,9 +9,9 @@ from sqlalchemy.orm import selectinload
 from app.api.ask import sources_json
 from app.config import get_settings
 from app.deps import CurrentUser, EmbedderDep, LLMDep, SessionDep
-from app.models import Chat, ChatMessage, Item
-from app.schemas import ChatCreate, ChatOut, ChatRename, ChatSummary, MessageIn
-from app.services import quota
+from app.models import Chat, ChatMessage, Item, SourceType
+from app.schemas import ChatCreate, ChatOut, ChatRename, ChatSummary, ItemOut, MessageIn
+from app.services import jobs, quota
 from app.services.answer import Answer, Turn, stream_answer
 from app.services.chat import HISTORY_TURNS, chat_title, standalone_question
 from app.services.llm import LLMError
@@ -203,6 +203,54 @@ def _scope(session, user_id: int, context: dict) -> list[int]:
             )
         )
     return sorted(ids) or [-1]  # a tag nothing carries: nothing to answer from
+
+
+@router.post("/{chat_id}/messages/{message_id}/save", response_model=ItemOut, status_code=201)
+def save_answer(chat_id: int, message_id: int, session: SessionDep, user: CurrentUser) -> Item:
+    """Keep an answer in the library as a note: titled with its question, its sources listed
+    at the end (so its [n] markers still mean something). Saving it again opens the same note."""
+    chat = _get_or_404(session, chat_id, user.id)
+    index = next((i for i, m in enumerate(chat.messages) if m.id == message_id), None)
+    if index is None or chat.messages[index].role != "assistant":
+        raise HTTPException(404, "Answer not found")
+    answer = chat.messages[index]
+    if answer.not_found:
+        raise HTTPException(409, "There's no answer to save here.")
+    if answer.saved_item_id is not None:
+        saved = session.get(Item, answer.saved_item_id)
+        if saved is not None:
+            session.refresh(saved, ["tags"])
+            return saved
+    question = chat.messages[index - 1].content if index > 0 else chat.title
+    note = Item(
+        user_id=user.id,
+        title=question.strip()[:200] or "Saved answer",
+        title_edited=True,
+        source_type=SourceType.note,
+        source=answer_note(answer.content, answer.sources or [], answer.cited or []),
+    )
+    quota.check(session, user.id, "items", get_settings().daily_items)
+    session.add(note)
+    session.flush()
+    jobs.enqueue(session, note)
+    answer.saved_item_id = note.id
+    session.commit()
+    session.refresh(note, ["tags"])
+    return note
+
+
+def answer_note(text: str, sources: list[dict], cited: list[int]) -> str:
+    """An answer as a note: its text, then the sources it cited, numbered as in the text."""
+    lines = []
+    for n in sorted(set(cited)):
+        if not 0 < n <= len(sources):
+            continue
+        source = sources[n - 1]
+        where = source.get("source") if source.get("kind") == "web" else None
+        page = f", page {source['page']}" if source.get("page") else ""
+        lines.append(f"[{n}] {source.get('title', '')}{page}" + (f" ({where})" if where else ""))
+    body = text.strip()
+    return body + ("\n\nSources:\n" + "\n".join(lines) if lines else "")
 
 
 def _turns(messages: list[ChatMessage]) -> list[Turn]:

@@ -156,3 +156,27 @@ def test_web_only_skips_the_library(client, library, fake_llm, web):
     assert done["web_used"] and web.queries
     final = [d for k, d in events if k == "sources"][-1]["sources"]
     assert [s["kind"] for s in final] == ["web"]
+
+
+def test_an_answer_can_be_kept_as_a_note(client, session, library, fake_llm):
+    from app.models import Item
+
+    fake_llm.answer = "A B-tree keeps keys sorted [1]."
+    chat_id = client.post("/chats", json={}).json()["id"]
+    _ask(client, chat_id, "which index serves range scans?")
+    answer = client.get(f"/chats/{chat_id}").json()["messages"][1]
+
+    saved = client.post(f"/chats/{chat_id}/messages/{answer['id']}/save")
+    assert saved.status_code == 201
+    note = saved.json()
+    assert note["title"] == "which index serves range scans?" and note["source_type"] == "note"
+    item = session.get(Item, note["id"])
+    assert item.source.startswith("A B-tree keeps keys sorted [1].")
+    assert "Sources:\n[1] Database indexing, page 2" in item.source
+
+    # Saving again gives back the same note, and the chat shows it was saved.
+    again = client.post(f"/chats/{chat_id}/messages/{answer['id']}/save").json()
+    assert again["id"] == note["id"]
+    assert client.get(f"/chats/{chat_id}").json()["messages"][1]["saved_item_id"] == note["id"]
+    question = client.get(f"/chats/{chat_id}").json()["messages"][0]
+    assert client.post(f"/chats/{chat_id}/messages/{question['id']}/save").status_code == 404

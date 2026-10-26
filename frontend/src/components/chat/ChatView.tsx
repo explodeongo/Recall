@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerText } from "@/components/AnswerText";
-import { AnswerFigures, FromTheWeb, NotFound, SourcesList, Thinking } from "@/components/chat/AnswerParts";
+import { AnswerActions, AnswerFigures, FromTheWeb, NotFound, SourcesList, Thinking } from "@/components/chat/AnswerParts";
 import { ChatList } from "@/components/chat/ChatList";
 import { MentionMenu, PinnedChips, SourceSwitch, mentionAt, useAnswerSource, useMentions, type Mention, type Pinned } from "@/components/chat/ContextPicker";
 import { Button } from "@/components/ui/button";
@@ -188,7 +188,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
           ) : (
             <div className="space-y-10 pb-4">
               {turnsOf(messages).map(([question, answer]) => (
-                <Exchange key={question.id} question={question.content} context={question.context ?? null} searchQuery={question.search_query} answer={answer} />
+                <Exchange key={question.id} chatId={chatId} question={question.content} context={question.context ?? null} searchQuery={question.search_query} answer={answer} />
               ))}
               {pending && <PendingExchange pending={pending} />}
             </div>
@@ -254,7 +254,19 @@ function Welcome({ scoped, onPick }: { scoped: boolean; onPick: (q: string) => v
   );
 }
 
-function Exchange({ question, context, searchQuery, answer }: { question: string; context: MessageContext | null; searchQuery: string | null; answer: ChatMessage }) {
+function Exchange({
+  chatId,
+  question,
+  context,
+  searchQuery,
+  answer,
+}: {
+  chatId: number | null;
+  question: string;
+  context: MessageContext | null;
+  searchQuery: string | null;
+  answer: ChatMessage;
+}) {
   const sources = answer.sources ?? [];
   const cited = (answer.cited ?? []).map((n) => sources[n - 1]).filter(Boolean);
   const fromWeb = cited.some((s) => s.kind === "web");
@@ -268,6 +280,7 @@ function Exchange({ question, context, searchQuery, answer }: { question: string
           {fromWeb && context?.source !== "web" && <FromTheWeb partly={cited.some((s) => s.kind !== "web")} />}
           <AnswerText text={answer.content} sources={sources} />
           <AnswerFigures sources={sources} cited={answer.cited ?? []} />
+          <AnswerActions chatId={chatId} message={answer} question={question} sources={sources} />
           {sources.length > 0 && <SourcesList sources={sources} cited={answer.cited ?? []} />}
         </>
       )}

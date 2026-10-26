@@ -8,6 +8,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Connections } from "@/components/Connections";
 import { Cover, NotePictures, NoteView, PictureButton, pictureIds, usePictureInsert, withoutPicture } from "@/components/Pictures";
 import { HighlightReader } from "@/components/HighlightReader";
+import { ListenButton } from "@/components/Listen";
 import { type Mark, joinPages } from "@/components/Reader";
 import { toast } from "sonner";
 import { SourceIcon, StatusBadge, sourceLabel, timeAgo } from "@/components/ItemBits";
@@ -104,6 +105,9 @@ function ItemView() {
             </Link>
           )}
           {data.status === "ready" && <QuizButton item={data} />}
+          {data.status === "ready" && data.summary && (
+            <ListenButton id={`summary-${data.id}`} title={data.title} text={summaryToRead(data)} className="h-8 px-3 text-sm" />
+          )}
           {sourceHref(data, data.id) && (
             <a href={sourceHref(data, data.id)!} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>
               <ExternalLink />
@@ -154,6 +158,16 @@ function ItemView() {
 }
 
 /** "Quiz me": makes flashcards the first time, then opens a quiz on this item's cards. */
+/** What "Listen" reads on the summary: the summary, then the overview and key points. */
+function summaryToRead(item: Item) {
+  const parts = [item.title + ".", item.summary ?? ""];
+  if (item.details) {
+    parts.push(item.details.overview);
+    if (item.details.key_points.length) parts.push("Key points.", ...item.details.key_points);
+  }
+  return parts.filter(Boolean).join("\n\n");
+}
+
 function QuizButton({ item }: { item: Item }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -476,6 +490,7 @@ function DocumentText({ item, chunkId, range }: { item: Item; chunkId: number | 
   }
   return (
     <div className="space-y-6">
+      <ListenButton id={`text-${item.id}`} title={item.title} text={joinPages(content.data.pages)} label="Read it aloud" />
       {marks.length > 0 && (
         <p className="flex max-w-[68ch] items-center gap-2 text-sm text-muted-foreground">
           <Quote className="size-4 shrink-0 text-brand" aria-hidden />

@@ -202,6 +202,7 @@ class MessageOut(BaseModel):
     not_found: bool
     search_query: str | None
     context: dict | None = None
+    saved_item_id: int | None = None
     created_at: datetime
 
 

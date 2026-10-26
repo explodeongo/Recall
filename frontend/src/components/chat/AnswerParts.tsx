@@ -1,11 +1,14 @@
 "use client";
 
-import { ChevronDown, ExternalLink, FileQuestion, Globe, Loader2 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { BookmarkPlus, Check, ChevronDown, Copy, ExternalLink, FileQuestion, Globe, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useId, useState } from "react";
 import { SourceIcon } from "@/components/ItemBits";
+import { ListenButton } from "@/components/Listen";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { imageSrc, passageHref, siteOf, sourceHref, sourceName, type Source } from "@/lib/api";
+import { api, imageSrc, passageHref, siteOf, sourceHref, sourceName, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export function Thinking({ searching, status }: { searching: boolean; status?: string | null }) {
@@ -189,5 +192,76 @@ function WebSourceCard({ source, index, animate }: { source: Source; index: numb
       </div>
       <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{source.text}</p>
     </li>
+  );
+}
+
+/** Under a finished answer: read it aloud, keep it as a note, copy it. */
+export function AnswerActions({
+  chatId,
+  message,
+  question,
+  sources,
+}: {
+  chatId: number | null;
+  message: { id: number; content: string; cited: number[] | null; saved_item_id?: number | null };
+  question: string;
+  sources: Source[];
+}) {
+  const queryClient = useQueryClient();
+  const [savedId, setSavedId] = useState(message.saved_item_id ?? null);
+  const [copied, setCopied] = useState(false);
+  const save = useMutation({
+    mutationFn: () => api.saveAnswer(chatId!, message.id),
+    onSuccess: (item) => {
+      setSavedId(item.id);
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
+      toast.success("Saved to your library as a note. Recall is reading it now.");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const cited = (message.cited ?? []).filter((n) => sources[n - 1]);
+  const plain =
+    message.content.trim() +
+    (cited.length ? "\n\nSources:\n" + cited.map((n) => `[${n}] ${sources[n - 1].title}`).join("\n") : "");
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <ListenButton id={`answer-${message.id}`} title={question} text={message.content} />
+      {savedId ? (
+        <Link
+          href={`/items/${savedId}`}
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 px-2.5 py-1 text-xs text-emerald-700 transition-colors duration-150 hover:bg-emerald-500/10 dark:text-emerald-400"
+        >
+          <Check className="size-3.5" aria-hidden /> Saved as a note
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={() => save.mutate()}
+          disabled={save.isPending || chatId === null}
+          className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground transition-[color,border-color,transform] duration-150 hover:border-brand/50 hover:text-foreground active:scale-[0.97] disabled:opacity-50"
+        >
+          {save.isPending ? <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden /> : <BookmarkPlus className="size-3.5" aria-hidden />}
+          Save as note
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(plain);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          } catch {
+            toast.error("Couldn't copy. Select the text and copy it instead.");
+          }
+        }}
+        className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground transition-[color,border-color,transform] duration-150 hover:border-brand/50 hover:text-foreground active:scale-[0.97]"
+      >
+        {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
   );
 }

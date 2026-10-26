@@ -305,6 +305,8 @@ export interface ChatMessage {
   search_query: string | null;
   /** On questions: what the answer was limited to ("@" items and tags) and where it could come from. */
   context?: MessageContext | null;
+  /** On answers kept in the library: the note they became. */
+  saved_item_id?: number | null;
   created_at: string;
 }
 
@@ -440,6 +442,7 @@ export const api = {
   login: (email: string, password: string) => request<User>("/auth/login", json("POST", { email, password })),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 
+  saveAnswer: (chatId: number, messageId: number) => request<Item>(`/chats/${chatId}/messages/${messageId}/save`, { method: "POST" }),
   chats: () => request<ChatSummary[]>("/chats"),
   chat: (id: number) => request<Chat>(`/chats/${id}`),
   createChat: (itemId?: number) => request<Chat>("/chats", json("POST", { item_id: itemId ?? null })),
