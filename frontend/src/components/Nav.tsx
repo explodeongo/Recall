@@ -49,7 +49,7 @@ export function Nav() {
             aria-current={isActive(href) ? "page" : undefined}
             className={cn(
               "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2.5",
-              isActive(href) && "bg-muted font-medium text-foreground",
+              isActive(href) && "bg-brand-soft font-medium text-brand hover:bg-brand-soft hover:text-brand",
             )}
           >
             <Icon className="size-4" aria-hidden />
@@ -64,7 +64,7 @@ export function Nav() {
         {!authPage && (
           <button
             onClick={openSearch}
-            className="ml-auto flex h-8 items-center gap-2 rounded-md border bg-card px-2.5 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground sm:w-56"
+            className="ml-auto flex h-8 items-center gap-2 rounded-md border bg-card shadow-xs px-2.5 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground sm:w-56"
             aria-label="Search your library"
           >
             <Search className="size-4" aria-hidden />

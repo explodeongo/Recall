@@ -130,7 +130,7 @@ function Library() {
           </p>
         )
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="divide-y rounded-xl border bg-card shadow-xs">
           {items.data.map((item) => (
             <ItemRow key={item.id} item={item} filter={filter} />
           ))}
@@ -280,13 +280,13 @@ function Resurface() {
     return (
       <Link
         href="/review"
-        className="flex items-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm transition-colors duration-150 hover:border-brand/40"
+        className="flex items-center gap-2 rounded-xl border bg-card shadow-xs px-4 py-3 text-sm transition-colors duration-150 hover:border-brand/40"
       >
         <Layers className="size-4 text-brand" aria-hidden />
         <span>
           {cards_due} {cards_due === 1 ? "flashcard is" : "flashcards are"} ready to review
         </span>
-        <span className="ml-auto text-brand">Review now</span>
+        <span className="ml-auto shrink-0 text-brand">Review now</span>
       </Link>
     );
   }
@@ -306,7 +306,7 @@ function Resurface() {
         <ul className="grid gap-2 sm:grid-cols-3">
           {items.map((item) => (
             <li key={item.id}>
-              <Link href={`/items/${item.id}`} className="flex h-full flex-col rounded-xl border bg-card p-4 transition-colors duration-150 hover:border-brand/40">
+              <Link href={`/items/${item.id}`} className="flex h-full flex-col rounded-xl border bg-card shadow-xs p-4 transition-colors duration-150 hover:border-brand/40">
                 <span className="flex items-center gap-2 text-xs text-muted-foreground">
                   <SourceIcon type={item.source_type} className="size-3.5" />
                   Saved {timeAgo(item.created_at)}

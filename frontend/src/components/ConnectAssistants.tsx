@@ -86,7 +86,7 @@ export function ConnectAssistants() {
         </div>
       )}
 
-      <div className="space-y-2 rounded-xl border bg-card p-4">
+      <div className="space-y-2 rounded-xl border bg-card shadow-xs p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium">Set it up</p>
           <div role="tablist" aria-label="App" className="flex rounded-full border p-0.5 text-xs">

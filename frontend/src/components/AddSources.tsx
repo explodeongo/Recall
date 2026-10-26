@@ -97,7 +97,7 @@ function FileDrop({ busy, onFiles }: { busy: boolean; onFiles: (files: File[]) =
       }}
       className={cn(
         "flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-14 text-center transition-colors",
-        over ? "border-brand bg-brand-soft/60" : "border-border bg-card",
+        over ? "border-brand bg-brand-soft/60" : "border-border bg-card shadow-xs",
       )}
     >
       {busy ? (
@@ -157,7 +157,7 @@ function LinksForm({ busy, onUrls }: { busy: boolean; onUrls: (urls: string[]) =
 
   return (
     <form
-      className="space-y-3 rounded-2xl border bg-card p-6"
+      className="space-y-3 rounded-2xl border bg-card shadow-xs p-6"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
@@ -198,7 +198,7 @@ function NoteForm({ busy, onNote }: { busy: boolean; onNote: (text: string, titl
   const id = useId();
   return (
     <form
-      className="space-y-3 rounded-2xl border bg-card p-6"
+      className="space-y-3 rounded-2xl border bg-card shadow-xs p-6"
       onSubmit={(e) => {
         e.preventDefault();
         if (text.trim()) onNote(text, title.trim() || undefined);

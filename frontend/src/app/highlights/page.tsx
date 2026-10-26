@@ -56,7 +56,7 @@ export default function HighlightsPage() {
                 <li key={h.id}>
                   <Link
                     href={`/items/${h.item_id}?from=${h.start_char}&to=${h.end_char}`}
-                    className="block rounded-xl border bg-card p-4 transition-colors duration-150 hover:border-amber-400/60"
+                    className="block rounded-xl border bg-card shadow-xs p-4 transition-colors duration-150 hover:border-amber-400/60"
                   >
                     <span className="font-heading text-[17px] leading-relaxed">
                       <span className="rounded-sm bg-amber-200/60 px-0.5 [box-decoration-break:clone] dark:bg-amber-400/20">{h.quote}</span>

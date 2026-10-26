@@ -17,7 +17,7 @@ export function Bookmarklet() {
   }, []);
 
   return (
-    <section aria-labelledby="bookmarklet-title" className="space-y-3 rounded-2xl border bg-card p-6">
+    <section aria-labelledby="bookmarklet-title" className="space-y-3 rounded-2xl border bg-card shadow-xs p-6">
       <h2 id="bookmarklet-title" className="font-heading text-xl font-medium">
         Save from any page in one click
       </h2>

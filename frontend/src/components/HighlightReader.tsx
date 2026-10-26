@@ -155,7 +155,7 @@ export function HighlightReader({ itemId, pages, cited }: { itemId: number; page
             <li
               key={h.id}
               className={cn(
-                "rounded-lg border bg-card p-3 text-sm transition-colors duration-150 hover:border-amber-400/60",
+                "rounded-lg border bg-card shadow-xs p-3 text-sm transition-colors duration-150 hover:border-amber-400/60",
                 focus === `h-${h.id}` && "border-amber-400/70",
               )}
             >

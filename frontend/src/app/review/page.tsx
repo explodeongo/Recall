@@ -238,7 +238,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
               key={g}
               onClick={() => grade(g)}
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-xl border bg-card px-3 py-3 text-sm font-medium transition-[background-color,border-color,transform] duration-150 active:scale-[0.97]",
+                "flex flex-col items-center gap-0.5 rounded-xl border bg-card shadow-xs px-3 py-3 text-sm font-medium transition-[background-color,border-color,transform] duration-150 active:scale-[0.97]",
                 tone,
               )}
             >
@@ -271,7 +271,7 @@ function AllDone({ reviewed, hasCards, nextDue }: { reviewed: number; hasCards: 
     );
   }
   return (
-    <div className="animate-enter rounded-2xl border bg-card p-8 text-center">
+    <div className="animate-enter rounded-2xl border bg-card shadow-xs p-8 text-center">
       <p className="font-heading text-2xl">{reviewed ? "Done for now" : "All caught up"}</p>
       <p className="mt-2 text-sm text-muted-foreground">
         {reviewed ? `You reviewed ${reviewed} ${reviewed === 1 ? "card" : "cards"}. ` : ""}

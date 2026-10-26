@@ -147,7 +147,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
             <History /> Chats
           </Button>
           {historyOpen && (
-            <div className="mt-3 animate-enter rounded-xl border bg-card p-3">
+            <div className="mt-3 animate-enter rounded-xl border bg-card shadow-xs p-3">
               <ChatList activeId={chatId} onNavigate={() => setHistoryOpen(false)} />
             </div>
           )}
@@ -241,7 +241,7 @@ function Welcome({ scoped, onPick }: { scoped: boolean; onPick: (q: string) => v
                 <button
                   key={t.id}
                   onClick={() => onPick(q)}
-                  className="rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-[color,border-color,transform] duration-150 hover:border-brand/50 hover:text-foreground active:scale-[0.97]"
+                  className="rounded-full border bg-card shadow-xs px-3 py-1.5 text-sm text-muted-foreground transition-[color,border-color,transform] duration-150 hover:border-brand/50 hover:text-foreground active:scale-[0.97]"
                 >
                   {q}
                 </button>

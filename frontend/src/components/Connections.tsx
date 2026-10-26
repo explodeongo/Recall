@@ -25,7 +25,7 @@ export function Connections({ item }: { item: Item }) {
       <ul className="space-y-2">
         {found.data.map((c, i) => (
           <li key={c.item.id} className="animate-enter" style={{ "--i": i } as React.CSSProperties}>
-            <div className="group relative rounded-xl border bg-card p-4 transition-colors duration-150 hover:border-brand/40">
+            <div className="group relative rounded-xl border bg-card shadow-xs p-4 transition-colors duration-150 hover:border-brand/40">
               <div className="flex items-start gap-2.5">
                 <SourceIcon type={c.item.source_type} className="mt-0.5" />
                 <div className="min-w-0 flex-1">

@@ -210,7 +210,7 @@ function Flashcards({ item }: { item: Item }) {
         </div>
       </div>
       {open && (
-        <ul className="animate-enter divide-y rounded-xl border bg-card">
+        <ul className="animate-enter divide-y rounded-xl border bg-card shadow-xs">
           {cards.data.map((card) => (
             <li key={card.id} className="group flex gap-3 p-4 text-sm">
               <div className="min-w-0 flex-1">
@@ -273,7 +273,7 @@ function ItemNote({ item }: { item: Item }) {
         maxLength={50000}
         placeholder="What you think about this, how it connects to other things you've read…"
         aria-labelledby="notes-title"
-        className="block w-full resize-y rounded-xl border bg-card px-4 py-3 text-[15px] leading-relaxed outline-none transition focus:border-brand/60 focus:ring-3 focus:ring-brand/15"
+        className="block w-full resize-y rounded-xl border bg-card shadow-xs px-4 py-3 text-[15px] leading-relaxed outline-none transition focus:border-brand/60 focus:ring-3 focus:ring-brand/15"
       />
     </section>
   );
@@ -469,7 +469,7 @@ function Processing({ status }: { status: Item["status"] }) {
   const steps = ["Saved", "Reading the text", "Summarising and tagging"];
   const current = status === "queued" ? 1 : 2;
   return (
-    <section aria-live="polite" className="rounded-xl border bg-card p-5">
+    <section aria-live="polite" className="rounded-xl border bg-card shadow-xs p-5">
       <p className="font-medium">Recall is reading this. It usually takes a few seconds.</p>
       <ol className="mt-4 flex flex-col gap-2 text-sm sm:flex-row sm:gap-6">
         {steps.map((step, i) => (
@@ -538,7 +538,7 @@ function RenameTitle({ item, onDone }: { item: Item; onDone: () => void }) {
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && onDone()}
         onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-        className="w-full rounded-lg border bg-card px-2 py-1 font-heading text-3xl leading-tight font-medium outline-none focus:border-brand/60 sm:text-4xl"
+        className="w-full rounded-lg border bg-card shadow-xs px-2 py-1 font-heading text-3xl leading-tight font-medium outline-none focus:border-brand/60 sm:text-4xl"
       />
     </form>
   );

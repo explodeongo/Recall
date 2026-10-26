@@ -72,7 +72,7 @@ function GraphView() {
       )}
 
       {graph.isPending ? (
-        <div className="grid h-[60vh] place-items-center rounded-xl border bg-card" aria-busy="true">
+        <div className="grid h-[60vh] place-items-center rounded-xl border bg-card shadow-xs" aria-busy="true">
           <Loader2 className="size-5 animate-spin text-muted-foreground motion-reduce:animate-none" aria-label="Loading the graph" />
         </div>
       ) : graph.isError ? (
@@ -358,7 +358,7 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
   const chosen = nodes.find((n) => n.id === selected);
 
   return (
-    <div ref={box} className="relative h-[68vh] min-h-96 overflow-hidden rounded-xl border bg-card">
+    <div ref={box} className="relative h-[68vh] min-h-96 overflow-hidden rounded-xl border bg-card shadow-xs">
       <svg
         ref={svg}
         width={size.width}
@@ -431,7 +431,7 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
                 onPointerDown={(e) => onPointerDown(e, n)}
                 className="cursor-pointer outline-none [&:focus-visible>circle]:stroke-(--brand)"
               >
-                {selected === n.id && <circle cx={n.x} cy={n.y} r={radius(n) + 6} fill="none" stroke={color} strokeWidth={2 / view.k} className="animate-pop" />}
+                {selected === n.id && <circle cx={n.x} cy={n.y} r={radius(n) + 6} fill="none" stroke={color} strokeWidth={2 / view.k} className="animate-pop [transform-box:fill-box] origin-center" />}
                 {/* Items linked to nothing are drawn hollow. */}
                 <circle
                   cx={n.x}

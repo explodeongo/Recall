@@ -27,7 +27,7 @@ export function Thinking({ searching, status }: { searching: boolean; status?: s
 
 export function NotFound({ searchedWeb = false }: { searchedWeb?: boolean }) {
   return (
-    <div className="flex gap-4 rounded-xl border bg-card p-5">
+    <div className="flex gap-4 rounded-xl border bg-card shadow-xs p-5">
       <FileQuestion className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
       <div>
         <p className="font-medium">{searchedWeb ? "Not found in your library or on the web" : "Not found in your library"}</p>
@@ -106,7 +106,7 @@ export function SourceCard({ source, index = 0, animate = true }: { source: Sour
   return (
     <li
       style={{ "--i": Math.min(index, 5) } as React.CSSProperties}
-      className={cn("group relative rounded-xl border bg-card p-4 transition-colors duration-150 hover:border-brand/40", animate && "animate-enter")}
+      className={cn("group relative rounded-xl border bg-card shadow-xs p-4 transition-colors duration-150 hover:border-brand/40", animate && "animate-enter")}
     >
       <div className="flex items-center gap-2 text-sm">
         <span className="grid size-5 shrink-0 place-items-center rounded-md bg-brand-soft text-xs font-semibold text-brand tabular-nums">{source.n}</span>
