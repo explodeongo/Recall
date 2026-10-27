@@ -28,6 +28,16 @@ export function Figure({ picture, caption, className }: { picture: Pick<Picture,
           height={picture.height || undefined}
           loading="lazy"
           className="mx-auto h-auto max-h-[28rem] w-auto max-w-full object-contain"
+          // The box is held at its final size before the picture arrives, so text below doesn't
+          // jump (a cited passage the reader was scrolled to would slide out of view).
+          style={
+            picture.width && picture.height
+              ? {
+                  aspectRatio: `${picture.width} / ${picture.height}`,
+                  width: `min(100%, ${picture.width}px, calc(28rem * ${(picture.width / picture.height).toFixed(4)}))`,
+                }
+              : undefined
+          }
         />
       </button>
       {text && <figcaption className="mt-2 font-sans text-sm text-muted-foreground">{text}</figcaption>}

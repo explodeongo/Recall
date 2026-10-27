@@ -5,7 +5,22 @@ only from your own library, with a citation to the exact passage.
 
 ![CI](https://github.com/explodeongo/Recall/actions/workflows/ci.yml/badge.svg)
 
-![Ask: an answer from the library, every claim cited](docs/screenshots/ask.jpg)
+![Ask a question, get an answer cited from your library, open a citation: the passage, highlighted in the paper](docs/screenshots/hero.gif)
+
+**Highlights**
+
+- **Retrieval that's measured, not assumed.** Hybrid search (pgvector + Postgres full-text,
+  merged with reciprocal rank fusion) puts the right document in the top 3 for every question in
+  a 46-question evaluation that runs in CI on every push. Answers come only from retrieved
+  passages: 94% of answerable questions answered, 100% of unanswerable ones refused instead of
+  guessed. [Results](#results) · [engineering notes](docs/engineering-notes.md)
+- **Fast:** first words on screen in 0.9 s, whole answers in 1.1 s (p50), streamed over
+  Server-Sent Events; search itself takes 13 ms.
+- **Every claim is checkable:** each sentence carries a numbered citation that opens the source
+  with the passage highlighted, PDFs included.
+- **An MCP server:** Claude, Cursor or any MCP app can search your library and get cited answers.
+- **Built to be run, not just demoed:** a Postgres job queue (`SKIP LOCKED`, no Redis), Alembic
+  migrations, ~200 tests against a real Postgres, Docker images, and CI for both apps.
 
 ## What it does
 
@@ -20,15 +35,16 @@ only from your own library, with a citation to the exact passage.
 - **Linked ideas:** while you read, names that your other saved items are about (a method, a
   chemical, a person) are underlined; hover one to see those items and the passage in each.
   Concepts are picked out once when an item is saved; linking needs no AI call.
-- **Ask, like a chat assistant, but grounded:** answers come from your library first, with
-  a numbered citation on every claim; click one to land on the exact passage, highlighted.
-  What your library doesn't cover is answered from the web: Recall searches, reads the top
-  pages and answers only from them, citing each page and labelling the answer "from the
-  web". It never answers from the model's memory, which is where made-up answers come from;
-  if neither your library nor the web has it, it says so. Chats are saved and handle
-  follow-ups ("tell me more", "summarize that", "explain it simply"). Choose where answers
-  come from (Library, Library + Web, or Web), and type `@` to limit a question to some items
-  or tags.
+- **Ask, like a chat assistant, but grounded:** answers come from your library, with a
+  numbered citation on every claim (numbered 1, 2, 3 in reading order); click one to land on
+  the exact passage, highlighted. Each answer ends with three suggested follow-up questions.
+  When your library doesn't have the answer, one click asks the web instead: Recall searches,
+  reads the top pages and answers only from them, citing each page and labelling the answer
+  "from the web". It never answers from the model's memory, which is where made-up answers
+  come from; if nothing it found has the answer, it says so. Chats are saved, searchable, and
+  handle follow-ups ("tell me more", "summarize that", "explain it simply"). Choose where
+  answers come from (Library, Library + Web, or Web), and type `@` to limit a question to
+  some items or tags.
 - **Find:** the Library's search matches each word anywhere (titles, tags, summaries, your
   notes and the full text), shows the passage where it matched, and adds documents that are
   about the same thing in other words. ⌘K jumps to any document, passage, highlight or chat.
@@ -53,41 +69,81 @@ only from your own library, with a citation to the exact passage.
 
 | | |
 | --- | --- |
-| ![Library](docs/screenshots/library.jpg) | ![An item with its connections](docs/screenshots/item.jpg) |
-| **Library:** search inside every document, colored tags, things worth another look | **An item:** summary, overview, key points, and what it connects to |
-| ![Graph](docs/screenshots/graph.jpg) | ![Review](docs/screenshots/review.jpg) |
-| **Graph:** the library as topics, with the passage linking two items | **Review:** flashcards, multiple choice and true/false, spaced out |
-| ![Dark mode](docs/screenshots/dark.jpg) | ![Connect AI assistants](docs/screenshots/assistants.jpg) |
-| **Dark mode,** and `@` to ask about one document | **MCP:** Claude or Cursor can search and ask your library |
+| ![An answer with its sources and suggested follow-ups](docs/screenshots/ask.jpg) | ![Library](docs/screenshots/library.jpg) |
+| **Ask:** every claim cited, figures from the sources, follow-ups to ask next | **Library:** search inside every document, colored tags, things worth another look |
+| ![An item](docs/screenshots/item.jpg) | ![Graph](docs/screenshots/graph.jpg) |
+| **An item:** summary, tags, notes, a quiz, and what it connects to | **Graph:** the library as topics, with the passage linking two items |
+| ![Review](docs/screenshots/review.jpg) | ![Dark mode](docs/screenshots/dark.jpg) |
+| **Review:** flashcards, multiple choice and true/false, spaced out, with a recap at the end | **Dark mode** |
+| ![Connect AI assistants](docs/screenshots/assistants.jpg) | |
+| **MCP:** Claude or Cursor can search and ask your library | |
 
 ## Results
 
 Measured on 20 pinned Wikipedia articles and 46 questions, 10 of which the library can't answer.
 Method, caveats and the full tables are in [`backend/eval`](backend/eval/README.md).
 
-| Search mode | Answer passage ranked first | Answer passage in top 3 | Latency (p50) |
-| --- | --- | --- | --- |
-| Keyword only (Postgres full-text) | 64% | 86% | 13 ms |
-| Vector only (pgvector) | 72% | 89% | 11 ms |
-| **Hybrid, merged with reciprocal rank fusion** | **83%** | **92%** | 13 ms |
+| Search mode | Right document in top 3 | Answer passage ranked first | Answer passage in top 3 | Latency (p50) |
+| --- | --- | --- | --- | --- |
+| Keyword only (Postgres full-text) | 97% | 61% | 89% | 12 ms |
+| Vector only (pgvector) | 100% | 67% | 92% | 11 ms |
+| **Hybrid, merged with reciprocal rank fusion** | **100%** | **81%** | **92%** | 13 ms |
 
 End to end, with Gemini answering from the top six passages:
 
 | Measure | Result | Proposal target |
 | --- | --- | --- |
 | Correct source in the top 3 | 100% | 80% |
+| Answerable questions answered | 94% | |
 | Unanswerable questions refused | 100% (10 of 10) | |
 | Answers citing the right document | 100% | |
-| Answer time, p50 / p95 | 1.2 s / 1.6 s | 5 to 10 s |
+| Answer time, p50 / p95 | 1.1 s / 1.5 s | 5 to 10 s |
+| First words on screen, p50 | 0.9 s | |
 
-What the evaluation changed: embedding each chunk with its document's title raised hybrid's
-first-place rate from 72% to 83%. A cross-encoder reranker was tried as well; it got the answer into
-the model's context more often (100% against 94%) but added about 0.6 s per question, so it ships
-as an option (`SEARCH_MODE=rerank`) rather than the default. The "not found" threshold (0.58) was
-tuned so off-topic questions never reach the LLM, while near-miss questions are left to the model,
-which is told to answer `NOT_FOUND` when the passages don't hold the answer.
+What the evaluation changed:
+
+- Embedding each chunk with its document's title raised hybrid's first-place rate from 72% to 83%.
+- A cross-encoder reranker got the answer into the model's context more often (100% against 94%)
+  but added about 0.6 s per question, so it ships as an option (`SEARCH_MODE=rerank`), not the
+  default.
+- Dropping reference lists and navigation lines from extracted text cut the index by a third
+  (390 to 265 chunks) with end-to-end answers unchanged; a question-by-question comparison showed
+  the one first-place swap was chunk boundaries moving, not lost text. The story is in the
+  [engineering notes](docs/engineering-notes.md).
+- The "not found" threshold (0.58) was tuned so off-topic questions never reach the LLM, while
+  near-miss questions are left to the model, which is told to answer `NOT_FOUND` when the
+  passages don't hold the answer.
 
 ## How it works
+
+```mermaid
+flowchart TB
+    subgraph Save["Save (background job)"]
+        direction TB
+        S1["PDF · link · video · note"] --> S2["Extract text<br/>and figures"]
+        S2 --> S3["Clean: headers, page numbers,<br/>navigation, reference lists"]
+        S3 --> S4["Chunk ~400 tokens<br/>with overlap"]
+        S4 --> S5["Embed locally<br/>bge-small (ONNX)"]
+        S3 --> S6["Gemini: summaries,<br/>tags, key concepts"]
+    end
+
+    subgraph Ask["Ask (streamed)"]
+        direction TB
+        A1["Question"] --> A2["Rewrite follow-ups<br/>to stand alone"]
+        A2 --> A3["Hybrid search:<br/>pgvector HNSW + full-text,<br/>reciprocal rank fusion"]
+        A3 --> A4{"Closest passage<br/>similar enough?"}
+        A4 -- no --> A5["Not in your library<br/>(no LLM call)"]
+        A4 -- yes --> A6["Gemini answers from<br/>the top 6 passages only"]
+        A6 --> A7["Cited answer over SSE,<br/>suggested follow-ups"]
+        A5 -. one click .-> W["Web search: read the top<br/>pages, answer from them"]
+    end
+
+    DB[("Postgres<br/>items · chunks · vectors<br/>jobs queue")]
+    S5 --> DB
+    S6 --> DB
+    DB --> A3
+    MCP["Claude · Cursor<br/>(MCP server)"] --> A1
+```
 
 - **Save:** `POST /items` stores a PDF or URL and queues a background job.
 - **Process:** a worker claims jobs from Postgres (`FOR UPDATE SKIP LOCKED`), extracts text,

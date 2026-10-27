@@ -121,11 +121,12 @@ function Inline({ text, sources, numbers }: { text: string; sources: Source[]; n
   return <>{parts}</>;
 }
 
-/** **bold**, and maths sub- and superscripts: d_{model}, 10^{4}, x^2. */
+/** **bold**, and maths sub- and superscripts: d_{model}, d_k, 10^{4}, x^2. A bare subscript
+ * is one or two characters after a single letter (d_k, x_i), so snake_case words stay as they are. */
 function Bold({ text }: { text: string }) {
   return (
     <>
-      {text.split(/(\*\*[^*]+\*\*|[_^]\{[^{}]{1,24}\}|(?<=[A-Za-z0-9)])\^-?\d{1,3}\b)/g).map((part, i) =>
+      {text.split(/(\*\*[^*]+\*\*|[_^]\{[^{}]{1,24}\}|(?<=\b[A-Za-z])_[A-Za-z0-9]{1,2}\b|(?<=[A-Za-z0-9)])\^-?\d{1,3}\b)/g).map((part, i) =>
         part.startsWith("**") && part.endsWith("**") ? (
           <strong key={i} className="font-semibold">
             {part.slice(2, -2)}
@@ -136,6 +137,8 @@ function Bold({ text }: { text: string }) {
           ) : (
             <sup key={i} className="text-[0.72em]">{part.slice(2, -1)}</sup>
           )
+        ) : /^_[A-Za-z0-9]{1,2}$/.test(part) ? (
+          <sub key={i} className="text-[0.72em]">{part.slice(1)}</sub>
         ) : /^\^-?\d/.test(part) ? (
           <sup key={i} className="text-[0.72em]">{part.slice(1)}</sup>
         ) : (
