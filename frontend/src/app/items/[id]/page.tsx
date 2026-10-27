@@ -48,9 +48,17 @@ function ItemView() {
   const range = from !== null && to !== null && Number.isFinite(from) && to > from ? { from, to } : null;
   // A citation opens the document itself, scrolled to the passage; otherwise the summary.
   const [view, setView] = useState<"summary" | "read">(range || chunkId || params.get("view") === "read" ? "read" : "summary");
+  const queryClient = useQueryClient();
   const item = useQuery({
     queryKey: ["item", id],
     queryFn: () => api.item(id),
+    // Opened from the library, the item is already in a cached list: show it at once while the
+    // fresh copy loads, instead of a skeleton.
+    placeholderData: () =>
+      queryClient
+        .getQueriesData<Item[]>({ queryKey: ["items"] })
+        .flatMap(([, list]) => list ?? [])
+        .find((i) => i.id === id),
     refetchInterval: (query) => (query.state.data && isBusy(query.state.data.status) ? 1500 : false),
   });
   // Only an item seen being read on this visit gets the reveal; opening a finished one is instant.
@@ -58,6 +66,10 @@ function ItemView() {
   const [renaming, setRenaming] = useState(false);
   // Record the visit once, so "Worth another look" doesn't suggest what was just read.
   const opened = useRef(false);
+  const title = item.data?.title;
+  useEffect(() => {
+    if (title) document.title = `${title} · Recall`;
+  }, [title]);
   useEffect(() => {
     if (opened.current || !item.data || item.data.status !== "ready") return;
     opened.current = true;

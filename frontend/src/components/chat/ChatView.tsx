@@ -1,12 +1,12 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, AtSign, FileText, Globe, Hash, History, MessageSquareText, Search, Square } from "lucide-react";
+import { ArrowUp, AtSign, FileText, Globe, Hash, History, MessageSquareText, RotateCw, Search, Square } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerText } from "@/components/AnswerText";
-import { AnswerActions, AnswerFigures, FromTheWeb, NotFound, SourcesList, Thinking } from "@/components/chat/AnswerParts";
+import { AnswerActions, AnswerFigures, FromTheWeb, NotFound, SourcesList, SuggestedQuestions, Thinking } from "@/components/chat/AnswerParts";
 import { ChatList } from "@/components/chat/ChatList";
 import { MentionMenu, PinnedChips, SourceSwitch, mentionAt, useAnswerSource, useMentions, type Mention, type Pinned } from "@/components/chat/ContextPicker";
 import { Button } from "@/components/ui/button";
@@ -189,10 +189,19 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
             <Welcome scoped={itemId !== null} onPick={ask} />
           ) : (
             <div className="flex-1 space-y-10 pb-4">
-              {turnsOf(messages).map(([question, answer]) => (
-                <Exchange key={question.id} chatId={chatId} question={question.content} context={question.context ?? null} searchQuery={question.search_query} answer={answer} />
+              {turnsOf(messages).map(([question, answer], i, all) => (
+                <Exchange
+                  key={question.id}
+                  // Follow-ups only under the latest answer, and not while another is coming.
+                  onAsk={i === all.length - 1 && !pending ? ask : undefined}
+                  chatId={chatId}
+                  question={question.content}
+                  context={question.context ?? null}
+                  searchQuery={question.search_query}
+                  answer={answer}
+                />
               ))}
-              {pending && <PendingExchange pending={pending} />}
+              {pending && <PendingExchange pending={pending} onRetry={ask} />}
             </div>
           )}
           <Composer
@@ -277,7 +286,9 @@ function Exchange({
   context,
   searchQuery,
   answer,
+  onAsk,
 }: {
+  onAsk?: (q: string) => void;
   chatId: number | null;
   question: string;
   context: MessageContext | null;
@@ -299,21 +310,27 @@ function Exchange({
           <AnswerFigures sources={sources} cited={answer.cited ?? []} />
           <AnswerActions chatId={chatId} message={answer} question={question} sources={sources} />
           {sources.length > 0 && <SourcesList sources={sources} cited={answer.cited ?? []} />}
+          {onAsk && <SuggestedQuestions questions={answer.suggestions ?? []} onAsk={onAsk} />}
         </>
       )}
     </section>
   );
 }
 
-function PendingExchange({ pending }: { pending: Pending }) {
+function PendingExchange({ pending, onRetry }: { pending: Pending; onRetry: (q: string) => void }) {
   const sources = pending.sources ?? [];
   return (
     <section aria-live="polite" aria-busy={pending.error === null} className="animate-enter space-y-4">
       <Question text={pending.question} context={pending.context} searchQuery={pending.query} />
       {pending.error && !pending.text ? (
-        <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-          {pending.error === "Stopped." ? "Stopped. This question wasn't saved." : `Something went wrong: ${pending.error}. This question wasn't saved; try asking again.`}
-        </p>
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          <p className="min-w-0 flex-1">
+            {pending.error === "Stopped." ? "Stopped. This question wasn't saved." : `${pending.error.replace(/\.$/, "")}. Your question wasn't saved.`}
+          </p>
+          <Button size="sm" variant="outline" onClick={() => onRetry(pending.question)}>
+            <RotateCw /> Try again
+          </Button>
+        </div>
       ) : pending.sources === null || !pending.text ? (
         <Thinking searching={pending.sources === null} status={pending.status} />
       ) : (
@@ -581,6 +598,7 @@ function appendTurn(chat: Chat, pending: Pending, done: MessageDone): Chat {
         sources: pending.sources ?? [],
         cited: done.cited,
         not_found: done.not_found,
+        suggestions: done.suggestions,
         search_query: null,
         created_at: now,
       },

@@ -70,6 +70,11 @@ def _pattern(key: str) -> str:
     )
 
 
+def _overview(details: dict | None) -> str:
+    details = details or {}
+    return " ".join([details.get("overview") or "", *(details.get("key_points") or [])])
+
+
 def _usable(term: str) -> bool:
     return len(term) >= 3 and term.lower() not in GENERIC
 
@@ -79,7 +84,7 @@ def links_for(session: Session, item: Item) -> list[Link]:
         return []
     text = "\n\n".join(p["text"] for p in item.content)
     others = session.execute(
-        select(Item.id, Item.title, Item.details, Item.cover_image_id).where(
+        select(Item.id, Item.title, Item.summary, Item.details, Item.cover_image_id).where(
             Item.user_id == item.user_id,
             Item.id != item.id,
             Item.status == ItemStatus.ready,
@@ -90,8 +95,12 @@ def links_for(session: Session, item: Item) -> list[Link]:
     by_term: dict[str, dict[int, Target]] = {}
     spelling: dict[str, str] = {}
     for row in others:
-        terms = title_terms(row.title) + list((row.details or {}).get("concepts") or [])
-        for term in terms:
+        # An item is a link target for its own name, and for the concepts it's about: those
+        # its summary or overview mention, not one it names in passing ("Microsoft" in an
+        # article about A/B testing).
+        about = _key(" ".join([row.summary or "", _overview(row.details)]))
+        concepts = [c for c in (row.details or {}).get("concepts") or [] if _key(c) in about]
+        for term in title_terms(row.title) + concepts:
             key = _key(term)
             if not _usable(term) or key in own:
                 continue

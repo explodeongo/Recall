@@ -468,6 +468,7 @@ def main() -> None:
                 "p50_ms": percentile(result.latencies_ms, 50),
                 "p95_ms": percentile(result.latencies_ms, 95),
                 "misses": sorted(i for i, r in result.ranks.items() if not r or r > 3),
+                "passage_ranks": result.passage_ranks,  # to compare runs question by question
             }
             m = report["retrieval"][mode.value]["all"]
             print(

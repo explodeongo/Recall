@@ -9,6 +9,7 @@ from app.services.llm import GeminiClient, LLMError
 def _client(handler, models=("primary", "backup")) -> GeminiClient:
     client = GeminiClient("test-key", list(models))
     client._http = httpx.Client(transport=httpx.MockTransport(handler))
+    client.WAIT_S = 0  # no real waiting between rounds in tests
     return client
 
 
@@ -55,10 +56,32 @@ def test_client_errors_do_not_fall_back():
     assert not err.value.retryable
 
 
-def test_last_model_failure_is_retryable():
+def test_last_model_failure_is_retryable_and_said_plainly():
+    calls = []
+
+    def handler(req):
+        calls.append(req.url.path)
+        return httpx.Response(429, text='{"error": "quota"}')
+
     with pytest.raises(LLMError) as err:
-        _client(lambda req: httpx.Response(429, text="quota")).generate("hi")
+        _client(handler).generate("hi")
     assert err.value.retryable
+    assert len(calls) == 4  # both models, twice
+    assert str(err.value).startswith("Gemini, the AI behind answers, is busy right now")
+    assert "quota" not in str(err.value)
+
+
+def test_a_second_round_rides_out_a_brief_overload():
+    calls = []
+
+    def handler(req):
+        calls.append(req.url.path)
+        if len(calls) <= 2:
+            return httpx.Response(503, text="overloaded")
+        return httpx.Response(200, json=_reply("back"))
+
+    assert _client(handler).generate("hi") == "back"
+    assert len(calls) == 3
 
 
 def test_stream_parses_sse_and_skips_thoughts():

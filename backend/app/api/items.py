@@ -47,6 +47,21 @@ def create_item(
     article, a PDF, or a YouTube video), or typed text as a note. It's read in the background."""
     if sum(x is not None for x in (file, url, text)) != 1:
         raise HTTPException(422, "Send exactly one of: a file, a url, or text")
+    if url is not None:
+        try:
+            clean = str(_url_adapter.validate_python(url.strip()))
+        except ValidationError as exc:
+            raise HTTPException(422, "That doesn't look like a valid http(s) URL") from exc
+        # The same link saved twice (a double click on the bookmark button) is the same item.
+        existing = session.scalars(
+            select(Item)
+            .where(Item.user_id == user.id, Item.source == clean)
+            .where(Item.source_type.in_([SourceType.url, SourceType.youtube]))
+            .where(Item.status != ItemStatus.failed)
+            .options(selectinload(Item.tags))
+        ).first()
+        if existing is not None:
+            return existing
     quota.check(session, user.id, "items", get_settings().daily_items)
 
     if file is not None:
@@ -55,10 +70,6 @@ def create_item(
         item = Item(user_id=user.id, title=name, source_type=kind, source=path)
         item.title_edited = bool(title and title.strip())
     elif url is not None:
-        try:
-            clean = str(_url_adapter.validate_python(url.strip()))
-        except ValidationError as exc:
-            raise HTTPException(422, "That doesn't look like a valid http(s) URL") from exc
         kind = SourceType.youtube if video_id(clean) else SourceType.url
         item = Item(user_id=user.id, title=clean, source_type=kind, source=clean)
     else:

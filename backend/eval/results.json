@@ -5,17 +5,17 @@
         "n": 36,
         "hit@1": 0.9444444444444444,
         "recall@3": 1,
-        "mrr": 0.9675925925925926,
-        "passage@1": 0.8333333333333334,
+        "mrr": 0.9722222222222222,
+        "passage@1": 0.8055555555555556,
         "passage@3": 0.9166666666666666,
-        "passage_mrr": 0.8680555555555556,
+        "passage_mrr": 0.8541666666666666,
         "answer_in_context": 0.9444444444444444
       },
       "paraphrase": {
         "n": 17,
         "hit@1": 0.8823529411764706,
         "recall@3": 1,
-        "mrr": 0.9313725490196079,
+        "mrr": 0.9411764705882353,
         "passage@1": 0.7647058823529411,
         "passage@3": 0.8823529411764706,
         "passage_mrr": 0.8186274509803921,
@@ -26,14 +26,52 @@
         "hit@1": 1,
         "recall@3": 1,
         "mrr": 1.0,
-        "passage@1": 0.8947368421052632,
+        "passage@1": 0.8421052631578947,
         "passage@3": 0.9473684210526315,
-        "passage_mrr": 0.9122807017543859,
+        "passage_mrr": 0.8859649122807017,
         "answer_in_context": 0.9473684210526315
       },
-      "p50_ms": 11.215833015739918,
-      "p95_ms": 15.75133396545425,
-      "misses": []
+      "p50_ms": 12.79929099837318,
+      "p95_ms": 18.1243330007419,
+      "misses": [],
+      "passage_ranks": {
+        "q01": 1,
+        "q02": 1,
+        "q03": 1,
+        "q04": 1,
+        "q05": 1,
+        "q06": 1,
+        "q07": 1,
+        "q08": 1,
+        "q09": 1,
+        "q10": null,
+        "q11": 1,
+        "q12": 3,
+        "q13": 1,
+        "q14": 1,
+        "q15": 1,
+        "q16": 1,
+        "q17": 4,
+        "q18": 3,
+        "q19": 1,
+        "q20": 1,
+        "q21": null,
+        "q22": 2,
+        "q23": 1,
+        "q24": 1,
+        "q25": 1,
+        "q26": 1,
+        "q27": 1,
+        "q28": 1,
+        "q29": 1,
+        "q30": 1,
+        "q31": 3,
+        "q32": 1,
+        "q33": 1,
+        "q34": 1,
+        "q35": 1,
+        "q36": 1
+      }
     },
     "vector": {
       "all": {
@@ -41,9 +79,9 @@
         "hit@1": 0.8888888888888888,
         "recall@3": 1,
         "mrr": 0.9398148148148148,
-        "passage@1": 0.7222222222222222,
-        "passage@3": 0.8888888888888888,
-        "passage_mrr": 0.8134259259259259,
+        "passage@1": 0.6666666666666666,
+        "passage@3": 0.9166666666666666,
+        "passage_mrr": 0.7888888888888889,
         "answer_in_context": 0.9722222222222222
       },
       "paraphrase": {
@@ -52,8 +90,8 @@
         "recall@3": 1,
         "mrr": 0.8725490196078431,
         "passage@1": 0.47058823529411764,
-        "passage@3": 0.7647058823529411,
-        "passage_mrr": 0.6441176470588236,
+        "passage@3": 0.8235294117647058,
+        "passage_mrr": 0.6509803921568628,
         "answer_in_context": 0.9411764705882353
       },
       "keyword": {
@@ -61,34 +99,72 @@
         "hit@1": 1,
         "recall@3": 1,
         "mrr": 1.0,
-        "passage@1": 0.9473684210526315,
+        "passage@1": 0.8421052631578947,
         "passage@3": 1,
-        "passage_mrr": 0.9649122807017544,
+        "passage_mrr": 0.9122807017543859,
         "answer_in_context": 1
       },
-      "p50_ms": 8.303084003273398,
-      "p95_ms": 9.922792029101402,
-      "misses": []
+      "p50_ms": 10.90449996991083,
+      "p95_ms": 13.082374993246049,
+      "misses": [],
+      "passage_ranks": {
+        "q01": 1,
+        "q02": 1,
+        "q03": 2,
+        "q04": 1,
+        "q05": 1,
+        "q06": 1,
+        "q07": 3,
+        "q08": 1,
+        "q09": 2,
+        "q10": 1,
+        "q11": 1,
+        "q12": 5,
+        "q13": 1,
+        "q14": 1,
+        "q15": 1,
+        "q16": 1,
+        "q17": 5,
+        "q18": 3,
+        "q19": 1,
+        "q20": 1,
+        "q21": null,
+        "q22": 2,
+        "q23": 2,
+        "q24": 1,
+        "q25": 1,
+        "q26": 1,
+        "q27": 2,
+        "q28": 2,
+        "q29": 1,
+        "q30": 1,
+        "q31": 3,
+        "q32": 1,
+        "q33": 1,
+        "q34": 1,
+        "q35": 1,
+        "q36": 1
+      }
     },
     "keyword": {
       "all": {
         "n": 36,
-        "hit@1": 0.9722222222222222,
-        "recall@3": 1,
-        "mrr": 0.9861111111111112,
-        "passage@1": 0.6388888888888888,
-        "passage@3": 0.8611111111111112,
-        "passage_mrr": 0.7439814814814815,
+        "hit@1": 0.9444444444444444,
+        "recall@3": 0.9722222222222222,
+        "mrr": 0.9606481481481481,
+        "passage@1": 0.6111111111111112,
+        "passage@3": 0.8888888888888888,
+        "passage_mrr": 0.7430555555555556,
         "answer_in_context": 0.9166666666666666
       },
       "paraphrase": {
         "n": 17,
-        "hit@1": 0.9411764705882353,
-        "recall@3": 1,
-        "mrr": 0.9705882352941176,
-        "passage@1": 0.7058823529411765,
-        "passage@3": 0.7647058823529411,
-        "passage_mrr": 0.7617647058823529,
+        "hit@1": 0.8823529411764706,
+        "recall@3": 0.9411764705882353,
+        "mrr": 0.9166666666666666,
+        "passage@1": 0.6470588235294118,
+        "passage@3": 0.8235294117647058,
+        "passage_mrr": 0.7401960784313726,
         "answer_in_context": 0.8823529411764706
       },
       "keyword": {
@@ -98,12 +174,52 @@
         "mrr": 1.0,
         "passage@1": 0.5789473684210527,
         "passage@3": 0.9473684210526315,
-        "passage_mrr": 0.7280701754385965,
+        "passage_mrr": 0.7456140350877193,
         "answer_in_context": 0.9473684210526315
       },
-      "p50_ms": 12.376458034850657,
-      "p95_ms": 14.196417003404349,
-      "misses": []
+      "p50_ms": 12.461959035135806,
+      "p95_ms": 15.694208967033774,
+      "misses": [
+        "q17"
+      ],
+      "passage_ranks": {
+        "q01": 2,
+        "q02": 1,
+        "q03": 2,
+        "q04": 1,
+        "q05": 1,
+        "q06": 1,
+        "q07": 1,
+        "q08": 1,
+        "q09": 1,
+        "q10": null,
+        "q11": 1,
+        "q12": 3,
+        "q13": 1,
+        "q14": 1,
+        "q15": 1,
+        "q16": 1,
+        "q17": null,
+        "q18": 3,
+        "q19": 1,
+        "q20": 1,
+        "q21": null,
+        "q22": 3,
+        "q23": 2,
+        "q24": 2,
+        "q25": 1,
+        "q26": 2,
+        "q27": 1,
+        "q28": 1,
+        "q29": 2,
+        "q30": 2,
+        "q31": 4,
+        "q32": 1,
+        "q33": 1,
+        "q34": 1,
+        "q35": 1,
+        "q36": 1
+      }
     },
     "rerank": {
       "all": {
@@ -113,8 +229,8 @@
         "mrr": 1.0,
         "passage@1": 0.8333333333333334,
         "passage@3": 0.9166666666666666,
-        "passage_mrr": 0.8851851851851852,
-        "answer_in_context": 1
+        "passage_mrr": 0.8828703703703704,
+        "answer_in_context": 0.9722222222222222
       },
       "paraphrase": {
         "n": 17,
@@ -123,8 +239,8 @@
         "mrr": 1.0,
         "passage@1": 0.8235294117647058,
         "passage@3": 0.8823529411764706,
-        "passage_mrr": 0.8725490196078431,
-        "answer_in_context": 1
+        "passage_mrr": 0.8676470588235294,
+        "answer_in_context": 0.9411764705882353
       },
       "keyword": {
         "n": 19,
@@ -136,9 +252,47 @@
         "passage_mrr": 0.8964912280701754,
         "answer_in_context": 1
       },
-      "p50_ms": 625.9314579656348,
-      "p95_ms": 685.722624999471,
-      "misses": []
+      "p50_ms": 668.1589999934658,
+      "p95_ms": 895.1882499968633,
+      "misses": [],
+      "passage_ranks": {
+        "q01": 1,
+        "q02": 1,
+        "q03": 1,
+        "q04": 1,
+        "q05": 1,
+        "q06": 1,
+        "q07": 1,
+        "q08": 1,
+        "q09": 1,
+        "q10": 1,
+        "q11": 1,
+        "q12": 1,
+        "q13": 1,
+        "q14": 1,
+        "q15": 1,
+        "q16": 1,
+        "q17": 4,
+        "q18": 3,
+        "q19": 1,
+        "q20": 1,
+        "q21": null,
+        "q22": 1,
+        "q23": 1,
+        "q24": 1,
+        "q25": 1,
+        "q26": 5,
+        "q27": 1,
+        "q28": 1,
+        "q29": 1,
+        "q30": 2,
+        "q31": 2,
+        "q32": 1,
+        "q33": 1,
+        "q34": 1,
+        "q35": 1,
+        "q36": 1
+      }
     }
   },
   "gate": {
@@ -156,19 +310,19 @@
     },
     "answerable_min": 0.6017707343648113,
     "answerable_max": 0.8948543793137639,
-    "unanswerable_min": 0.43551778024647314,
+    "unanswerable_min": 0.4355312470551582,
     "unanswerable_max": 0.6853627154014889,
     "similarities": {
       "q01": 0.7027326934974925,
       "q02": 0.6017707343648113,
       "q03": 0.7648538754575755,
       "q04": 0.8948543793137639,
-      "q05": 0.7917182420844786,
+      "q05": 0.7927754983135695,
       "q06": 0.7287170129249699,
-      "q07": 0.7438213894207557,
+      "q07": 0.7438121132626722,
       "q08": 0.8033175121692612,
       "q09": 0.6965561274819222,
-      "q10": 0.7084354336002223,
+      "q10": 0.7256783083485665,
       "q11": 0.8460825842096916,
       "q12": 0.8206626390620959,
       "q13": 0.7310813229631602,
@@ -178,13 +332,13 @@
       "q17": 0.7704492211341858,
       "q18": 0.8325615428204721,
       "q19": 0.7315487149568827,
-      "q20": 0.628461153140353,
-      "q21": 0.7373715356145512,
-      "q22": 0.6264642958268728,
-      "q23": 0.6497196183026547,
+      "q20": 0.63592701875511,
+      "q21": 0.7347084563623071,
+      "q22": 0.6310309015476032,
+      "q23": 0.6547249761388011,
       "q24": 0.8363432537419875,
       "q25": 0.6628881692886541,
-      "q26": 0.764395847058556,
+      "q26": 0.7643839804277406,
       "q27": 0.7519732494298472,
       "q28": 0.6262708228019419,
       "q29": 0.8227848165397433,
@@ -193,12 +347,12 @@
       "q32": 0.7067630851182642,
       "q33": 0.7644164421806722,
       "q34": 0.7701158797602797,
-      "q35": 0.8351180952928239,
+      "q35": 0.8351137343252437,
       "q36": 0.7795817821594835,
       "u01": 0.5258758633284769,
-      "u02": 0.47353759407998475,
+      "u02": 0.46199765121894876,
       "u03": 0.5129018716274586,
-      "u04": 0.43551778024647314,
+      "u04": 0.4355312470551582,
       "u05": 0.5573922493405181,
       "u06": 0.6594926321808927,
       "u07": 0.6853627154014889,
@@ -251,9 +405,9 @@
       },
       {
         "threshold": 0.47,
-        "refusal_recall": 0.1,
+        "refusal_recall": 0.2,
         "answer_rate": 1,
-        "balanced": 0.55
+        "balanced": 0.6
       },
       {
         "threshold": 0.48,
@@ -348,8 +502,8 @@
       {
         "threshold": 0.63,
         "refusal_recall": 0.6,
-        "answer_rate": 0.8888888888888888,
-        "balanced": 0.7444444444444445
+        "answer_rate": 0.9444444444444444,
+        "balanced": 0.7722222222222221
       },
       {
         "threshold": 0.64,
@@ -360,8 +514,8 @@
       {
         "threshold": 0.65,
         "refusal_recall": 0.6,
-        "answer_rate": 0.8611111111111112,
-        "balanced": 0.7305555555555556
+        "answer_rate": 0.8888888888888888,
+        "balanced": 0.7444444444444445
       },
       {
         "threshold": 0.66,
@@ -396,14 +550,14 @@
       {
         "threshold": 0.71,
         "refusal_recall": 1,
-        "answer_rate": 0.7222222222222222,
-        "balanced": 0.8611111111111112
+        "answer_rate": 0.75,
+        "balanced": 0.875
       },
       {
         "threshold": 0.72,
         "refusal_recall": 1,
-        "answer_rate": 0.7222222222222222,
-        "balanced": 0.8611111111111112
+        "answer_rate": 0.75,
+        "balanced": 0.875
       },
       {
         "threshold": 0.73,
@@ -459,9 +613,9 @@
     "answered_rate": 0.9444444444444444,
     "refusal_recall": 1,
     "cites_expected_doc": 1,
-    "answer_p50_ms": 1242.1584999538027,
-    "answer_p95_ms": 1573.3602920081466,
-    "first_token_p50_ms": 1150.1609580009244
+    "answer_p50_ms": 1128.8370420224965,
+    "answer_p95_ms": 1549.7040419722907,
+    "first_token_p50_ms": 936.2164579797536
   },
   "answer_rows": [
     {
@@ -469,15 +623,15 @@
       "question": "Which company's research lab were the inventors of the B-tree working at?",
       "expected_doc": "btree",
       "not_found": false,
-      "answer": "The inventors of the B-tree were working at Boeing Research Labs [1].",
+      "answer": "Rudolf Bayer and Edward M. McCreight were working at Boeing Research Labs when they invented B-trees [1].",
       "cited_docs": [
         "btree"
       ],
       "cited_passages": [
         "B-tree\n\nB-tree\n\nType | Tree (data structure)\n\nInvented | 1970\n\nInvented by | Rudolf Bayer, Edward M. McCreight\n\nComplexities in big O notation\n\nSpace complexity\n\nSpace\n\nTime complexity\n\nFunction | Amortized | Worst case\n\nSearch\n\nInsert\n\nDelete\n\nIn computer science, a B-tree is a self-balancing tree data structure that maintains sorted data and allows searches, sequential access, insertions, and deletions in logarithmic time. The B-tree generalizes the binary search tree, allowing nodes to have more than two children.\n\nBy allowing more children under one node than a regular self-balancing binary search tree, the B-tree reduces the height of the tree and puts the data in fewer separate blocks. This is especially important for trees stored in secondary storage (e.g., disk drives), as these systems have relatively high latency and work with relatively large blocks of data, hence the B-tree's use in databases and file systems. This remains a major advantage when the tree is stored in memory, as modern computer systems rely heavily on CPU caches. Compared to reading from the cache, reading from memory after a cache miss costs significant time.\n\nHistory\n\nWhile working at Boeing Research Labs, Rudolf Bayer and Edward M. McCreight invented B-trees to efficiently manage index pages for large random-access files. Their basic assumption was that indices would be so voluminous that only small chunks of the tree could fit in the main memory. Bayer and McCreight's paper Organization and maintenance of large ordered indices was first circulated in July 1970 and later published in Acta Informatica.\n\nBayer and McCreight never explained what, if anything, the B stands for; Boeing, balanced, between, broad, bushy, and Bayer have been suggested. When asked, \"I want to know what B in B-Tree stands for,\" McCreight answered:\n\nEverybody does!\n\nSo you just have no idea what a lunchtime conversation can turn into. So there we were, Rudy and I, at lunch. We had to give the thing a name...."
       ],
-      "total_ms": 1311.2826659926213,
-      "first_token_ms": 1209.0116659528576,
+      "total_ms": 1376.542915997561,
+      "first_token_ms": 1202.4977499968372,
       "llm_called": true
     },
     {
@@ -485,15 +639,15 @@
       "question": "When was Bayer and McCreight's paper on large ordered indices first circulated?",
       "expected_doc": "btree",
       "not_found": false,
-      "answer": "Bayer and McCreight's paper on large ordered indices was first circulated in July 1970 [1].",
+      "answer": "Rudolf Bayer and Edward M. McCreight's paper titled \"Organization and maintenance of large ordered indices\" was first circulated in July 1970 [1].",
       "cited_docs": [
         "btree"
       ],
       "cited_passages": [
         "B-tree\n\nB-tree\n\nType | Tree (data structure)\n\nInvented | 1970\n\nInvented by | Rudolf Bayer, Edward M. McCreight\n\nComplexities in big O notation\n\nSpace complexity\n\nSpace\n\nTime complexity\n\nFunction | Amortized | Worst case\n\nSearch\n\nInsert\n\nDelete\n\nIn computer science, a B-tree is a self-balancing tree data structure that maintains sorted data and allows searches, sequential access, insertions, and deletions in logarithmic time. The B-tree generalizes the binary search tree, allowing nodes to have more than two children.\n\nBy allowing more children under one node than a regular self-balancing binary search tree, the B-tree reduces the height of the tree and puts the data in fewer separate blocks. This is especially important for trees stored in secondary storage (e.g., disk drives), as these systems have relatively high latency and work with relatively large blocks of data, hence the B-tree's use in databases and file systems. This remains a major advantage when the tree is stored in memory, as modern computer systems rely heavily on CPU caches. Compared to reading from the cache, reading from memory after a cache miss costs significant time.\n\nHistory\n\nWhile working at Boeing Research Labs, Rudolf Bayer and Edward M. McCreight invented B-trees to efficiently manage index pages for large random-access files. Their basic assumption was that indices would be so voluminous that only small chunks of the tree could fit in the main memory. Bayer and McCreight's paper Organization and maintenance of large ordered indices was first circulated in July 1970 and later published in Acta Informatica.\n\nBayer and McCreight never explained what, if anything, the B stands for; Boeing, balanced, between, broad, bushy, and Bayer have been suggested. When asked, \"I want to know what B in B-Tree stands for,\" McCreight answered:\n\nEverybody does!\n\nSo you just have no idea what a lunchtime conversation can turn into. So there we were, Rudy and I, at lunch. We had to give the thing a name...."
       ],
-      "total_ms": 1161.941582977306,
-      "first_token_ms": 1005.4944580188021,
+      "total_ms": 1128.8370420224965,
+      "first_token_ms": 823.8602080382407,
       "llm_called": true
     },
     {
@@ -501,7 +655,7 @@
       "question": "Besides keeping a linked list per slot, how can a hash table place an item whose slot is already taken?",
       "expected_doc": "hash-table",
       "not_found": false,
-      "answer": "- Open addressing, which searches for the next available slot according to a probing sequence [1][3].",
+      "answer": "- Open addressing can be used, which searches for the next available slot according to a probing sequence [1][4].",
       "cited_docs": [
         "hash-table"
       ],
@@ -509,8 +663,8 @@
         "Hash table\n\nHash table\n\nType | Unordered associative array\n\nInvented | 1953\n\nTime complexity in big O notation\n\nOperation | Average | Worst case\n\nSearch | \u0398(1) | O(n)[a]\n\nInsert | \u0398(1) | O(n)\n\nDelete | \u0398(1) | O(n)\n\nSpace complexity\n\nSpace | \u0398(n) | O(n)\n\nIn computer science, a hash table is a data structure that implements an associative array, also called a dictionary or simply map; an associative array is an abstract data type that maps keys to values. A hash table uses a hash function to compute an index, also called a hash code, into an array of buckets or slots, from which the desired value can be found. During lookup, the key is hashed and the resulting hash indicates where the corresponding value is stored. A map implemented by a hash table is called a hash map.\n\nMost hash table designs employ an imperfect hash function. Hash collisions, where the hash function generates the same index for more than one key, therefore typically must be accommodated in some way. Common strategies to handle hash collisions include separate chaining, which stores multiple elements in the same slot using linked lists, and open addressing, which searches for the next available slot according to a probing sequence.\n\nIn a well-dimensioned hash table, the average time complexity for each lookup is independent of the number of elements stored in the table. Many hash table designs also allow arbitrary insertions and deletions of key\u2013value pairs, at amortized constant average cost per operation.: 513\u2013558\n\nHashing is an example of a space\u2013time tradeoff. If memory is infinite, the entire key can be used directly as an index to locate its value with a single memory access. On the other hand, if infinite time is available, values can be stored without regard for their keys, and a binary search or linear search can be used to retrieve the element.: 458",
         "For open addressing schemes, the hash function should also avoid runs, the mapping of two or more keys to consecutive slots. Such runs may cause the lookup cost to skyrocket, even if the load factor is low and collisions are infrequent. The popular multiplicative hash is claimed to have particularly poor run behavior.\n\nK-independent hashing offers a way to prove a certain hash function does not have bad keysets for a given type of hashtable. A number of K-independence results are known for collision resolution schemes such as linear probing and cuckoo hashing. Since K-independence can prove a hash function works, one can then focus on finding the fastest possible such hash function.\n\nCollision resolution\n\nA search algorithm that uses hashing consists of two parts. The first part is computing a hash function which transforms the search key into an array index. The ideal case is such that no two search keys hash to the same array index. However, this is not always the case and impossible to guarantee for unseen given data.: 515 Hence the second part of the algorithm is collision resolution. The two common methods for collision resolution are separate chaining and open addressing.: 458\n\nSeparate chaining\n\nIn separate chaining, the process involves building a linked list of key\u2013value pairs for each search array index. The collided items are chained together through a single linked list, which can be traversed during lookup of a specific key.: 464 Collision resolution through chaining with linked lists is a common method of implementation of hash tables. Let be the hash table, be an element , and be its key. The operations involved are as follows:: 258\n\nChained-Hash-Insert(T, x)\n\ninsert x at the head of linked list T[h(k)]\n\nChained-Hash-Search(T, k)\n\nsearch for an element with key k in linked list T[h(k)]\n\nChained-Hash-Delete(T, x)\n\ndelete x from the linked list T[h(k)]"
       ],
-      "total_ms": 1037.1035829884931,
-      "first_token_ms": 991.6745829978026,
+      "total_ms": 1059.9181249272078,
+      "first_token_ms": 915.1126249926165,
       "llm_called": true
     },
     {
@@ -518,15 +672,15 @@
       "question": "How is the load factor of a hash table defined?",
       "expected_doc": "hash-table",
       "not_found": false,
-      "answer": "- The load factor ($\\alpha$) of a hash table is defined as the ratio of the number of stored elements ($n$) to the number of available slots or buckets ($m$).\n- Expressed as a formula: $\\alpha = \\frac{n}{m}$, where $n$ is the number of key-value pairs and $m$ is the number of buckets [1].",
+      "answer": "The load factor of a hash table is defined as the ratio of the number of stored elements to the number of available slots [1]. Specifically, it is defined as where is the number of key-value pairs and is the number of buckets [1].",
       "cited_docs": [
         "hash-table"
       ],
       "cited_passages": [
         "Overview\n\nAn associative array stores a set of (key, value) pairs and allows insertion, deletion, and lookup (search), with the constraint of unique keys. In the hash table implementation of associative arrays, an array of length is partially filled with elements, where . A key is hashed using a hash function to compute an index location in the hash table, where . At this index, both the key and its associated value are stored. Storing the key alongside the value ensures that lookups can verify the key at the index to retrieve the correct value, even in the presence of collisions. Under reasonable assumptions, hash tables have better time complexity bounds on search, delete, and insert operations in comparison to self-balancing binary search trees.: 1\n\nLoad factor\n\nThe efficiency of a hash table depends on the load factor (), defined as the ratio of the number of stored elements to the number of available slots, with lower load factors generally yielding faster operations. Load factor is a critical statistic of a hash table, and is defined as follows: where\n\n- is the number of key-value pairs in the hash table.\n\n- is the number of buckets.\n\nThe performance of the hash table deteriorates in relation to the load factor .: 2 In the limit of large and , each bucket statistically has a Poisson distribution with expectation for an ideally random hash function.\n\nThe implementation of a hash table typically ensures that the load factor remains below a certain constant, . This helps maintain good performance. Therefore, a common approach is to resize or \"rehash\" the hash table whenever the load factor reaches . Similarly the table may also be resized if the load factor drops below .\n\nLoad factor for open addressing\n\nWith open addressing, each slot of the bucket array holds exactly one item. Therefore an open-addressed hash table cannot have a load factor greater than 1.\n\nThe performance of open addressing becomes very bad when the load factor approaches 1. Therefore a hash table that uses open addressing must be resized or rehashed if the load factor approaches 1."
       ],
-      "total_ms": 1380.2985830116086,
-      "first_token_ms": 1006.1467920313589,
+      "total_ms": 1128.2461669761688,
+      "first_token_ms": 903.0364589998499,
       "llm_called": true
     },
     {
@@ -534,15 +688,15 @@
       "question": "What is a covering index?",
       "expected_doc": "database-index",
       "not_found": false,
-      "answer": "- A covering index is a special case of a database index where the index itself contains the required data fields to answer a query, eliminating the need to look up the data record in the table [1].\n- While standard indexes are typically used only to locate data records rather than return data, a covering index can directly provide the requested information [1].",
+      "answer": "- A covering index is a special case of an index that contains the required data fields and can directly answer the required data, eliminating the need to look up the underlying record [1].\n- It can dramatically speed up data retrieval, but its additional keys can make the index large, which slows down data insertion and updates [1].\n- To reduce the size of a covering index, some systems allow non-key fields to be included at the leaf level without being part of the index ordering [1].",
       "cited_docs": [
         "database-index"
       ],
       "cited_passages": [
-        "Covering index\n\nIn most cases, an index is used to quickly locate the data records from which the required data is read. In other words, the index is only used to locate data records in the table and not to return data.\n\nA covering index is a special case where the index itself contains the required data fields and can answer the required data.\n\nConsider the following table (other fields omitted):\n\nID | Name | Other Fields\n\n12 | Plug | ...\n\n13 | Lamp | ...\n\n14 | Fuse | ...\n\nTo find the Name for ID 13, an index on (ID) is useful, but the record must still be read to get the Name. However, an index on (ID, Name) contains the required data field and eliminates the need to look up the record.\n\nCovering indexes are each for a specific table. Queries which JOIN/ access across multiple tables, may potentially consider covering indexes on more than one of these tables.\n\nA covering index can dramatically speed up data retrieval but may itself be large due to the additional keys, which slow down data insertion and update. To reduce such index size, some systems allow including non-key fields in the index. Non-key fields are not themselves part of the index ordering but only included at the leaf level, allowing for a covering index with less overall index size.\n\nThis can be done in SQL with CREATE INDEX my_index ON my_table (id) INCLUDE (name);.\n\nStandardization\n\nNo standard defines how to create indexes, because the ISO SQL Standard does not cover physical aspects. Indexes are one of the physical parts of database conception among others like storage (tablespace or filegroups).[clarification needed] RDBMS vendors all give a CREATE INDEX syntax with some specific options that depend on their software's capabilities.\n\nSee also\n\n- Index locking\n\n- Inverted index \u2013 Type of database index\n\n- Search engine indexing \u2013 Method for data management\n\nReferences\n\n- \u2191 Mitchell, Sarah (2025-12-03)."
+        "Covering index\n\nIn most cases, an index is used to quickly locate the data records from which the required data is read. In other words, the index is only used to locate data records in the table and not to return data.\n\nA covering index is a special case where the index itself contains the required data fields and can answer the required data.\n\nConsider the following table (other fields omitted):\n\nID | Name | Other Fields\n\n12 | Plug | ...\n\n13 | Lamp | ...\n\n14 | Fuse | ...\n\nTo find the Name for ID 13, an index on (ID) is useful, but the record must still be read to get the Name. However, an index on (ID, Name) contains the required data field and eliminates the need to look up the record.\n\nCovering indexes are each for a specific table. Queries which JOIN/ access across multiple tables, may potentially consider covering indexes on more than one of these tables.\n\nA covering index can dramatically speed up data retrieval but may itself be large due to the additional keys, which slow down data insertion and update. To reduce such index size, some systems allow including non-key fields in the index. Non-key fields are not themselves part of the index ordering but only included at the leaf level, allowing for a covering index with less overall index size.\n\nThis can be done in SQL with CREATE INDEX my_index ON my_table (id) INCLUDE (name);.\n\nStandardization\n\nNo standard defines how to create indexes, because the ISO SQL Standard does not cover physical aspects. Indexes are one of the physical parts of database conception among others like storage (tablespace or filegroups).[clarification needed] RDBMS vendors all give a CREATE INDEX syntax with some specific options that depend on their software's capabilities.\n\nSee also\n\n- Index locking\n\n- Inverted index \u2013 Type of database index\n\n- Search engine indexing \u2013 Method for data management"
       ],
-      "total_ms": 1079.1512919822708,
-      "first_token_ms": 839.9991249898449,
+      "total_ms": 1228.6387920030393,
+      "first_token_ms": 869.4444170105271,
       "llm_called": true
     },
     {
@@ -550,15 +704,15 @@
       "question": "In a non-clustered index, what does the leaf level of the tree contain?",
       "expected_doc": "database-index",
       "not_found": false,
-      "answer": "- The leaf level of a non-clustered index tree contains the pointer to the record, which consists of the page and the row number in the data page in page-organized engines, or the row offset in file-organized engines [1].",
+      "answer": "In a non-clustered index, the leaf level of the tree contains pointers to records, which are the page and row number in data pages for page-organized engines, or the row offset for file-organized engines [1].",
       "cited_docs": [
         "database-index"
       ],
       "cited_passages": [
         "Index architecture and indexing methods\n\nNon-clustered\n\nThe data is present in arbitrary order, but the logical ordering is specified by the index. The data rows may be spread throughout the table regardless of the value of the indexed column or expression. The non-clustered index tree contains the index keys in sorted order, with the leaf level of the index containing the pointer to the record (page and the row number in the data page in page-organized engines; row offset in file-organized engines).\n\nIn a non-clustered index,\n\n- The physical order of the rows is not the same as the index order.\n\n- The indexed columns are typically non-primary key columns used in JOIN, WHERE, and ORDER BY clauses.\n\nThere can be more than one non-clustered index on a database table.\n\nClustered\n\nClustering alters the data block into a certain distinct order to match the index, resulting in the row data being stored in order. Therefore, only one clustered index can be created on a given database table. Clustered indexes can greatly increase overall speed of retrieval, but usually only where the data is accessed sequentially in the same or reverse order of the clustered index, or when a range of items is selected.\n\nSince the physical records are in this sort order on disk, the next row item in the sequence is immediately before or after the last one, and so fewer data block reads are required. The primary feature of a clustered index is therefore the ordering of the physical data rows in accordance with the index blocks that point to them. Some databases separate the data and index blocks into separate files, others put two completely different data blocks within the same physical file(s).\n\nCluster\n\nWhen multiple databases and multiple tables are joined, it is called a cluster (not to be confused with clustered index described previously). The records for the tables sharing the value of a cluster key shall be stored together in the same or nearby data blocks."
       ],
-      "total_ms": 1133.3190010627732,
-      "first_token_ms": 916.5607920149341,
+      "total_ms": 1339.3079170491546,
+      "first_token_ms": 1044.4935000268742,
       "llm_called": true
     },
     {
@@ -573,8 +727,8 @@
       "cited_passages": [
         "Log-structured merge-tree\n\nLog-structured merge-tree\n\nType | Hybrid (two tree-like components)\n\nInvented | 1996\n\nInvented by | Patrick O'Neil, Edward Cheng, Dieter Gawlick, Elizabeth O'Neil\n\nTime complexity in big O notation\n\nOperation | Average | Worst case\n\nInsert | O(T * L / B)\n\nFind-min | O(1) | O(L * e^(-M/N))\n\nSpace complexity\n\nSpace | O((T + 1) / T)\n\nIn computer science, the log-structured merge-tree (also known as LSM tree, or LSMT) is a data structure with performance characteristics that make it attractive for providing indexed access to files with high insert volume, such as transactional log data. LSM trees, like other search trees, maintain key-value pairs. LSM trees maintain data in two or more separate structures, each of which is optimized for its respective underlying storage medium; data is synchronized between the two structures efficiently, in batches.\n\nOne simple version of the LSM tree is a two-level LSM tree. As described by Patrick O'Neil, a two-level LSM tree comprises two tree-like structures, called C0 and C1. C0 is smaller and entirely resident in memory, whereas C1 is resident on disk. New records are inserted into the memory-resident C0 component. If the insertion causes the C0 component to exceed a certain size threshold, a contiguous segment of entries is removed from C0 and merged into C1 on disk. The performance characteristics of LSM trees stem from the fact that each component is tuned to the characteristics of its underlying storage medium, and that data is efficiently migrated across media in rolling batches, using an algorithm reminiscent of merge sort. Such tuning involves writing data in a sequential manner as opposed to as a series of separate random access requests. This optimization reduces total seek time in hard-disk drives (HDDs) and latency in solid-state drives (SSDs).\n\nMost LSM trees used in practice employ multiple levels."
       ],
-      "total_ms": 1060.7187919667922,
-      "first_token_ms": 997.5587920052931,
+      "total_ms": 1299.4728740304708,
+      "first_token_ms": 1030.2600000286475,
       "llm_called": true
     },
     {
@@ -582,15 +736,15 @@
       "question": "Who invented the log-structured merge-tree?",
       "expected_doc": "lsm-tree",
       "not_found": false,
-      "answer": "The log-structured merge-tree was invented by Patrick O'Neil, Edward Cheng, Dieter Gawlick, and Elizabeth O'Neil in 1996 [1].",
+      "answer": "The log-structured merge-tree was invented by Patrick O'Neil, Edward Cheng, Dieter Gawlick, and Elizabeth O'Neil [1].",
       "cited_docs": [
         "lsm-tree"
       ],
       "cited_passages": [
         "Log-structured merge-tree\n\nLog-structured merge-tree\n\nType | Hybrid (two tree-like components)\n\nInvented | 1996\n\nInvented by | Patrick O'Neil, Edward Cheng, Dieter Gawlick, Elizabeth O'Neil\n\nTime complexity in big O notation\n\nOperation | Average | Worst case\n\nInsert | O(T * L / B)\n\nFind-min | O(1) | O(L * e^(-M/N))\n\nSpace complexity\n\nSpace | O((T + 1) / T)\n\nIn computer science, the log-structured merge-tree (also known as LSM tree, or LSMT) is a data structure with performance characteristics that make it attractive for providing indexed access to files with high insert volume, such as transactional log data. LSM trees, like other search trees, maintain key-value pairs. LSM trees maintain data in two or more separate structures, each of which is optimized for its respective underlying storage medium; data is synchronized between the two structures efficiently, in batches.\n\nOne simple version of the LSM tree is a two-level LSM tree. As described by Patrick O'Neil, a two-level LSM tree comprises two tree-like structures, called C0 and C1. C0 is smaller and entirely resident in memory, whereas C1 is resident on disk. New records are inserted into the memory-resident C0 component. If the insertion causes the C0 component to exceed a certain size threshold, a contiguous segment of entries is removed from C0 and merged into C1 on disk. The performance characteristics of LSM trees stem from the fact that each component is tuned to the characteristics of its underlying storage medium, and that data is efficiently migrated across media in rolling batches, using an algorithm reminiscent of merge sort. Such tuning involves writing data in a sequential manner as opposed to as a series of separate random access requests. This optimization reduces total seek time in hard-disk drives (HDDs) and latency in solid-state drives (SSDs).\n\nMost LSM trees used in practice employ multiple levels."
       ],
-      "total_ms": 1183.6639580433257,
-      "first_token_ms": 930.8948329999112,
+      "total_ms": 1082.462000020314,
+      "first_token_ms": 825.823416991625,
       "llm_called": true
     },
     {
@@ -598,15 +752,15 @@
       "question": "Can a probabilistic set-membership structure that answers 'possibly in set' ever wrongly say an element is absent?",
       "expected_doc": "bloom-filter",
       "not_found": false,
-      "answer": "No, false negatives are not possible in a Bloom filter [1]. A query will return either \"possibly in set\" or \"definitely not in set\" [1].",
+      "answer": "No, false negative matches are not possible [1]. A query returns either \"possibly in set\" or \"definitely not in set\" [1].",
       "cited_docs": [
         "bloom-filter"
       ],
       "cited_passages": [
-        "Bloom filter\n\nPart of a series on\n\nProbabilistic data structures\n\nRandom trees\n\nRelated\n\nIn computing, a Bloom filter is a space-efficient probabilistic data structure, conceived by Burton Howard Bloom in 1970, that is used to test whether an element is a member of a set. False positive matches are possible, but false negatives are not \u2013 in other words, a query returns either \"possibly in set\" or \"definitely not in set\". Elements can be added to the set, but not removed (though this can be addressed with the counting Bloom filter variant); the more items added, the larger the probability of false positives.\n\nBloom proposed the technique for applications where the amount of source data would require an impractically large amount of memory if \"conventional\" error-free hashing techniques were applied. He gave the example of a hyphenation algorithm for a dictionary of 500,000 words, out of which 90% follow simple hyphenation rules, but the remaining 10% require expensive disk accesses to retrieve specific hyphenation patterns. With sufficient memory, an error-free hash could be used to eliminate all unnecessary disk accesses; on the other hand, with limited memory, Bloom's technique uses a smaller hash area but still eliminates most unnecessary accesses. For example, a hash area only 18% of the size needed by an ideal error-free hash still eliminates 87% of the disk accesses.\n\nMore generally, fewer than 10 bits per element are required for a 1% false positive probability, independent of the size or number of elements in the set.\n\nAlgorithm description\n\nAn empty Bloom filter is a bit array of m bits, all set to 0. It is equipped with k different hash functions, which map set elements to one of the m possible array positions. To be optimal, the hash functions should be uniformly distributed and independent. Typically, k is a small constant which depends on the desired false error rate \u03b5, while m is proportional to k and the number of elements to be added."
+        "Bloom filter\n\nProbabilistic data structures\n\nRandom trees\n\nRelated\n\nIn computing, a Bloom filter is a space-efficient probabilistic data structure, conceived by Burton Howard Bloom in 1970, that is used to test whether an element is a member of a set. False positive matches are possible, but false negatives are not \u2013 in other words, a query returns either \"possibly in set\" or \"definitely not in set\". Elements can be added to the set, but not removed (though this can be addressed with the counting Bloom filter variant); the more items added, the larger the probability of false positives.\n\nBloom proposed the technique for applications where the amount of source data would require an impractically large amount of memory if \"conventional\" error-free hashing techniques were applied. He gave the example of a hyphenation algorithm for a dictionary of 500,000 words, out of which 90% follow simple hyphenation rules, but the remaining 10% require expensive disk accesses to retrieve specific hyphenation patterns. With sufficient memory, an error-free hash could be used to eliminate all unnecessary disk accesses; on the other hand, with limited memory, Bloom's technique uses a smaller hash area but still eliminates most unnecessary accesses. For example, a hash area only 18% of the size needed by an ideal error-free hash still eliminates 87% of the disk accesses.\n\nMore generally, fewer than 10 bits per element are required for a 1% false positive probability, independent of the size or number of elements in the set.\n\nAlgorithm description\n\nAn empty Bloom filter is a bit array of m bits, all set to 0. It is equipped with k different hash functions, which map set elements to one of the m possible array positions. To be optimal, the hash functions should be uniformly distributed and independent. Typically, k is a small constant which depends on the desired false error rate \u03b5, while m is proportional to k and the number of elements to be added."
       ],
-      "total_ms": 1362.9366660607047,
-      "first_token_ms": 1177.774458017666,
+      "total_ms": 1025.3974170191213,
+      "first_token_ms": 803.9789579925127,
       "llm_called": true
     },
     {
@@ -617,8 +771,8 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 1181.2666250625625,
-      "first_token_ms": 1139.4851670484059,
+      "total_ms": 999.7593330335803,
+      "first_token_ms": 822.3265410051681,
       "llm_called": true
     },
     {
@@ -626,7 +780,7 @@
       "question": "In Raft, what makes a server become a candidate and start a leader election?",
       "expected_doc": "raft",
       "not_found": false,
-      "answer": "A server becomes a candidate and starts a leader election if it receives no communication from the leader over a period known as the election timeout, causing it to assume there is no acting leader anymore [1][2].",
+      "answer": "A server becomes a candidate and starts a leader election if it receives no communication from the leader over a period called the election timeout, causing it to assume there is no acting leader anymore [1][2]. To start the election, the server increases the term counter, votes for itself as the new leader, and sends a message to all other servers requesting their votes [1].",
       "cited_docs": [
         "raft"
       ],
@@ -634,8 +788,8 @@
         "A leader leads until it fails or disconnects, in which case surviving servers elect a new leader.\n\nThe consensus problem is decomposed in Raft into two relatively independent subproblems listed down below.\n\nLeader election\n\nWhen the existing leader fails or when the algorithm initializes, a new leader needs to be elected.\n\nIn this case, a new term starts in the cluster. A term is an arbitrary period of time on the server for which a new leader needs to be elected. Each term starts with a leader election. If the election is completed successfully (i.e. a single leader is elected) the term keeps going with normal operations orchestrated by the new leader. If the election is a failure, a new term starts, with a new election.\n\nA leader election is started by a candidate server. A server becomes a candidate if it receives no communication by the leader over a period called the election timeout, so it assumes there is no acting leader anymore. It starts the election by increasing the term counter, voting for itself as new leader, and sending a message to all other servers requesting their vote. A server will vote only once per term, on a first-come-first-served basis. If a candidate receives a message from another server with a term number larger than the candidate's current term, then the candidate's election is defeated and the candidate changes into a follower and recognizes the leader as legitimate. If a candidate receives a majority of votes, then it becomes the new leader. If neither happens, e.g., because of a split vote, then a new term starts, and a new election begins.\n\nRaft uses a randomized election timeout to ensure that split vote problems are resolved quickly. This should reduce the chance of a split vote because servers won't become candidates at the same time: a single server will time out, win the election, then become leader and send heartbeat messages to other servers before any of the followers can become candidates.\n\nLog replication\n\nThe leader is responsible for the log replication.",
         "Raft (algorithm)\n\nRaft\n\nClass | Consensus algorithm\n\nRaft is a consensus algorithm designed as an alternative to the Paxos family of algorithms. It was meant to be more understandable than Paxos by means of separation of logic, but it is also formally proven safe and offers some additional features. Raft offers a generic way to distribute a state machine across a cluster of computing systems, ensuring that each node in the cluster agrees upon the same series of state transitions. It has a number of open-source reference implementations, with full-specification implementations in Go, C++, Java, JavaScript, and Scala. It is named after Reliable, Replicated, Redundant, And Fault-Tolerant.\n\nRaft is not Byzantine fault tolerant in the base form; the nodes trust the elected leader, and the algorithm assumes all participants are trustworthy, yielding only crash fault tolerance. However there exist variants that use cryptographic signatures to achieve Byzantine fault tolerance.\n\nBasics\n\nRaft achieves consensus via an elected leader. A server in a raft cluster is either a leader or a follower, and can be a candidate in the precise case of an election (leader unavailable). The leader is responsible for log replication to the followers. It regularly informs the followers of its existence by sending a heartbeat message. Each follower has a timeout (typically between 150 and 300 ms) in which it expects the heartbeat from the leader. The timeout is reset on receiving the heartbeat. If no heartbeat is received the follower changes its status to candidate and starts a leader election.\n\nApproach of the consensus problem in Raft\n\nRaft implements consensus by a leader approach. The cluster has one and only one elected leader which is fully responsible for managing log replication on the other servers of the cluster. It means that the leader can decide on new entries' placement and establishment of data flow between it and the other servers without consulting other servers. A leader leads until it fails or disconnects, in which case surviving servers elect a new leader.\n\nThe consensus problem is decomposed in Raft into two relatively independent subproblems listed down below.\n\nLeader election"
       ],
-      "total_ms": 1324.2592079914175,
-      "first_token_ms": 1234.3597919680178,
+      "total_ms": 1691.4866659790277,
+      "first_token_ms": 1276.4188329456374,
       "llm_called": true
     },
     {
@@ -643,15 +797,15 @@
       "question": "What was the main design goal of the consensus algorithm built as an alternative to Paxos?",
       "expected_doc": "raft",
       "not_found": false,
-      "answer": "- The consensus algorithm (Raft) was designed to be more understandable than Paxos by means of separation of logic [3].",
+      "answer": "The consensus algorithm built as an alternative to Paxos (named Raft) was designed to be more understandable than Paxos by means of separation of logic [3].",
       "cited_docs": [
         "raft"
       ],
       "cited_passages": [
         "Raft (algorithm)\n\nRaft\n\nClass | Consensus algorithm\n\nRaft is a consensus algorithm designed as an alternative to the Paxos family of algorithms. It was meant to be more understandable than Paxos by means of separation of logic, but it is also formally proven safe and offers some additional features. Raft offers a generic way to distribute a state machine across a cluster of computing systems, ensuring that each node in the cluster agrees upon the same series of state transitions. It has a number of open-source reference implementations, with full-specification implementations in Go, C++, Java, JavaScript, and Scala. It is named after Reliable, Replicated, Redundant, And Fault-Tolerant.\n\nRaft is not Byzantine fault tolerant in the base form; the nodes trust the elected leader, and the algorithm assumes all participants are trustworthy, yielding only crash fault tolerance. However there exist variants that use cryptographic signatures to achieve Byzantine fault tolerance.\n\nBasics\n\nRaft achieves consensus via an elected leader. A server in a raft cluster is either a leader or a follower, and can be a candidate in the precise case of an election (leader unavailable). The leader is responsible for log replication to the followers. It regularly informs the followers of its existence by sending a heartbeat message. Each follower has a timeout (typically between 150 and 300 ms) in which it expects the heartbeat from the leader. The timeout is reset on receiving the heartbeat. If no heartbeat is received the follower changes its status to candidate and starts a leader election.\n\nApproach of the consensus problem in Raft\n\nRaft implements consensus by a leader approach. The cluster has one and only one elected leader which is fully responsible for managing log replication on the other servers of the cluster. It means that the leader can decide on new entries' placement and establishment of data flow between it and the other servers without consulting other servers. A leader leads until it fails or disconnects, in which case surviving servers elect a new leader.\n\nThe consensus problem is decomposed in Raft into two relatively independent subproblems listed down below.\n\nLeader election"
       ],
-      "total_ms": 2137.2044590534642,
-      "first_token_ms": 2076.364334032405,
+      "total_ms": 1234.2533749178983,
+      "first_token_ms": 1010.8813329716213,
       "llm_called": true
     },
     {
@@ -659,15 +813,15 @@
       "question": "What three roles does each process play in a typical Paxos deployment?",
       "expected_doc": "paxos",
       "not_found": false,
-      "answer": "In a typical deployment of Paxos, each participating process acts in the following three roles:\n- Proposer [1]\n- Acceptor [1]\n- Learner [1]",
+      "answer": "In a typical deployment of Paxos, each participating process acts in three roles: Proposer, Acceptor, and Learner [1].",
       "cited_docs": [
         "paxos"
       ],
       "cited_passages": [
         "- Termination (or liveness)\n\n- If value C has been proposed, then eventually learner L will learn some value (if sufficient processors remain non-faulty).\n\nNote that Paxos is not guaranteed to terminate, and thus does not have the liveness property. This is supported by the Fischer Lynch Paterson impossibility result (FLP) which states that a consistency protocol can only have two of safety, liveness, and fault tolerance. As Paxos's point is to ensure fault tolerance and it guarantees safety, it cannot also guarantee liveness.\n\nTypical deployment\n\nIn most deployments of Paxos, each participating process acts in three roles: Proposer, Acceptor and Learner. This reduces the message complexity significantly, without sacrificing correctness:\n\nIn Paxos, clients send commands to a leader. During normal operation, the leader receives a client's command, assigns it a new command number , and then begins the th instance of the consensus algorithm by sending messages to a set of acceptor processes.\n\nBy merging roles, the protocol \"collapses\" into an efficient client-master-replica style deployment, typical of the database community. The benefit of the Paxos protocols (including implementations with merged roles) is the guarantee of its safety properties.\n\nA typical implementation's message flow is covered in the section Multi-Paxos.\n\nBasic Paxos\n\nThis protocol is the most basic of the Paxos family. Each \"instance\" (or \"execution\") of the basic Paxos protocol decides on a single output value. The protocol proceeds over several rounds. A successful round has 2 phases: phase 1 (which is divided into parts a and b) and phase 2 (also divided into parts a and b). See below the description of the phases. Remember that we assume an asynchronous model, so e.g. a processor may be in one phase while another processor may be in another.\n\nPhase 1\n\nPhase 1a: Prepare\n\n- A Proposer creates a message, which we call a Prepare."
       ],
-      "total_ms": 941.9956259662285,
-      "first_token_ms": 834.3236249638721,
+      "total_ms": 1260.520666022785,
+      "first_token_ms": 1051.0562079725787,
       "llm_called": true
     },
     {
@@ -675,15 +829,15 @@
       "question": "What does partition tolerance mean in the CAP theorem?",
       "expected_doc": "cap-theorem",
       "not_found": false,
-      "answer": "In the CAP theorem, partition tolerance means that the system continues to operate despite an arbitrary number of messages being dropped or delayed by the network between nodes [1].",
+      "answer": "Partition tolerance in the CAP theorem means that the system continues to operate despite an arbitrary number of messages being dropped or delayed by the network between nodes [1].",
       "cited_docs": [
         "cap-theorem"
       ],
       "cited_passages": [
         "CAP theorem\n\nIn database theory, the CAP theorem, also named Brewer's theorem after computer scientist Eric Brewer, states that any distributed data store can provide at most two of the following three guarantees:\n\n- Consistency\n\n- Every read receives the most recent write or an error. Consistency means that all clients see the same data at the same time, no matter which node they connect to. For this to happen, whenever data is written to one node, it must be instantly forwarded or replicated to all the other nodes in the system before the write is deemed \u2018successful\u2019. Consistency as defined in the CAP theorem is quite different from the consistency guaranteed in ACID database transactions.\n\n- Availability\n\n- Every request received by a non-failing node in the system must result in a response, without the guarantee that it contains the most recent version of the data. This is the definition of availability in CAP theorem as defined by Gilbert and Lynch. Availability as defined in CAP theorem is different from high availability in software architecture.\n\n- Partition tolerance\n\n- The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes.\n\nWhen a network partition failure happens, it must be decided whether to do one of the following:\n\n- cancel the operation and thus decrease the availability but ensure consistency\n\n- proceed with the operation and thus provide availability but risk inconsistency. This does not necessarily mean that system is highly available to its users.\n\nThus, if there is a network partition, one has to choose between consistency or availability.\n\nDuring times of normal operations, a data store covers all three.\n\nExplanation\n\nNo distributed system is safe from network failures, thus network partitioning generally has to be tolerated. In the presence of a partition, one is then left with two options: consistency or availability. When choosing consistency over availability, the system will return an error or a time out if particular information cannot be guaranteed to be up to date due to network partitioning."
       ],
-      "total_ms": 1265.9325830172747,
-      "first_token_ms": 1208.1040830234997,
+      "total_ms": 1030.9507919591852,
+      "first_token_ms": 810.9995839768089,
       "llm_called": true
     },
     {
@@ -691,15 +845,15 @@
       "question": "Which computer scientist is the theorem about consistency, availability and partition tolerance named after?",
       "expected_doc": "cap-theorem",
       "not_found": false,
-      "answer": "The CAP theorem is also named Brewer's theorem after computer scientist Eric Brewer [1].",
+      "answer": "The theorem about consistency, availability, and partition tolerance (the CAP theorem) is also named Brewer's theorem after computer scientist Eric Brewer [1].",
       "cited_docs": [
         "cap-theorem"
       ],
       "cited_passages": [
         "CAP theorem\n\nIn database theory, the CAP theorem, also named Brewer's theorem after computer scientist Eric Brewer, states that any distributed data store can provide at most two of the following three guarantees:\n\n- Consistency\n\n- Every read receives the most recent write or an error. Consistency means that all clients see the same data at the same time, no matter which node they connect to. For this to happen, whenever data is written to one node, it must be instantly forwarded or replicated to all the other nodes in the system before the write is deemed \u2018successful\u2019. Consistency as defined in the CAP theorem is quite different from the consistency guaranteed in ACID database transactions.\n\n- Availability\n\n- Every request received by a non-failing node in the system must result in a response, without the guarantee that it contains the most recent version of the data. This is the definition of availability in CAP theorem as defined by Gilbert and Lynch. Availability as defined in CAP theorem is different from high availability in software architecture.\n\n- Partition tolerance\n\n- The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes.\n\nWhen a network partition failure happens, it must be decided whether to do one of the following:\n\n- cancel the operation and thus decrease the availability but ensure consistency\n\n- proceed with the operation and thus provide availability but risk inconsistency. This does not necessarily mean that system is highly available to its users.\n\nThus, if there is a network partition, one has to choose between consistency or availability.\n\nDuring times of normal operations, a data store covers all three.\n\nExplanation\n\nNo distributed system is safe from network failures, thus network partitioning generally has to be tolerated. In the presence of a partition, one is then left with two options: consistency or availability. When choosing consistency over availability, the system will return an error or a time out if particular information cannot be guaranteed to be up to date due to network partitioning."
       ],
-      "total_ms": 964.4674589508213,
-      "first_token_ms": 859.156833961606,
+      "total_ms": 1462.550124968402,
+      "first_token_ms": 1199.5218750089407,
       "llm_called": true
     },
     {
@@ -707,15 +861,15 @@
       "question": "Who introduced the term consistent hashing, and where?",
       "expected_doc": "consistent-hashing",
       "not_found": false,
-      "answer": "The term \"consistent hashing\" was introduced by David Karger et al. at MIT in an academic paper from 1997 presented at the Symposium on Theory of Computing [1].",
+      "answer": "The term \"consistent hashing\" was introduced by David Karger and colleagues at MIT [1]. It was introduced in an academic paper presented at the 1997 Symposium on Theory of Computing [1].",
       "cited_docs": [
         "consistent-hashing"
       ],
       "cited_passages": [
         "Consistent hashing\n\nIn computer science, consistent hashing is a special kind of hashing technique such that when a hash table is resized, only keys need to be remapped on average where is the number of keys and is the number of slots. Consistent hashing evenly distributes cache keys across shards, even if some of the shards crash or become unavailable. In contrast, in most traditional hash tables, a change in the number of array slots causes nearly all keys to be remapped because the mapping between the keys and the slots is defined by a modular operation.\n\nConsistent hashing is used by Content Delivery Networks because it is useful for distributing requests for content from a rotating population of web servers. Tim Berners-Lee credits consistent hashing algorithms, and Daniel Lewin as their inventor, with solving the slashdotting problem which plagued the World Wide Web in the 1990s.\n\nHistory\n\nThe term \"consistent hashing\" was introduced by David Karger et al. at MIT for use in distributed caching, particularly for the web. This academic paper from 1997 in Symposium on Theory of Computing introduced the term \"consistent hashing\" as a way of distributing requests among a changing population of web servers. Each slot is then represented by a server in a distributed system or cluster. The addition of a server and the removal of a server (during scalability or outage) requires only items to be re-shuffled when the number of slots (i.e. servers) change. The authors mention linear hashing and its ability to handle sequential server addition and removal, while consistent hashing allows servers to be added and removed in an arbitrary order. The paper was later re-purposed to address technical challenge of keeping track of a file in peer-to-peer networks such as a distributed hash table.\n\nTeradata used this technique in their distributed database, released in 1986, although they did not use this term. Teradata still uses the concept of a hash table to fulfill exactly this purpose. Akamai Technologies was founded in 1998 by the scientists Daniel Lewin and F."
       ],
-      "total_ms": 1251.0302920127288,
-      "first_token_ms": 1124.6857499936596,
+      "total_ms": 977.385709004011,
+      "first_token_ms": 783.6779170320369,
       "llm_called": true
     },
     {
@@ -723,15 +877,16 @@
       "question": "When a cache cluster grows or shrinks, why does hashing keys onto a ring avoid moving most of them?",
       "expected_doc": "consistent-hashing",
       "not_found": false,
-      "answer": "When using consistent hashing, only a minimal fraction of keys (on average, $K/N$ where $K$ is the number of keys and $N$ is the number of slots or servers) need to be remapped or re-shuffled when the cluster grows or shrinks [4]. In contrast, traditional hash tables map keys to slots via a modular operation, meaning a change in the number of slots forces nearly all keys to be remapped [4].",
+      "answer": "When using consistent hashing, adding or removing slots (such as servers) requires only a fraction of the items\u2014specifically $K/N$ items, where $K$ is the number of keys and $N$ is the number of slots\u2014to be re-shuffled or remapped [4]. Unlike traditional hash tables where a change in slots causes nearly all keys to be remapped due to modular arithmetic, consistent hashing evenly distributes and maps keys along a ring such that changes only affect the localized neighborhood of the added or removed server [1][4].",
       "cited_docs": [
         "consistent-hashing"
       ],
       "cited_passages": [
-        "Consistent hashing\n\nIn computer science, consistent hashing is a special kind of hashing technique such that when a hash table is resized, only keys need to be remapped on average where is the number of keys and is the number of slots. Consistent hashing evenly distributes cache keys across shards, even if some of the shards crash or become unavailable. In contrast, in most traditional hash tables, a change in the number of array slots causes nearly all keys to be remapped because the mapping between the keys and the slots is defined by a modular operation.\n\nConsistent hashing is used by Content Delivery Networks because it is useful for distributing requests for content from a rotating population of web servers. Tim Berners-Lee credits consistent hashing algorithms, and Daniel Lewin as their inventor, with solving the slashdotting problem which plagued the World Wide Web in the 1990s.\n\nHistory\n\nThe term \"consistent hashing\" was introduced by David Karger et al. at MIT for use in distributed caching, particularly for the web. This academic paper from 1997 in Symposium on Theory of Computing introduced the term \"consistent hashing\" as a way of distributing requests among a changing population of web servers. Each slot is then represented by a server in a distributed system or cluster. The addition of a server and the removal of a server (during scalability or outage) requires only items to be re-shuffled when the number of slots (i.e. servers) change. The authors mention linear hashing and its ability to handle sequential server addition and removal, while consistent hashing allows servers to be added and removed in an arbitrary order. The paper was later re-purposed to address technical challenge of keeping track of a file in peer-to-peer networks such as a distributed hash table.\n\nTeradata used this technique in their distributed database, released in 1986, although they did not use this term. Teradata still uses the concept of a hash table to fulfill exactly this purpose. Akamai Technologies was founded in 1998 by the scientists Daniel Lewin and F."
+        "Consistent hashing\n\nIn computer science, consistent hashing is a special kind of hashing technique such that when a hash table is resized, only keys need to be remapped on average where is the number of keys and is the number of slots. Consistent hashing evenly distributes cache keys across shards, even if some of the shards crash or become unavailable. In contrast, in most traditional hash tables, a change in the number of array slots causes nearly all keys to be remapped because the mapping between the keys and the slots is defined by a modular operation.\n\nConsistent hashing is used by Content Delivery Networks because it is useful for distributing requests for content from a rotating population of web servers. Tim Berners-Lee credits consistent hashing algorithms, and Daniel Lewin as their inventor, with solving the slashdotting problem which plagued the World Wide Web in the 1990s.\n\nHistory\n\nThe term \"consistent hashing\" was introduced by David Karger et al. at MIT for use in distributed caching, particularly for the web. This academic paper from 1997 in Symposium on Theory of Computing introduced the term \"consistent hashing\" as a way of distributing requests among a changing population of web servers. Each slot is then represented by a server in a distributed system or cluster. The addition of a server and the removal of a server (during scalability or outage) requires only items to be re-shuffled when the number of slots (i.e. servers) change. The authors mention linear hashing and its ability to handle sequential server addition and removal, while consistent hashing allows servers to be added and removed in an arbitrary order. The paper was later re-purposed to address technical challenge of keeping track of a file in peer-to-peer networks such as a distributed hash table.\n\nTeradata used this technique in their distributed database, released in 1986, although they did not use this term. Teradata still uses the concept of a hash table to fulfill exactly this purpose. Akamai Technologies was founded in 1998 by the scientists Daniel Lewin and F.",
+        "However, in the case of web page caches, in most implementations there is no involvement of moving or copying, assuming the cached BLOB is small enough. When a request hits a newly added cache server, a cache miss happens and a request to the actual web server is made and the BLOB is cached locally for future requests. The redundant BLOBs on the previously used cache servers would be removed as per the cache eviction policies.\n\nImplementation\n\nLet and be the hash functions used for the BLOB and server's unique identifier respectively. In practice, a binary search tree (BST) is used to dynamically maintain the within a cluster or hashring, and to find the successor or minimum within the BST, tree traversal is used.\n\n- Inserting into the cluster\n\n- Let be the hash value of a BLOB such that, where and . To insert , find the successor of in the BST of s. If is larger than all of the s, the BLOB is placed in the server with smallest value.\n\n- Deleting from the cluster\n\n- Find the successor of in the BST, remove the BLOB from the returned . If has no successor, remove the BLOB from the smallest of the s.\n\n- Insert a server into cluster\n\n- Let be the hash value of a server's identifier such that, where and . Move all the BLOBs, whose hash value is smaller than , from the server whose is successor of . If is largest of all the s, move the relevant BLOBs from the smallest of the s into .\n\n- Delete a server from cluster\n\n- Find the successor of in the BST, move the BLOBs from into its successor server. If doesn't have a successor, move the BLOBs into the smallest of the s.\n\nVariance reduction\n\nTo avoid skewness of multiple nodes within the radian, which happen due to lack of uniform distribution of the servers within the cluster, multiple labels are used. Those duplicate labels are called \"virtual nodes\" i.e. multiple labels which point to a single \"real\" label or server within the cluster."
       ],
-      "total_ms": 1464.0256249695085,
-      "first_token_ms": 1209.9441249738447,
+      "total_ms": 1549.7040419722907,
+      "first_token_ms": 1013.3903329842724,
       "llm_called": true
     },
     {
@@ -739,17 +894,17 @@
       "question": "What happens in the commit-request phase of two-phase commit?",
       "expected_doc": "two-phase-commit",
       "not_found": false,
-      "answer": "During the commit-request (or voting) phase of the two-phase commit protocol:\n\n- The coordinator sends a query to commit message to all participants and waits for a reply from all of them [1][2][3].\n- The participants execute the transaction up to the point where they will be asked to commit, writing an entry to their undo log and an entry to their redo log [1][2].\n- Each participant votes \"Yes\" (sending an agreement message) if its actions succeeded and local portion execution ended properly, or votes \"No\" (sending an abort message) if a failure or problem makes it impossible to commit [1][2][3].",
+      "answer": "- The coordinator sends a query to commit message to all participants and waits for a reply from all of them [2].\n- The participants execute the transaction up to the point where they are asked to commit, writing an entry to their undo log and an entry to their redo log [1][2].\n- Each participant replies with an agreement message (voting Yes to commit) if their actions succeeded, or an abort message (voting No to commit) if they experience a failure making it impossible to commit [1][3].",
       "cited_docs": [
         "two-phase-commit"
       ],
       "cited_passages": [
-        "They each write an entry to their undo log and an entry to their redo log.\n\n- Each participant replies with:\n\n- either an agreement message (participant votes Yes to commit), if the participant's actions succeeded;\n\n- or an abort message (participant votes No to commit), if the participant experiences a failure that will make it impossible to commit.\n\nCommit (or completion) phase\n\nSuccess\n\nIf the coordinator received an agreement message from all participants during the commit-request phase:\n\n- The coordinator sends a commit message to all the participants.\n\n- Each participant completes the operation, and releases all the locks and resources held during the transaction.\n\n- Each participant sends an acknowledgement to the coordinator.\n\n- The coordinator completes the transaction when all acknowledgements have been received.\n\nFailure\n\nIf any participant votes No during the commit-request phase (or the coordinator's timeout expires):\n\n- The coordinator sends a rollback message to all the participants.\n\n- Each participant undoes the transaction using the undo log, and releases the resources and locks held during the transaction.\n\n- Each participant sends an acknowledgement to the coordinator.\n\n- The coordinator undoes the transaction when all acknowledgements have been received.\n\nMessage flow\n\nCoordinator Participant\n\nQUERY TO COMMIT\n\nVOTE YES/NO prepare*/abort*\n\ncommit*/abort* COMMIT/ROLLBACK\n\nACKNOWLEDGEMENT commit*/abort*\n\nend\n\nAn * next to the record type means that the record is forced to stable storage.\n\nDisadvantages\n\n- The greatest disadvantage of the two-phase commit protocol is that it is a blocking protocol.\n\n- If the coordinator fails permanently, some participants will never resolve their transactions: After a participant has sent an agreement message as a response to the commit-request message from the coordinator, it will block until a commit or rollback is received.\n\n- A two-phase commit protocol cannot dependably recover from a failure of both the coordinator and a cohort member during the commit phase. If only the coordinator had failed, and no cohort members had received a commit message, it could safely be inferred that no commit had happened.",
         "- The commit phase, in which, based on voting of the participants, the coordinator decides whether to commit (only if all have voted \"Yes\") or abort the transaction (otherwise), and notifies the result to all the participants. The participants then follow with the needed actions (commit or abort) with their local transactional resources (also called recoverable resources; e.g., database data) and their respective portions in the transaction's other output (if applicable).\n\nThe two-phase commit (2PC) protocol should not be confused with the two-phase locking (2PL) protocol, a concurrency control protocol.\n\nAssumptions\n\nThe protocol works in the following manner: one node is a designated coordinator, which is the master site, and the rest of the nodes in the network are designated the participants. The protocol assumes that:\n\n- there is stable storage at each node with a write-ahead log,\n\n- no node crashes forever,\n\n- the data in the write-ahead log is never lost or corrupted in a crash, and\n\n- any two nodes can communicate with each other.\n\nThe last assumption is not too restrictive, as network communication can typically be rerouted. The first two assumptions are much stronger; if a node is totally destroyed then data can be lost.\n\nThe protocol is initiated by the coordinator after the last step of the transaction has been reached. The participants then respond with an agreement message or an abort message depending on whether the transaction has been processed successfully at the participant.\n\nBasic algorithm\n\nCommit request (or voting) phase\n\n- The coordinator sends a query to commit message to all participants and waits until it has received a reply from all participants.\n\n- The participants execute the transaction up to the point where they will be asked to commit. They each write an entry to their undo log and an entry to their redo log.\n\n- Each participant replies with:\n\n- either an agreement message (participant votes Yes to commit), if the participant's actions succeeded;",
+        "They each write an entry to their undo log and an entry to their redo log.\n\n- Each participant replies with:\n\n- either an agreement message (participant votes Yes to commit), if the participant's actions succeeded;\n\n- or an abort message (participant votes No to commit), if the participant experiences a failure that will make it impossible to commit.\n\nCommit (or completion) phase\n\nSuccess\n\nIf the coordinator received an agreement message from all participants during the commit-request phase:\n\n- The coordinator sends a commit message to all the participants.\n\n- Each participant completes the operation, and releases all the locks and resources held during the transaction.\n\n- Each participant sends an acknowledgement to the coordinator.\n\n- The coordinator completes the transaction when all acknowledgements have been received.\n\nFailure\n\nIf any participant votes No during the commit-request phase (or the coordinator's timeout expires):\n\n- The coordinator sends a rollback message to all the participants.\n\n- Each participant undoes the transaction using the undo log, and releases the resources and locks held during the transaction.\n\n- Each participant sends an acknowledgement to the coordinator.\n\n- The coordinator undoes the transaction when all acknowledgements have been received.\n\nMessage flow\n\nCoordinator Participant\n\nQUERY TO COMMIT\n\nVOTE YES/NO prepare*/abort*\n\ncommit*/abort* COMMIT/ROLLBACK\n\nACKNOWLEDGEMENT commit*/abort*\n\nend\n\nAn * next to the record type means that the record is forced to stable storage.\n\nDisadvantages\n\n- The greatest disadvantage of the two-phase commit protocol is that it is a blocking protocol.\n\n- If the coordinator fails permanently, some participants will never resolve their transactions: After a participant has sent an agreement message as a response to the commit-request message from the coordinator, it will block until a commit or rollback is received.\n\n- A two-phase commit protocol cannot dependably recover from a failure of both the coordinator and a cohort member during the commit phase. If only the coordinator had failed, and no cohort members had received a commit message, it could safely be inferred that no commit had happened.",
         "Two-phase commit protocol\n\nIn transaction processing, databases, and computer networking, the two-phase commit protocol (2PC, tupac) is a type of atomic commitment protocol (ACP). It is a distributed algorithm that coordinates all the processes that participate in a distributed atomic transaction on whether to commit or abort (roll back) the transaction. This protocol (a specialised type of consensus protocol) achieves its goal even in many cases of temporary system failure (involving either process, network node, communication, etc. failures), and is thus widely used. However, it is not resilient to all possible failure configurations, and in rare cases, manual intervention is needed to remedy an outcome. To accommodate recovery from failure (automatic in most cases) the protocol's participants use logging of the protocol's states. Log records, which are typically slow to generate but survive failures, are used by the protocol's recovery procedures. Many protocol variants exist that primarily differ in logging strategies and recovery mechanisms. Though usually intended to be used infrequently, recovery procedures compose a substantial portion of the protocol, due to many possible failure scenarios to be considered and supported by the protocol.\n\nIn a \"normal execution\" of any single distributed transaction (i.e., when no failure occurs, which is typically the most frequent situation), the protocol consists of two phases:\n\n- The commit-request phase (or voting phase), in which a coordinator process attempts to prepare all the transaction's participating processes (named participants, cohorts, or workers) to take the necessary steps for either committing or aborting the transaction and to vote, either \"Yes\": commit (if the transaction participant's local portion execution has ended properly), or \"No\": abort (if a problem has been detected with the local portion), and"
       ],
-      "total_ms": 1573.3602920081466,
-      "first_token_ms": 1213.9146670233458,
+      "total_ms": 1388.203457929194,
+      "first_token_ms": 947.3147499957122,
       "llm_called": true
     },
     {
@@ -757,15 +912,15 @@
       "question": "What is the biggest weakness of the atomic commit protocol where a coordinator collects votes from every participant?",
       "expected_doc": "two-phase-commit",
       "not_found": false,
-      "answer": "The greatest disadvantage of the two-phase commit protocol is that it is a blocking protocol [1].",
+      "answer": "The greatest disadvantage of the two-phase commit protocol is that it is a blocking protocol [1]. If the coordinator fails permanently, participants that have already sent an agreement message will remain blocked until they receive a commit or rollback [1].",
       "cited_docs": [
         "two-phase-commit"
       ],
       "cited_passages": [
         "They each write an entry to their undo log and an entry to their redo log.\n\n- Each participant replies with:\n\n- either an agreement message (participant votes Yes to commit), if the participant's actions succeeded;\n\n- or an abort message (participant votes No to commit), if the participant experiences a failure that will make it impossible to commit.\n\nCommit (or completion) phase\n\nSuccess\n\nIf the coordinator received an agreement message from all participants during the commit-request phase:\n\n- The coordinator sends a commit message to all the participants.\n\n- Each participant completes the operation, and releases all the locks and resources held during the transaction.\n\n- Each participant sends an acknowledgement to the coordinator.\n\n- The coordinator completes the transaction when all acknowledgements have been received.\n\nFailure\n\nIf any participant votes No during the commit-request phase (or the coordinator's timeout expires):\n\n- The coordinator sends a rollback message to all the participants.\n\n- Each participant undoes the transaction using the undo log, and releases the resources and locks held during the transaction.\n\n- Each participant sends an acknowledgement to the coordinator.\n\n- The coordinator undoes the transaction when all acknowledgements have been received.\n\nMessage flow\n\nCoordinator Participant\n\nQUERY TO COMMIT\n\nVOTE YES/NO prepare*/abort*\n\ncommit*/abort* COMMIT/ROLLBACK\n\nACKNOWLEDGEMENT commit*/abort*\n\nend\n\nAn * next to the record type means that the record is forced to stable storage.\n\nDisadvantages\n\n- The greatest disadvantage of the two-phase commit protocol is that it is a blocking protocol.\n\n- If the coordinator fails permanently, some participants will never resolve their transactions: After a participant has sent an agreement message as a response to the commit-request message from the coordinator, it will block until a commit or rollback is received.\n\n- A two-phase commit protocol cannot dependably recover from a failure of both the coordinator and a cohort member during the commit phase. If only the coordinator had failed, and no cohort members had received a commit message, it could safely be inferred that no commit had happened."
       ],
-      "total_ms": 1283.9602089952677,
-      "first_token_ms": 1251.9923340296373,
+      "total_ms": 1532.175374974031,
+      "first_token_ms": 1191.4101250004023,
       "llm_called": true
     },
     {
@@ -773,16 +928,15 @@
       "question": "Which paper first proposed the transformer architecture, and in what year?",
       "expected_doc": "transformer",
       "not_found": false,
-      "answer": "The original version of the transformer architecture was proposed in the 2017 paper titled \"Attention Is All You Need\" [1][6].",
+      "answer": "The original version of the transformer architecture was proposed in the 2017 paper titled \"Attention Is All You Need\" by researchers at Google [1].",
       "cited_docs": [
         "transformer"
       ],
       "cited_passages": [
-        "Transformer (deep learning)\n\nPart of a series on\n\nMachine learning and data mining\n\nIn deep learning, the transformer is a family of artificial neural network architectures based on the multi-head attention mechanism, in which input data such as text, images, or audio is converted to a sequence of numerical representations called tokens, and each token is converted into a vector through an embedding layer. At each layer, each token is then contextualized within the scope of the context window with other (unmasked) tokens via a parallel multi-head attention mechanism, allowing the signal for key tokens to be amplified and less important tokens to be diminished. Because self-attention alone is permutation-invariant, transformers inject positional information, typically through positional encodings or learned positional embeddings, so token order can affect the output.\n\nBecause transformers do not process tokens one at a time, their computations can be parallelized across sequence positions during training more readily than those of recurrent neural networks like long short-term memory (LSTM). Later variations have been widely adopted for training large language models (LLMs) on large (language) datasets.\n\nThe original version of the transformer architecture was proposed in the 2017 paper \"Attention Is All You Need\" by researchers at Google. The predecessors of transformers were developed as an improvement over previous architectures for machine translation, but have found many applications since. They are used in large-scale natural language processing, computer vision (vision transformers), reinforcement learning, audio, multimodal learning, robotics, and playing chess. It has also led to the development of pre-trained systems, such as generative pre-trained transformers (GPTs).\n\nHistory\n\nPredecessors\n\nBefore transformers, recurrent neural networks (RNNs) were widely used for sequence modelling and generation. A well-cited early example was the Elman network (1990). In theory, the information from one token can propagate arbitrarily far down the sequence, but in practice the vanishing-gradient problem leaves the model's state at the end of a long sentence without precise, extractable information about preceding tokens.",
-        "The new model was a seq2seq model where the encoder and the decoder were both 8 layers of bidirectional LSTM. It took nine months to develop, and it outperformed the statistical approach, which took ten years to develop.\n\nParallelizing attention\n\nSeq2seq models with attention (including self-attention) still suffered from the same issue with recurrent networks, which is that they are hard to parallelize, which prevented them from being accelerated on GPUs. In 2016, decomposable attention applied a self-attention mechanism to feedforward networks, which are easy to parallelize, and achieved state-of-the-art (SOTA) results in textual entailment with an order of magnitude fewer parameters than LSTMs. One of its authors, Jakob Uszkoreit, suspected that attention without recurrence would be sufficient for language translation, thus the title \"attention is All you need\". That hypothesis was against conventional wisdom at the time, and even his father Hans Uszkoreit, a well-known computational linguist, was skeptical. In the same year, self-attention (called intra-attention or intra-sentence attention) was proposed for LSTMs.\n\nOn 2017-06-12, the original (100M-parameter) encoder\u2013decoder transformer model was published in the \"Attention is All you need\" paper. At the time, the focus of the research was on improving seq2seq for machine translation, by removing its recurrence to process all tokens in parallel, but preserving its dot-product attention mechanism to keep its text processing performance. This led to the introduction of a multi-head attention model that was easier to parallelize due to the use of independent heads and the lack of recurrence. Its parallelizability was an important factor to its widespread use in large neural networks.\n\nAI boom era\n\nIn spring 2017, before the \"Attention is All you need\" preprint was published, one of the co-authors applied the \"decoder-only\" variation of the architecture to generate fictitious Wikipedia articles. Transformer architecture is now used alongside many generative models that contribute to the ongoing AI boom."
+        "Transformer (deep learning)\n\nMachine learning and data mining\n\nIn deep learning, the transformer is a family of artificial neural network architectures based on the multi-head attention mechanism, in which input data such as text, images, or audio is converted to a sequence of numerical representations called tokens, and each token is converted into a vector through an embedding layer. At each layer, each token is then contextualized within the scope of the context window with other (unmasked) tokens via a parallel multi-head attention mechanism, allowing the signal for key tokens to be amplified and less important tokens to be diminished. Because self-attention alone is permutation-invariant, transformers inject positional information, typically through positional encodings or learned positional embeddings, so token order can affect the output.\n\nBecause transformers do not process tokens one at a time, their computations can be parallelized across sequence positions during training more readily than those of recurrent neural networks like long short-term memory (LSTM). Later variations have been widely adopted for training large language models (LLMs) on large (language) datasets.\n\nThe original version of the transformer architecture was proposed in the 2017 paper \"Attention Is All You Need\" by researchers at Google. The predecessors of transformers were developed as an improvement over previous architectures for machine translation, but have found many applications since. They are used in large-scale natural language processing, computer vision (vision transformers), reinforcement learning, audio, multimodal learning, robotics, and playing chess. It has also led to the development of pre-trained systems, such as generative pre-trained transformers (GPTs).\n\nHistory\n\nPredecessors\n\nBefore transformers, recurrent neural networks (RNNs) were widely used for sequence modelling and generation. A well-cited early example was the Elman network (1990). In theory, the information from one token can propagate arbitrarily far down the sequence, but in practice the vanishing-gradient problem leaves the model's state at the end of a long sentence without precise, extractable information about preceding tokens."
       ],
-      "total_ms": 1247.3965000244789,
-      "first_token_ms": 1155.9857919928618,
+      "total_ms": 1017.0245409244671,
+      "first_token_ms": 799.952499975916,
       "llm_called": true
     },
     {
@@ -793,8 +947,8 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 825.1882930053398,
-      "first_token_ms": 806.8155840155669,
+      "total_ms": 1310.9438750543632,
+      "first_token_ms": 1147.116250009276,
       "llm_called": true
     },
     {
@@ -802,16 +956,15 @@
       "question": "What is Bahdanau-style attention also called?",
       "expected_doc": "attention",
       "not_found": false,
-      "answer": "Bahdanau-style attention is also referred to as additive attention [1][2].",
+      "answer": "Bahdanau-style attention is also referred to as additive attention [2].",
       "cited_docs": [
         "attention"
       ],
       "cited_passages": [
-        "I | love | you\n\nje | 0.94 | 0.02 | 0.04\n\nt' | 0.11 | 0.01 | 0.88\n\naime | 0.03 | 0.95 | 0.02\n\nSometimes, alignment can be multiple-to-multiple. For example, the English phrase look it up corresponds to cherchez-le. Thus, \"soft\" attention weights work better than \"hard\" attention weights (setting one attention weight to 1, and the others to 0), as we would like the model to make a context vector consisting of a weighted sum of the hidden vectors, rather than \"the best one\", as there may not be a best hidden vector.\n\nVariants\n\nMany variants of attention implement soft weights, such as\n\n- fast weight programmers, or fast weight controllers (1992). A \"slow\" neural network outputs the \"fast\" weights of another neural network through outer products. The slow network learns by gradient descent. It was later renamed as \"linearized self-attention\".\n\n- Bahdanau-style attention, also referred to as additive attention,\n\n- Luong-style attention, which is known as multiplicative attention,\n\n- Early attention mechanisms similar to modern self-attention were proposed using recurrent neural networks. However, the highly parallelizable self-attention was introduced in 2017 and successfully used in the Transformer model,\n\n- positional attention and factorized positional attention.\n\nFor convolutional neural networks, attention mechanisms can be distinguished by the dimension on which they operate, namely: spatial attention, channel attention, or combinations.\n\nThese variants recombine the encoder-side inputs to redistribute those effects to each target output. Often, a correlation-style matrix of dot products provides the re-weighting coefficients. In the figures below, W is the matrix of context attention weights, similar to the formula in Overview section above.\n\n1. encoder-decoder dot product | 2. encoder-decoder QKV | 3. encoder-only dot product | 4. encoder-only QKV | 5. Pytorch tutorial\n\nLegend\n\nLabel | Description",
-        "Similar properties hold for multi-head attention, which is defined below.\n\nMasked attention\n\nWhen QKV attention is used as a building block for an autoregressive decoder, and when at training time all input and output matrices have rows, a masked attention variant is used: where the mask, is a strictly upper triangular matrix, with zeros on and below the diagonal and in every element above the diagonal. The softmax output, in is then lower triangular, with zeros in all elements above the diagonal. The masking ensures that for all , row of the attention output is independent of row of any of the three input matrices. The permutation invariance and equivariance properties of standard QKV attention do not hold for the masked variant.\n\nMulti-head attention\n\nMulti-head attention where each head is computed with QKV attention as: and , and are parameter matrices.\n\nThe permutation properties of (standard, unmasked) QKV attention apply here also. For permutation matrices, : from which we also see that multi-head self-attention: is equivariant with respect to re-ordering of the rows of input matrix .\n\nBahdanau (additive) attention\n\nwhere and are learnable weight matrices.\n\nLuong attention (general)\n\nwhere is a learnable weight matrix.\n\nSelf-attention\n\nSelf-attention is essentially the same as cross-attention, except that query, key, and value vectors all come from the same model. Both encoder and decoder can use self-attention, but with subtle differences.\n\nFor encoder self-attention, we can start with a simple encoder without self-attention, such as an \"embedding layer\", which simply converts each input word into a vector by a fixed lookup table. This gives a sequence of hidden vectors . These can then be applied to a dot-product attention mechanism, to obtainor more succinctly, . This can be applied repeatedly, to obtain a multilayered encoder. This is the \"encoder self-attention\", sometimes called the \"all-to-all attention\", as the vector at every position can attend to every other.\n\nMasking"
+        "I | love | you\n\nje | 0.94 | 0.02 | 0.04\n\nt' | 0.11 | 0.01 | 0.88\n\naime | 0.03 | 0.95 | 0.02\n\nSometimes, alignment can be multiple-to-multiple. For example, the English phrase look it up corresponds to cherchez-le. Thus, \"soft\" attention weights work better than \"hard\" attention weights (setting one attention weight to 1, and the others to 0), as we would like the model to make a context vector consisting of a weighted sum of the hidden vectors, rather than \"the best one\", as there may not be a best hidden vector.\n\nVariants\n\nMany variants of attention implement soft weights, such as\n\n- fast weight programmers, or fast weight controllers (1992). A \"slow\" neural network outputs the \"fast\" weights of another neural network through outer products. The slow network learns by gradient descent. It was later renamed as \"linearized self-attention\".\n\n- Bahdanau-style attention, also referred to as additive attention,\n\n- Luong-style attention, which is known as multiplicative attention,\n\n- Early attention mechanisms similar to modern self-attention were proposed using recurrent neural networks. However, the highly parallelizable self-attention was introduced in 2017 and successfully used in the Transformer model,\n\n- positional attention and factorized positional attention.\n\nFor convolutional neural networks, attention mechanisms can be distinguished by the dimension on which they operate, namely: spatial attention, channel attention, or combinations.\n\nThese variants recombine the encoder-side inputs to redistribute those effects to each target output. Often, a correlation-style matrix of dot products provides the re-weighting coefficients. In the figures below, W is the matrix of context attention weights, similar to the formula in Overview section above.\n\n1. encoder-decoder dot product | 2. encoder-decoder QKV | 3. encoder-only dot product | 4. encoder-only QKV | 5. Pytorch tutorial\n\nLegend\n\nLabel | Description"
       ],
-      "total_ms": 1528.3791670226492,
-      "first_token_ms": 1488.7240000534803,
+      "total_ms": 1044.1434580134228,
+      "first_token_ms": 846.7358750058338,
       "llm_called": true
     },
     {
@@ -826,8 +979,8 @@
       "cited_passages": [
         "I | love | you\n\nje | 0.94 | 0.02 | 0.04\n\nt' | 0.11 | 0.01 | 0.88\n\naime | 0.03 | 0.95 | 0.02\n\nSometimes, alignment can be multiple-to-multiple. For example, the English phrase look it up corresponds to cherchez-le. Thus, \"soft\" attention weights work better than \"hard\" attention weights (setting one attention weight to 1, and the others to 0), as we would like the model to make a context vector consisting of a weighted sum of the hidden vectors, rather than \"the best one\", as there may not be a best hidden vector.\n\nVariants\n\nMany variants of attention implement soft weights, such as\n\n- fast weight programmers, or fast weight controllers (1992). A \"slow\" neural network outputs the \"fast\" weights of another neural network through outer products. The slow network learns by gradient descent. It was later renamed as \"linearized self-attention\".\n\n- Bahdanau-style attention, also referred to as additive attention,\n\n- Luong-style attention, which is known as multiplicative attention,\n\n- Early attention mechanisms similar to modern self-attention were proposed using recurrent neural networks. However, the highly parallelizable self-attention was introduced in 2017 and successfully used in the Transformer model,\n\n- positional attention and factorized positional attention.\n\nFor convolutional neural networks, attention mechanisms can be distinguished by the dimension on which they operate, namely: spatial attention, channel attention, or combinations.\n\nThese variants recombine the encoder-side inputs to redistribute those effects to each target output. Often, a correlation-style matrix of dot products provides the re-weighting coefficients. In the figures below, W is the matrix of context attention weights, similar to the formula in Overview section above.\n\n1. encoder-decoder dot product | 2. encoder-decoder QKV | 3. encoder-only dot product | 4. encoder-only QKV | 5. Pytorch tutorial\n\nLegend\n\nLabel | Description"
       ],
-      "total_ms": 1044.4147079833783,
-      "first_token_ms": 956.8422919837758,
+      "total_ms": 1063.490999978967,
+      "first_token_ms": 936.2164579797536,
       "llm_called": true
     },
     {
@@ -835,15 +988,15 @@
       "question": "What two model architectures can Word2Vec use?",
       "expected_doc": "word2vec",
       "not_found": false,
-      "answer": "Word2Vec can use either of the following two model architectures:\n- Continuous bag of words (CBOW) [1]\n- Continuously sliding skip-gram [1]",
+      "answer": "Word2Vec can use either the continuous bag of words (CBOW) architecture or the continuously sliding skip-gram architecture [1].",
       "cited_docs": [
         "word2vec"
       ],
       "cited_passages": [
         "Word2Vec\n\nIn natural language processing, Word2Vec is a technique for obtaining vector representations of words as word embeddings. These vectors capture information about the meaning of a word based on its surrounding words in a piece of text, following the principles of distributional semantics. Once trained, the model can be used to find words with similar meanings or usage, while its embeddings can serve as inputs to systems for search and classification.\n\nWord2Vec was developed by Tom\u00e1\u0161 Mikolov, Kai Chen, Greg Corrado, Ilya Sutskever and Jeff Dean at Google, published in preprints and presented at ICLR in 2013. Its computational efficiency made it practical to learn high-quality word embeddings from very large text corpora and contributed to their widespread adoption in natural language processing.\n\nApproach\n\nWord2Vec is a group of related models that are used to produce word embeddings. These models are shallow, two-layer neural networks that are trained to reconstruct linguistic contexts of words. Word2Vec takes as its input a large corpus of text and produces a mapping of the set of words to a vector space, typically of several hundred dimensions, with each unique word in the corpus being assigned a vector in the space.\n\nWord2Vec can use either of two model architectures to produce these distributed representations of words: continuous bag of words (CBOW) or continuously sliding skip-gram. In both architectures, Word2Vec considers both individual words and a sliding context window as it iterates over the corpus.\n\nThe CBOW can be viewed as a \"fill in the blank\" task, where the word embedding represents the way the word influences the relative probabilities of other words in the context window. Words which are semantically similar should influence these probabilities in similar ways, because semantically similar words should be used in similar contexts. The order of context words does not influence prediction (bag of words assumption).\n\nIn the continuous skip-gram architecture, the model uses the current word to predict the surrounding window of context words. The skip-gram architecture weighs nearby context words more heavily than more distant context words."
       ],
-      "total_ms": 1198.8526660134085,
-      "first_token_ms": 1151.6191660193726,
+      "total_ms": 1239.1029989812523,
+      "first_token_ms": 1085.6693329988047,
       "llm_called": true
     },
     {
@@ -858,8 +1011,8 @@
       "cited_passages": [
         "Word2Vec\n\nIn natural language processing, Word2Vec is a technique for obtaining vector representations of words as word embeddings. These vectors capture information about the meaning of a word based on its surrounding words in a piece of text, following the principles of distributional semantics. Once trained, the model can be used to find words with similar meanings or usage, while its embeddings can serve as inputs to systems for search and classification.\n\nWord2Vec was developed by Tom\u00e1\u0161 Mikolov, Kai Chen, Greg Corrado, Ilya Sutskever and Jeff Dean at Google, published in preprints and presented at ICLR in 2013. Its computational efficiency made it practical to learn high-quality word embeddings from very large text corpora and contributed to their widespread adoption in natural language processing.\n\nApproach\n\nWord2Vec is a group of related models that are used to produce word embeddings. These models are shallow, two-layer neural networks that are trained to reconstruct linguistic contexts of words. Word2Vec takes as its input a large corpus of text and produces a mapping of the set of words to a vector space, typically of several hundred dimensions, with each unique word in the corpus being assigned a vector in the space.\n\nWord2Vec can use either of two model architectures to produce these distributed representations of words: continuous bag of words (CBOW) or continuously sliding skip-gram. In both architectures, Word2Vec considers both individual words and a sliding context window as it iterates over the corpus.\n\nThe CBOW can be viewed as a \"fill in the blank\" task, where the word embedding represents the way the word influences the relative probabilities of other words in the context window. Words which are semantically similar should influence these probabilities in similar ways, because semantically similar words should be used in similar contexts. The order of context words does not influence prediction (bag of words assumption).\n\nIn the continuous skip-gram architecture, the model uses the current word to predict the surrounding window of context words. The skip-gram architecture weighs nearby context words more heavily than more distant context words."
       ],
-      "total_ms": 1304.663916991558,
-      "first_token_ms": 1201.1327919899486,
+      "total_ms": 1240.2681250241585,
+      "first_token_ms": 900.8892090059817,
       "llm_called": true
     },
     {
@@ -867,15 +1020,16 @@
       "question": "What two objectives is BERT trained with?",
       "expected_doc": "bert",
       "not_found": false,
-      "answer": "BERT is trained with the following two objectives:\n\n- Masked language modeling (MLM) [2]\n- Next sentence prediction (NSP) [2]",
+      "answer": "BERT is trained with two simultaneous objectives:\n\n- Masked language modeling (MLM): The model ingests a sequence of words where one random word may be changed or \"masked,\" and it must predict the original word [2].\n- Next sentence prediction (NSP): The model is trained to predict whether one sentence logically follows another in the training corpus [2][5].",
       "cited_docs": [
         "bert"
       ],
       "cited_passages": [
-        "The notation for encoder stack is written as L/H. For example, BERTBASE is written as 12L/768H, BERTLARGE as 24L/1024H, and BERTTINY as 2L/128H.\n\nTraining\n\nPre-training\n\nBERT was pre-trained simultaneously on two tasks:\n\n- Masked language modeling (MLM): In this task, BERT ingests a sequence of words, where one word may be randomly changed (\"masked\"), and BERT tries to predict the original words that had been changed. For example, in the sentence \"The cat sat on the [MASK],\" BERT would need to predict \"mat. This helps BERT learn bidirectional context, meaning it understands the relationships between words not just from left to right or right to left but from both directions at the same time.\n\n- Next sentence prediction (NSP): In this task, BERT is trained to predict whether one sentence logically follows another. For example, given two sentences, \"The cat sat on the mat\" and \"It was a sunny day\", BERT has to decide if the second sentence is a valid continuation of the first one. This helps BERT understand relationships between sentences, which is important for tasks like question answering or document classification.\n\nMasked language modeling\n\nIn masked language modeling, 15% of tokens would be randomly selected for masked-prediction task, and the training objective was to predict the masked token given its context. In more detail, the selected token is:\n\n- replaced with a [MASK] token with probability 80%,\n\n- replaced with a random word token with probability 10%,\n\n- not replaced with probability 10%.\n\nThe reason not all selected tokens are masked is to avoid the dataset shift problem. The dataset shift problem arises when the distribution of inputs seen during training differs significantly from the distribution encountered during inference. A trained BERT model might be applied to word representation (like Word2Vec), where it would be run over sentences not containing any [MASK] tokens. It is later found that more diverse training objectives are generally better."
+        "The notation for encoder stack is written as L/H. For example, BERTBASE is written as 12L/768H, BERTLARGE as 24L/1024H, and BERTTINY as 2L/128H.\n\nTraining\n\nPre-training\n\nBERT was pre-trained simultaneously on two tasks:\n\n- Masked language modeling (MLM): In this task, BERT ingests a sequence of words, where one word may be randomly changed (\"masked\"), and BERT tries to predict the original words that had been changed. For example, in the sentence \"The cat sat on the [MASK],\" BERT would need to predict \"mat. This helps BERT learn bidirectional context, meaning it understands the relationships between words not just from left to right or right to left but from both directions at the same time.\n\n- Next sentence prediction (NSP): In this task, BERT is trained to predict whether one sentence logically follows another. For example, given two sentences, \"The cat sat on the mat\" and \"It was a sunny day\", BERT has to decide if the second sentence is a valid continuation of the first one. This helps BERT understand relationships between sentences, which is important for tasks like question answering or document classification.\n\nMasked language modeling\n\nIn masked language modeling, 15% of tokens would be randomly selected for masked-prediction task, and the training objective was to predict the masked token given its context. In more detail, the selected token is:\n\n- replaced with a [MASK] token with probability 80%,\n\n- replaced with a random word token with probability 10%,\n\n- not replaced with probability 10%.\n\nThe reason not all selected tokens are masked is to avoid the dataset shift problem. The dataset shift problem arises when the distribution of inputs seen during training differs significantly from the distribution encountered during inference. A trained BERT model might be applied to word representation (like Word2Vec), where it would be run over sentences not containing any [MASK] tokens. It is later found that more diverse training objectives are generally better.",
+        "A trained BERT model might be applied to word representation (like Word2Vec), where it would be run over sentences not containing any [MASK] tokens. It is later found that more diverse training objectives are generally better.\n\nAs an illustrative example, consider the sentence \"my dog is cute\". It would first be divided into tokens like \"my1 dog2 is3 cute4\". Then a random token in the sentence would be picked. Let it be the 4th one \"cute4\". Next, there would be three possibilities:\n\n- with probability 80%, the chosen token is masked, resulting in \"my1 dog2 is3 [MASK]4\";\n\n- with probability 10%, the chosen token is replaced by a uniformly sampled random token, such as \"happy\", resulting in \"my1 dog2 is3 happy4\";\n\n- with probability 10%, nothing is done, resulting in \"my1 dog2 is3 cute4\".\n\nAfter processing the input text, the model's 4th output vector is passed to its decoder layer, which outputs a probability distribution over its 30,000-dimensional vocabulary space.\n\nNext sentence prediction\n\nGiven two sentences, the model predicts if they appear sequentially in the training corpus, outputting either [IsNext] or [NotNext]. During training, the algorithm sometimes samples two sentences from a single continuous span in the training corpus, while at other times, it samples two sentences from two discontinuous spans.\n\nThe first sentence starts with a special token, [CLS] (for \"classify\"). The two sentences are separated by another special token, [SEP] (for \"separate\"). After processing the two sentences, the final vector for the [CLS] token is passed to a linear layer for binary classification into [IsNext] and [NotNext].\n\nFor example:\n\n- Given \"[CLS] my dog is cute [SEP] he likes playing [SEP]\", the model should predict [IsNext]."
       ],
-      "total_ms": 1480.4244170081802,
-      "first_token_ms": 1386.3613329594955,
+      "total_ms": 1238.3607079973444,
+      "first_token_ms": 837.711708038114,
       "llm_called": true
     },
     {
@@ -883,15 +1037,15 @@
       "question": "When did Google AI release its bidirectional encoder language model?",
       "expected_doc": "bert",
       "not_found": false,
-      "answer": "Google AI introduced and released the bidirectional encoder representations from transformers (BERT) language model in October 2018 [1].",
+      "answer": "Google AI released the bidirectional encoder representations from transformers (BERT) language model in October 2018 [1].",
       "cited_docs": [
         "bert"
       ],
       "cited_passages": [
         "BERT (language model)\n\nBidirectional encoder representations from transformers (BERT)\n\nOriginal author | Google AI\n\nRelease | October 31, 2018\n\nType\n\nLicense | Apache 2.0\n\nWebsite | arxiv.org/abs/1810.04805\n\nRepository | github.com/google-research/bert\n\nBidirectional encoder representations from transformers (BERT) is a language model introduced in October 2018 by researchers at Google. It learns to represent text as a sequence of vectors using self-supervised learning. It uses the encoder-only transformer architecture. BERT dramatically improved the state of the art for large language models. As of 2026[update], BERT is a common methodological component in natural language processing (NLP) research.\n\nBERT is trained by masked token prediction and next sentence prediction. With this training, BERT learns contextual, latent representations of tokens in their context, similar to ELMo and GPT-2. It found applications for many natural language processing tasks, such as coreference resolution and polysemy resolution. It improved on ELMo and spawned the study of \"BERTology\", which attempts to interpret what is learned by BERT.\n\nBERT was originally implemented in the English language at two model sizes, BERTBASE (110 million parameters) and BERTLARGE (340 million parameters). Both were trained on the Toronto BookCorpus (800M words) and English Wikipedia (2,500M words).: 5 The weights were released on GitHub. On March 11, 2020, 24 smaller models were released, the smallest being BERTTINY with just 4 million parameters.\n\nArchitecture\n\nBERT is an \"encoder-only\" transformer architecture. At a high level, BERT consists of 4 modules:\n\n- Tokenizer: This module converts a piece of English text into a sequence of integers (\"tokens\").\n\n- Embedding: This module converts the sequence of tokens into an array of real-valued vectors representing the tokens. It represents the conversion of discrete token types into a lower-dimensional Euclidean space.\n\n- Encoder: a stack of Transformer blocks with self-attention, but without causal masking."
       ],
-      "total_ms": 1366.6129169869237,
-      "first_token_ms": 1276.9104579929262,
+      "total_ms": 1103.4479590016417,
+      "first_token_ms": 868.1745840003714,
       "llm_called": true
     },
     {
@@ -899,15 +1053,15 @@
       "question": "How does letting a chatbot look up documents before answering help with made-up answers?",
       "expected_doc": "rag",
       "not_found": false,
-      "answer": "Blending the LLM process with document look-up processes helps large language models stick to the facts, which reduces AI hallucinations such as chatbots describing non-existent policies [1].",
+      "answer": "Letting a chatbot look up documents before answering helps it stick to the facts, which reduces AI hallucinations where chatbots might otherwise describe policies that do not exist or recommend nonexistent legal cases [1].",
       "cited_docs": [
         "rag"
       ],
       "cited_passages": [
         "Retrieval-augmented generation\n\nRetrieval-augmented generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external data sources. With RAG, LLMs first refer to a specified set of documents, then respond to user queries. These documents supplement information from the LLM's pre-existing training data. This allows LLMs to use domain-specific and/or updated information that is not available in the training data. For example, this enables LLM-based chatbots to access internal company data or generate responses based on authoritative sources. The technique was first proposed in 2020 and has since become a widely adopted approach in modern AI systems.\n\nRAG improves LLMs by incorporating information retrieval before generating responses. Unlike LLMs that rely on static training data, RAG pulls relevant text from databases, uploaded documents, or web sources. According to Ars Technica, \"RAG is a way of improving LLM performance, in essence by blending the LLM process with a web search or other document look-up process to help LLMs stick to the facts. This method helps reduce AI hallucinations, which have caused chatbots to describe policies that don't exist, or recommend nonexistent legal cases to lawyers that are looking for citations to support their arguments.\n\nRAG also reduces the need to retrain LLMs with new data, saving on computational and financial costs. Beyond efficiency gains, RAG also allows LLMs to include sources in their responses, so users can verify the cited sources. This provides greater transparency, as users can cross-check retrieved content to ensure accuracy and relevance.\n\nThe term retrieval-augmented generation (RAG) was introduced in a 2020 paper that described combining a parametric language model with a non-parametric external memory accessed through retrieval at inference time.\n\nRAG and LLM limitations\n\nLLMs can provide incorrect information. For example, when Google first demonstrated its LLM tool \"Bard\" (later re-branded to Google Gemini), the LLM provided incorrect information about the James Webb Space Telescope."
       ],
-      "total_ms": 1290.891415963415,
-      "first_token_ms": 1165.6397079932503,
+      "total_ms": 1374.7268750448711,
+      "first_token_ms": 1011.5071670152247,
       "llm_called": true
     },
     {
@@ -915,15 +1069,15 @@
       "question": "How does TCP CUBIC grow its congestion window?",
       "expected_doc": "tcp-congestion",
       "not_found": false,
-      "answer": "TCP CUBIC grows its congestion window as a cubic function of time since the last congestion event, with the inflection point set to the window prior to the event [1].",
+      "answer": "TCP CUBIC grows its congestion window as a cubic function of time since the last congestion event, with the inflection point set to the window prior to that event [1].",
       "cited_docs": [
         "tcp-congestion"
       ],
       "cited_passages": [
         "Hybla improvements are based on analytical evaluation of the congestion window dynamics.\n\nTCP BIC\n\nBinary Increase Congestion control (BIC) is a TCP implementation with an optimized CCA for high-speed networks with high latency, known as long fat networks (LFNs). BIC is used by default in Linux kernels 2.6.8 through 2.6.18.\n\nTCP CUBIC\n\nCUBIC is a less aggressive and more systematic derivative of BIC, in which the window is a cubic function of time since the last congestion event, with the inflection point set to the window prior to the event. CUBIC is used by default in Linux kernels since version 2.6.19.\n\nAgile-SD TCP\n\nAgile-SD is a Linux-based CCA that is designed for the real Linux kernel. It is a receiver-side algorithm that employs a loss-based approach using a novel mechanism, called agility factor (AF), to increase the bandwidth utilization over high-speed and short-distance networks (low bandwidth-delay product networks) such as local area networks or fiber-optic networks, especially when the applied buffer size is small. It has been evaluated by comparing its performance to Compound TCP (the default CCA in MS Windows) and CUBIC (the default of Linux) using the NS-2 simulator. It improves the total performance up to 55% in terms of average throughput.\n\nTCP Westwood+\n\nWestwood+ is a sender-only modification of TCP Reno that optimizes the performance of TCP congestion control over both wired and wireless networks. TCP Westwood+ is based on end-to-end bandwidth estimation to set the congestion window and slow-start threshold after a congestion episode, that is, after three duplicate acknowledgments or a timeout. The bandwidth is estimated by averaging the rate of returning acknowledgment packets. In contrast with TCP Reno, which blindly halves the congestion window after three duplicate ACKs, TCP Westwood+ adaptively sets a slow-start threshold and a congestion window that takes into account an estimate of bandwidth available at the time congestion is experienced."
       ],
-      "total_ms": 1065.9581670188345,
-      "first_token_ms": 996.743209019769,
+      "total_ms": 999.6827080030926,
+      "first_token_ms": 838.3194159832783,
       "llm_called": true
     },
     {
@@ -931,7 +1085,7 @@
       "question": "Which Linux kernel versions used BIC as the default congestion control?",
       "expected_doc": "tcp-congestion",
       "not_found": false,
-      "answer": "BIC was used by default in Linux kernels 2.6.8 through 2.6.18 [1][3].",
+      "answer": "BIC was used by default in Linux kernels version 2.6.8 through 2.6.18 [1][4].",
       "cited_docs": [
         "tcp-congestion"
       ],
@@ -939,8 +1093,8 @@
         "Hybla improvements are based on analytical evaluation of the congestion window dynamics.\n\nTCP BIC\n\nBinary Increase Congestion control (BIC) is a TCP implementation with an optimized CCA for high-speed networks with high latency, known as long fat networks (LFNs). BIC is used by default in Linux kernels 2.6.8 through 2.6.18.\n\nTCP CUBIC\n\nCUBIC is a less aggressive and more systematic derivative of BIC, in which the window is a cubic function of time since the last congestion event, with the inflection point set to the window prior to the event. CUBIC is used by default in Linux kernels since version 2.6.19.\n\nAgile-SD TCP\n\nAgile-SD is a Linux-based CCA that is designed for the real Linux kernel. It is a receiver-side algorithm that employs a loss-based approach using a novel mechanism, called agility factor (AF), to increase the bandwidth utilization over high-speed and short-distance networks (low bandwidth-delay product networks) such as local area networks or fiber-optic networks, especially when the applied buffer size is small. It has been evaluated by comparing its performance to Compound TCP (the default CCA in MS Windows) and CUBIC (the default of Linux) using the NS-2 simulator. It improves the total performance up to 55% in terms of average throughput.\n\nTCP Westwood+\n\nWestwood+ is a sender-only modification of TCP Reno that optimizes the performance of TCP congestion control over both wired and wireless networks. TCP Westwood+ is based on end-to-end bandwidth estimation to set the congestion window and slow-start threshold after a congestion episode, that is, after three duplicate acknowledgments or a timeout. The bandwidth is estimated by averaging the rate of returning acknowledgment packets. In contrast with TCP Reno, which blindly halves the congestion window after three duplicate ACKs, TCP Westwood+ adaptively sets a slow-start threshold and a congestion window that takes into account an estimate of bandwidth available at the time congestion is experienced.",
         "Intentionally slows down periodically for fairness and decreased delay.\n\n- TCP-Westwood (TCPW) \u2013 a loss causes the window to be reset to the sender's estimate of the bandwidth-delay product (the smallest measured RTT multiplied by the observed rate of receiving ACKs).\n\n- C2TCP\n\n- TFRC\n\n- TCP-Real\n\n- TCP-Jersey\n\nGreen box\n\n- Bimodal Mechanism \u2013 Bimodal Congestion Avoidance and Control mechanism.\n\n- Signalling methods implemented by routers\n\n- Random Early Detection (RED) randomly drops packets in proportion to the router's queue size, triggering multiplicative decrease in some flows.\n\n- Explicit Congestion Notification (ECN)\n\n- Network-Assisted Congestion Control\n\n- NATCP \u2013 Network-Assisted TCP uses out-of-band explicit feedback indicating minimum RTT of the network and capacity of the cellular access link.\n\n- The variable-structure congestion control protocol (VCP) uses two ECN bits to explicitly feed back the network state of congestion. It includes an end host side algorithm as well.\n\nThe following algorithms require custom fields to be added to the TCP packet structure:\n\n- Explicit Control Protocol (XCP) \u2013 XCP packets carry a congestion header with a feedback field, indicating the increase or decrease of the sender's congestion window. XCP routers set the feedback value explicitly for efficiency and fairness.\n\n- MaxNet \u2013 Uses a single header field, which carries the maximum congestion level of any router on a flow's path. The rate is set as a function of this maximum congestion, resulting in max-min fairness.\n\n- JetMax, like MaxNet, responds only to the maximum congestion signal, but also carries other overhead fields.\n\nLinux usage\n\n- BIC is used by default in Linux kernels 2.6.8 through 2.6.18. (August 2004 \u2013 September 2006)\n\n- CUBIC is used by default in Linux kernels since version 2.6.19. (November 2006)\n\n- PRR is incorporated in Linux kernels to improve loss recovery since version 3.2. (January 2012)"
       ],
-      "total_ms": 1242.1584999538027,
-      "first_token_ms": 1150.1609580009244,
+      "total_ms": 1148.3444580226205,
+      "first_token_ms": 960.8674159971997,
       "llm_called": true
     },
     {
@@ -948,7 +1102,7 @@
       "question": "How does the second major version of the web's transfer protocol avoid head-of-line blocking between requests?",
       "expected_doc": "http2",
       "not_found": false,
-      "answer": "HTTP/2 (the second major version of the protocol) avoids HTTP-transaction-level head-of-line blocking by allowing multiple concurrent HTTP transactions to be multiplexed over a single TCP connection [1][3].",
+      "answer": "HTTP/2 avoids HTTP-transaction-level head-of-line blocking by allowing multiple concurrent HTTP transactions to be multiplexed over a single TCP connection [1][3].",
       "cited_docs": [
         "http2"
       ],
@@ -956,8 +1110,8 @@
         "RFC7258/BCP188 mandates that pervasive monitoring be considered as an attack, and protocols designed by IETF should take steps to protect against passive monitoring (for example, through the use of opportunistic encryption). A number of specifications for opportunistic encryption of HTTP/2 have been provided, of which draft-nottingham-http2-encryption was adopted as an official work item of the working group, leading to the publication of RFC 8164 in May 2017.\n\nTCP head-of-line blocking\n\nAlthough the design of HTTP/2 effectively addresses the HTTP-transaction-level head-of-line blocking problem by allowing multiple concurrent HTTP transactions, all those transactions are multiplexed over a single TCP connection, meaning that any packet-level head-of-line blocking of the TCP stream simultaneously blocks all transactions being accessed via that connection. This head-of-line blocking in HTTP/2 is now widely regarded as a design flaw, and much of the effort behind QUIC and HTTP/3 has been devoted to reduce head-of-line blocking issues.\n\nServer-side support\n\nServer software\n\nThe following web servers support HTTP/2:\n\n- Apache httpd 2.4.12 supports HTTP/2 via the module mod_h2, although appropriate patches must be applied to the source code of the server in order for it to support that module. As of Apache 2.4.17 all patches are included in the main Apache source tree, although the module itself was renamed mod_http2. Old versions of SPDY were supported via the module mod_spdy, however the development of the mod_spdy module has stopped.\n\n- Apache Tomcat 8.5 (requires a configuration change)\n\n- Apache Traffic Server\n\n- Caddy\n\n- Charles Proxy since version Charles 4.\n\n- Citrix NetScaler 11.x\n\n- Sucuri\n\n- F5 BIG-IP Local Traffic Manager 11.6\n\n- Barracuda Networks WAF (Web Application Firewall)\n\n- h2o (built from the ground up for HTTP/2 support)\n\n- HAProxy 1.8\n\n- Jetty 9.3\n\n- lighttpd 1.4.56\n\n- LiteSpeed Web Server 5.0",
         "Goals\n\nThe working group charter mentions several goals and issues of concern:\n\n- Create a negotiation mechanism that allows clients and servers to elect to use HTTP/1.1, 2.0, or potentially other non-HTTP protocols.\n\n- Maintain high-level compatibility with HTTP/1.1 (for example with methods, status codes, URIs, and most header fields).\n\n- Decrease latency to improve page loading speed in web browsers by considering:\n\n- data compression of HTTP headers\n\n- HTTP/2 Server Push\n\n- prioritization of requests\n\n- multiplexing multiple requests over a single TCP connection (fixing the HTTP-transaction-level head-of-line blocking problem in HTTP 1.x)\n\n- Support common existing use cases of HTTP, such as desktop web browsers, mobile web browsers, web APIs, web servers at various scales, proxy servers, reverse proxy servers, firewalls, and content delivery networks.\n\nDifferences from HTTP/1.1\n\nThe changes do not require any changes to how existing web applications work, but new applications can take advantage of new features for increased speed. HTTP/2 leaves all of HTTP/1.1's high-level semantics, such as methods, status codes, header fields, and URIs, the same. What is new is how the data is framed and transported between the client and the server.\n\nWebsites that are efficient minimize the number of requests required to render an entire page by minifying (reducing the amount of code and packing smaller pieces of code into bundles, without reducing its ability to function) resources such as images and scripts. However, minification is not necessarily convenient nor efficient and may still require separate HTTP connections to get the page and the minified resources. HTTP/2 allows the server to \"push\" content, that is, to respond with data for more queries than the client requested."
       ],
-      "total_ms": 1336.5317499847151,
-      "first_token_ms": 1186.842625029385,
+      "total_ms": 1342.933750944212,
+      "first_token_ms": 1109.0324589749798,
       "llm_called": true
     },
     {
@@ -965,15 +1119,15 @@
       "question": "Who invented automatic reclamation of unused memory, and for which programming language?",
       "expected_doc": "garbage-collection",
       "not_found": false,
-      "answer": "Garbage collection was invented by American computer scientist John McCarthy around 1959 for Lisp [1].",
+      "answer": "Garbage collection was invented by American computer scientist John McCarthy around 1959 for the Lisp programming language [1].",
       "cited_docs": [
         "garbage-collection"
       ],
       "cited_passages": [
         "Garbage collection (computer science)\n\nIn computer science, garbage collection (GC) is a form of automatic memory management. The garbage collector attempts to reclaim memory that was allocated by the program, but is no longer referenced; such memory is called garbage. Garbage collection was invented by American computer scientist John McCarthy around 1959 to simplify manual memory management in Lisp.\n\nGarbage collection relieves the programmer from doing manual memory management, where the programmer specifies what objects to de-allocate and return to the memory system and when to do so. Other, similar techniques include stack allocation, region inference, and memory ownership, and combinations thereof. Garbage collection may take a significant proportion of a program's total processing time, and affect performance as a result.\n\nResources other than memory, such as network sockets, database handles, windows, file descriptors, and device descriptors, are not typically handled by garbage collection, but rather by other methods (e.g. destructors). Some such methods de-allocate memory also.\n\nOverview\n\nMany programming languages require garbage collection, either as part of the language specification (e.g., RPL, Java, C#, D, Go, and most scripting languages) or effectively for practical implementation (e.g., formal languages like lambda calculus). These are said to be garbage-collected languages. Other languages, such as C and C++, were designed for use with manual memory management, but have garbage-collected implementations available. Some languages, like Ada, Modula-3, and C++/CLI, allow both garbage collection and manual memory management to co-exist in the same application by using separate heaps for collected and manually managed objects. Still others, like D, are garbage-collected but allow the user to manually delete objects or even disable garbage collection entirely when speed is required.\n\nAlthough many languages integrate GC into their compiler and runtime system, post-hoc GC systems also exist, such as Automatic Reference Counting (ARC)."
       ],
-      "total_ms": 1059.455375012476,
-      "first_token_ms": 1036.4928750204854,
+      "total_ms": 977.3007089970633,
+      "first_token_ms": 786.7634170106612,
       "llm_called": true
     },
     {
@@ -981,7 +1135,7 @@
       "question": "Why can counting references fail to free two objects that point at each other?",
       "expected_doc": "garbage-collection",
       "not_found": false,
-      "answer": "If two or more objects refer to each other, they can create a cycle where their mutual references prevent their reference counts from ever reaching zero, meaning neither will be collected [1][2].",
+      "answer": "Two or more objects that refer to each other create a cycle, which prevents their reference counts from ever reaching zero so that neither object will be collected [1][2].",
       "cited_docs": [
         "garbage-collection"
       ],
@@ -989,8 +1143,8 @@
         "There are a number of disadvantages to reference counting; this can generally be solved or mitigated by more sophisticated algorithms:\n\n- Cycles\n\n- If two or more objects refer to each other, they can create a cycle whereby neither will be collected as their mutual references never let their reference counts become zero. Some garbage collection systems using reference counting (like the one in CPython) use specific cycle-detecting algorithms to deal with this issue. Another strategy is to use weak references for the \"backpointers\" which create cycles. Under reference counting, a weak reference is similar to a weak reference under a tracing garbage collector. It is a special reference object whose existence does not increment the reference count of the referent object. Furthermore, a weak reference is safe in that when the referent object becomes garbage, any weak reference to it lapses, rather than being permitted to remain dangling, meaning that it turns into a predictable value, such as a null reference.\n\n- Space overhead (reference count)\n\n- Reference counting requires space to be allocated for each object to store its reference count. The count may be stored adjacent to the object's memory or in a side table somewhere else, but in either case, every single reference-counted object requires additional storage for its reference count. Memory space with the size of an unsigned pointer is commonly used for this task, meaning that 32 or 64 bits of reference count storage must be allocated for each object. On some systems, it may be possible to mitigate this overhead by using a tagged pointer to store the reference count in unused areas of the object's memory. Often, an architecture does not actually allow programs to access the full range of memory addresses that could be stored in its native pointer size; a certain number of high bits in the address is either ignored or required to be zero. If an object reliably has a pointer at a certain location, the reference count can be stored in the unused bits of the pointer.",
         "The impact on performance was given by Apple as a reason for not adopting garbage collection in iOS, despite it being the most desired feature.\n\nThe moment when the garbage is actually collected can be unpredictable, resulting in stalls (pauses to shift/free memory) scattered throughout a session. Unpredictable stalls can be unacceptable in real-time environments, in transaction processing, or in interactive programs. Incremental, concurrent, and real-time garbage collectors address these problems, with varying trade-offs.\n\nStrategies\n\nTracing\n\nTracing garbage collection is the most common type of garbage collection, so much so that \"garbage collection\" often refers to tracing garbage collection, rather than other methods such as reference counting. The overall strategy consists of determining which objects should be garbage collected by tracing which objects are reachable by a chain of references from certain root objects, and considering the rest as garbage and collecting them. However, there are a large number of algorithms used in implementation, with widely varying complexity and performance characteristics.\n\nReference counting\n\nReference counting garbage collection is where each object has a count of the number of references to it. Garbage is identified by having a reference count of zero. An object's reference count is incremented when a reference to it is created and decremented when a reference is destroyed. When the count reaches zero, the object's memory is reclaimed.\n\nAs with manual memory management, and unlike tracing garbage collection, reference counting guarantees that objects are destroyed as soon as their last reference is destroyed, and usually only accesses memory which is either in CPU caches, in objects to be freed, or directly pointed to by those, and thus tends to not have significant negative side effects on CPU cache and virtual memory operation.\n\nThere are a number of disadvantages to reference counting; this can generally be solved or mitigated by more sophisticated algorithms:\n\n- Cycles\n\n- If two or more objects refer to each other, they can create a cycle whereby neither will be collected as their mutual references never let their reference counts become zero."
       ],
-      "total_ms": 1266.8597499723546,
-      "first_token_ms": 1238.428541983012,
+      "total_ms": 1423.2495819451287,
+      "first_token_ms": 1205.9359999839216,
       "llm_called": true
     },
     {
@@ -998,7 +1152,7 @@
       "question": "In what year did the Dutch computer scientist come up with his shortest-path algorithm?",
       "expected_doc": "dijkstra",
       "not_found": false,
-      "answer": "The Dutch computer scientist conceived of his shortest-path algorithm in 1956 [1][2][4].",
+      "answer": "Edsger Dijkstra conceived the shortest-path algorithm in 1956 [1][2]. He designed it while sitting on a caf\u00e9 terrace in Amsterdam with his fianc\u00e9e [4].",
       "cited_docs": [
         "dijkstra"
       ],
@@ -1007,8 +1161,8 @@
         "Dijkstra's algorithm\n\nDijkstra's algorithm\n\nClass | Search algorithm Greedy algorithm Dynamic programming\n\nData structure | Graph Usually used with priority queue or heap for optimization\n\nWorst-case performance\n\nDijkstra's algorithm (/\u02c8da\u026ak.str\u0259z/, DYKE-str\u0259z) is an algorithm for finding the shortest paths between nodes in a weighted graph, which may represent, for example, a road network. It was conceived by computer scientist Edsger W. Dijkstra in 1956 and published three years later.\n\nDijkstra's algorithm finds the shortest path from a given source node to every other node.: 196\u2013206 It can be used to find the shortest path to a specific destination node, by terminating the algorithm after determining the shortest path to that node. For example, if the nodes of the graph represent cities, and the costs of edges represent the distances between pairs of cities connected by a direct road, then Dijkstra's algorithm can be used to find the shortest route between one city and all other cities. A common application of shortest path algorithms is network routing protocols, most notably IS-IS (Intermediate System to Intermediate System) and OSPF (Open Shortest Path First). It is also employed as a subroutine in algorithms such as Johnson's algorithm.\n\nThe algorithm uses a min-priority queue data structure for selecting the shortest paths known so far. Before more advanced priority queue structures were discovered, Dijkstra's original algorithm ran in time, where is the number of nodes. Fredman & Tarjan 1984 proposed a Fibonacci heap priority queue to optimize the running time complexity to , where is the number of edges. This is asymptotically the fastest known single-source shortest-path algorithm for arbitrary directed graphs with unbounded non-negative weights. However, specialized cases (such as bounded/integer weights, directed acyclic graphs etc.) can be improved further. If preprocessing is allowed, algorithms such as contraction hierarchies can be up to seven orders of magnitude faster.\n\nDijkstra's algorithm is commonly used on graphs where the edge weights are positive integers or real numbers.",
         "If preprocessing is allowed, algorithms such as contraction hierarchies can be up to seven orders of magnitude faster.\n\nDijkstra's algorithm is commonly used on graphs where the edge weights are positive integers or real numbers. It can be generalized to any graph where the edge weights are partially ordered, provided the subsequent labels (a subsequent label is produced when traversing an edge) are monotonically non-decreasing. In many fields, particularly artificial intelligence, Dijkstra's algorithm or a variant offers a uniform cost search and is formulated as an instance of the more general idea of best-first search.\n\nHistory\n\nWhat is the shortest way to travel from Rotterdam to Groningen, in general: from given city to given city. It is the algorithm for the shortest path, which I designed in about twenty minutes. One morning I was shopping in Amsterdam with my young fianc\u00e9e, and tired, we sat down on the caf\u00e9 terrace to drink a cup of coffee and I was just thinking about whether I could do this, and I then designed the algorithm for the shortest path. As I said, it was a twenty-minute invention. In fact, it was published in '59, three years later. The publication is still readable, it is, in fact, quite nice. One of the reasons that it is so nice was that I designed it without pencil and paper. I learned later that one of the advantages of designing without pencil and paper is that you are almost forced to avoid all avoidable complexities. Eventually, that algorithm became to my great amazement, one of the cornerstones of my fame.\n\n\u2014 Edsger Dijkstra, in an interview with Philip L. Frana, Communications of the ACM, 2001\n\nDijkstra thought about the shortest path problem while working as a programmer at the Mathematical Center in Amsterdam in 1956. He wanted to demonstrate the capabilities of the new ARMAC computer. His objective was to choose a problem and a computer solution that non-computing people could understand."
       ],
-      "total_ms": 1207.3173759854399,
-      "first_token_ms": 1175.634125014767,
+      "total_ms": 1037.107041978743,
+      "first_token_ms": 805.7404999854043,
       "llm_called": true
     },
     {
@@ -1016,15 +1170,15 @@
       "question": "What data structure is Dijkstra's algorithm usually implemented with?",
       "expected_doc": "dijkstra",
       "not_found": false,
-      "answer": "- Dijkstra's algorithm is usually used with a priority queue or heap for optimization [1].",
+      "answer": "Dijkstra's algorithm is usually used with a priority queue or a heap for optimization [1].",
       "cited_docs": [
         "dijkstra"
       ],
       "cited_passages": [
         "Dijkstra's algorithm\n\nDijkstra's algorithm\n\nClass | Search algorithm Greedy algorithm Dynamic programming\n\nData structure | Graph Usually used with priority queue or heap for optimization\n\nWorst-case performance\n\nDijkstra's algorithm (/\u02c8da\u026ak.str\u0259z/, DYKE-str\u0259z) is an algorithm for finding the shortest paths between nodes in a weighted graph, which may represent, for example, a road network. It was conceived by computer scientist Edsger W. Dijkstra in 1956 and published three years later.\n\nDijkstra's algorithm finds the shortest path from a given source node to every other node.: 196\u2013206 It can be used to find the shortest path to a specific destination node, by terminating the algorithm after determining the shortest path to that node. For example, if the nodes of the graph represent cities, and the costs of edges represent the distances between pairs of cities connected by a direct road, then Dijkstra's algorithm can be used to find the shortest route between one city and all other cities. A common application of shortest path algorithms is network routing protocols, most notably IS-IS (Intermediate System to Intermediate System) and OSPF (Open Shortest Path First). It is also employed as a subroutine in algorithms such as Johnson's algorithm.\n\nThe algorithm uses a min-priority queue data structure for selecting the shortest paths known so far. Before more advanced priority queue structures were discovered, Dijkstra's original algorithm ran in time, where is the number of nodes. Fredman & Tarjan 1984 proposed a Fibonacci heap priority queue to optimize the running time complexity to , where is the number of edges. This is asymptotically the fastest known single-source shortest-path algorithm for arbitrary directed graphs with unbounded non-negative weights. However, specialized cases (such as bounded/integer weights, directed acyclic graphs etc.) can be improved further. If preprocessing is allowed, algorithms such as contraction hierarchies can be up to seven orders of magnitude faster.\n\nDijkstra's algorithm is commonly used on graphs where the edge weights are positive integers or real numbers."
       ],
-      "total_ms": 1036.411248962395,
-      "first_token_ms": 991.9102499843575,
+      "total_ms": 1228.202250029426,
+      "first_token_ms": 954.6754169859923,
       "llm_called": true
     },
     {
@@ -1032,15 +1186,15 @@
       "question": "In asymmetric cryptography, what does each key pair consist of?",
       "expected_doc": "public-key-crypto",
       "not_found": false,
-      "answer": "Each key pair consists of a public key and a corresponding private key [1].",
+      "answer": "In asymmetric cryptography, each key pair consists of a public key and a corresponding private key [1].",
       "cited_docs": [
         "public-key-crypto"
       ],
       "cited_passages": [
         "Public-key cryptography\n\nPublic-key cryptography, or asymmetric cryptography, is the field of cryptographic systems that use pairs of related keys. Each key pair consists of a public key and a corresponding private key. Key pairs are generated with algorithms based on mathematical problems termed one-way functions. Security of public-key cryptography depends on keeping the private key secret; the public key can be openly distributed without compromising security. There are many kinds of public-key cryptosystems, with different security goals, including digital signature, Diffie\u2013Hellman key exchange, public-key key encapsulation, and public-key encryption.\n\nPublic key algorithms are fundamental security primitives in modern cryptosystems, including applications and protocols that offer assurance of the confidentiality and authenticity of electronic communications and data storage. They underpin numerous Internet standards, such as Transport Layer Security (TLS), SSH, S/MIME, and PGP. Compared to symmetric cryptography, public-key cryptography can be too slow for many purposes, so these protocols often combine symmetric cryptography with public-key cryptography in hybrid cryptosystems.\n\nDescription\n\nBefore the mid-1970s, all cipher systems used symmetric key algorithms, in which the same cryptographic key is used with the underlying algorithm by both the sender and the recipient, who must both keep the key secret. Of necessity, the key in every such system had to be exchanged between the communicating parties in some secure way prior to any use of the system \u2013 for instance, via a secure channel. This requirement is never trivial and very rapidly becomes unmanageable as the number of participants increases, when secure channels are not available, or when (as is sensible cryptographic practice) keys are frequently changed. In particular, if messages are meant to be secure from other users, a separate key is required for each possible pair of users.\n\nBy contrast, in a public-key cryptosystem, the public keys can be disseminated widely and openly, and only the corresponding private keys need be kept secret.\n\nThe two best-known types of public key cryptography are digital signature and public-key encryption:"
       ],
-      "total_ms": 1255.1005420391448,
-      "first_token_ms": 1181.0001250123605,
+      "total_ms": 941.8271249742247,
+      "first_token_ms": 778.1833750195801,
       "llm_called": true
     },
     {
@@ -1051,9 +1205,9 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 25.78900003572926,
+      "total_ms": 13.150790939107537,
       "first_token_ms": null,
-      "llm_called": false
+      "llm_called": true
     },
     {
       "id": "u02",
@@ -1063,9 +1217,9 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 13.03166599245742,
+      "total_ms": 13.487542048096657,
       "first_token_ms": null,
-      "llm_called": false
+      "llm_called": true
     },
     {
       "id": "u03",
@@ -1075,9 +1229,9 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 14.821916993241757,
+      "total_ms": 23.82533298805356,
       "first_token_ms": null,
-      "llm_called": false
+      "llm_called": true
     },
     {
       "id": "u04",
@@ -1087,9 +1241,9 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 12.696041027083993,
+      "total_ms": 14.491917041596025,
       "first_token_ms": null,
-      "llm_called": false
+      "llm_called": true
     },
     {
       "id": "u05",
@@ -1099,9 +1253,9 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 13.082167017273605,
+      "total_ms": 28.177541971672326,
       "first_token_ms": null,
-      "llm_called": false
+      "llm_called": true
     },
     {
       "id": "u06",
@@ -1111,8 +1265,8 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 1072.067208995577,
-      "first_token_ms": 1003.5600839764811,
+      "total_ms": 1371.7606670106761,
+      "first_token_ms": 1322.5977910333313,
       "llm_called": true
     },
     {
@@ -1123,8 +1277,8 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 960.4881249833852,
-      "first_token_ms": 907.6502500101924,
+      "total_ms": 869.6997079532593,
+      "first_token_ms": 854.0820420021191,
       "llm_called": true
     },
     {
@@ -1135,8 +1289,8 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 1038.1749999942258,
-      "first_token_ms": 996.7253329814412,
+      "total_ms": 1143.6623749905266,
+      "first_token_ms": 1033.7462089955807,
       "llm_called": true
     },
     {
@@ -1147,8 +1301,8 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 1020.6297920667566,
-      "first_token_ms": 991.7100419988856,
+      "total_ms": 996.7605829588138,
+      "first_token_ms": 837.7227919991128,
       "llm_called": true
     },
     {
@@ -1159,17 +1313,17 @@
       "answer": "Not found in your library.",
       "cited_docs": [],
       "cited_passages": [],
-      "total_ms": 3333.268375019543,
-      "first_token_ms": 3307.281833025627,
+      "total_ms": 1923.9311660639942,
+      "first_token_ms": 1770.6982499803416,
       "llm_called": true
     }
   ],
   "setup": {
     "documents": 20,
-    "chunks": 390,
-    "ingest_s": 147.1251288750209,
-    "generated": "2026-10-25",
-    "commit": "be6a71f",
+    "chunks": 265,
+    "ingest_s": 203.85427787498338,
+    "generated": "2026-10-27",
+    "commit": "74532f5+uncommitted changes",
     "answerable": 36,
     "unanswerable": 10,
     "embedding_model": "BAAI/bge-small-en-v1.5",

@@ -17,6 +17,13 @@ def test_save_url_queues_a_job(client, session):
     assert [(j.item_id, j.status) for j in jobs] == [(body["id"], JobStatus.queued)]
 
 
+def test_saving_the_same_link_twice_gives_back_the_first_item(client, session):
+    first = client.post("/items", data={"url": "https://example.com/post"}).json()
+    again = client.post("/items", data={"url": " https://example.com/post "}).json()
+    assert again["id"] == first["id"]
+    assert session.query(Item).count() == 1 and session.query(Job).count() == 1
+
+
 def test_save_pdf_stores_file(client, tmp_path):
     resp = client.post(
         "/items", files={"file": ("db_indexing_notes.pdf", PDF_BYTES, "application/pdf")}

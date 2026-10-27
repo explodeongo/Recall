@@ -37,6 +37,8 @@ function Save() {
   const url = sharedUrl(params.get("url"), params.get("text"));
   const text = params.get("text")?.trim() || "";
   const title = params.get("title")?.trim() || undefined;
+  // A link saved before comes back as the old item rather than a copy.
+  const saved = state.status === "saved" && Date.now() - new Date(state.item.created_at).getTime() < 60_000;
 
   useEffect(() => {
     if (started.current) return;
@@ -67,9 +69,11 @@ function Save() {
       {state.status === "saved" && (
         <div className="animate-enter">
           <CheckCircle2 className="mx-auto size-9 text-emerald-600 dark:text-emerald-400" aria-hidden />
-          <h1 className="mt-4 font-heading text-2xl font-medium">Saved to Recall</h1>
+          <h1 className="mt-4 font-heading text-2xl font-medium">{saved ? "Saved to Recall" : "Already in your library"}</h1>
           <p className="mt-2 line-clamp-2 text-sm break-words text-muted-foreground">{title ?? state.item.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">It&apos;ll be summarised and tagged in a few seconds.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {saved ? "It'll be summarised and tagged in a few seconds." : "You saved this link before, so nothing new was added."}
+          </p>
           <div className="mt-6 flex justify-center gap-2">
             <Link href={`/items/${state.item.id}`} className={buttonVariants({ variant: "outline" })}>
               Open it

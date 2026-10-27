@@ -307,6 +307,8 @@ export interface ChatMessage {
   context?: MessageContext | null;
   /** On answers kept in the library: the note they became. */
   saved_item_id?: number | null;
+  /** On answers: follow-up questions to offer next. */
+  suggestions?: string[] | null;
   created_at: string;
 }
 
@@ -330,6 +332,7 @@ export interface Chat {
 
 export interface MessageDone extends AskDone {
   message_ids: [number, number];
+  suggestions: string[];
   title: string;
   /** Whether part of the answer came from web pages rather than the library. */
   web_used: boolean;

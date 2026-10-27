@@ -1,13 +1,15 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookmarkPlus, Check, ChevronDown, Copy, ExternalLink, FileQuestion, Globe, Loader2 } from "lucide-react";
+import { ArrowUp, BookmarkPlus, Check, ChevronDown, Copy, CornerDownRight, ExternalLink, FileQuestion, Globe, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useId, useState } from "react";
+import { displayNumbers, renumber } from "@/components/AnswerText";
 import { SourceIcon } from "@/components/ItemBits";
 import { ListenButton } from "@/components/Listen";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { api, imageSrc, passageHref, siteOf, sourceHref, sourceName, type Source } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -54,12 +56,13 @@ export function NotFound({ searchedWeb = false }: { searchedWeb?: boolean }) {
 export function AnswerFigures({ sources, cited }: { sources: Source[]; cited: number[] }) {
   const seen = new Set<number>();
   const figures: { id: number; alt: string | null; width: number; height: number; source: Source; n: number }[] = [];
+  const shown = displayNumbers(sources, cited);
   for (const n of cited) {
     const source = sources[n - 1];
     for (const image of source?.images ?? []) {
       if (seen.has(image.id)) continue;
       seen.add(image.id);
-      figures.push({ ...image, source, n });
+      figures.push({ ...image, source, n: shown.get(n) ?? n });
     }
   }
   if (!figures.length) return null;
@@ -92,46 +95,108 @@ export function AnswerFigures({ sources, cited }: { sources: Source[]; cited: nu
 }
 
 export function SourcesList({ sources, cited }: { sources: Source[]; cited: number[] }) {
-  const [showAll, setShowAll] = useState(false);
+  const [open, setOpen] = useState(false);
   const panelId = useId();
   const citedSources = cited.map((n) => sources[n - 1]).filter(Boolean);
   const others = sources.filter((s) => !cited.includes(s.n));
-  const shown = citedSources.length ? citedSources : sources;
+  const shown = displayNumbers(sources, cited);
+  // One pill per document (or web page), carrying every number it was cited as.
+  const keyOf = (s: Source) => (s.kind === "web" ? s.source : `${s.item_id}-${s.kind}`);
+  const pills: { source: Source; numbers: number[] }[] = [];
+  for (const s of citedSources.length ? citedSources : sources) {
+    const same = pills.find((p) => keyOf(p.source) === keyOf(s));
+    if (same) same.numbers.push(shown.get(s.n) ?? s.n);
+    else pills.push({ source: s, numbers: [shown.get(s.n) ?? s.n] });
+  }
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-medium text-muted-foreground">{citedSources.length ? "Sources" : "Passages searched"}</h3>
-      <ol className="grid gap-2">
-        {shown.map((s, i) => (
-          <SourceCard key={s.n} source={s} index={i} />
+    <section className="space-y-2.5" aria-label={citedSources.length ? "Sources" : "Passages searched"}>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {citedSources.length ? `Sources · ${citedSources.length}` : "Passages searched"}
+        </h3>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls={panelId}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
+        >
+          {open ? "Hide passages" : `Show passages${others.length ? ` (${sources.length})` : ""}`}
+          <ChevronDown className={cn("size-3.5 transition-transform duration-250 ease-(--ease-out)", open && "rotate-180")} aria-hidden />
+        </button>
+      </div>
+      <ul className="flex flex-wrap gap-1.5">
+        {pills.map((p, i) => (
+          <SourcePill key={p.source.n} source={p.source} numbers={p.numbers} index={i} />
         ))}
-      </ol>
-      {citedSources.length > 0 && others.length > 0 && (
-        <div>
-          <button onClick={() => setShowAll((v) => !v)} className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground" aria-expanded={showAll} aria-controls={panelId}>
-            <ChevronDown className={cn("size-4 transition-transform duration-250 ease-(--ease-out)", showAll && "rotate-180")} />
-            {showAll ? "Hide" : "Show"} {others.length} other {others.length === 1 ? "passage" : "passages"} Recall looked at
-          </button>
-          {/* Height animates through grid rows (0fr to 1fr), which needs no measuring. */}
-          <div
-            id={panelId}
-            inert={!showAll}
+      </ul>
+      {/* Height animates through grid rows (0fr to 1fr), which needs no measuring. */}
+      <div
+        id={panelId}
+        inert={!open}
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-250 ease-(--ease-out) motion-reduce:transition-none",
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <ol className="grid grid-cols-[minmax(0,1fr)] gap-2 pt-1 sm:grid-cols-2">
+            {[...citedSources, ...others].map((s, i) => (
+              <SourceCard key={s.n} source={s} n={shown.get(s.n)} index={i} animate={false} uncited={citedSources.length > 0 && !cited.includes(s.n)} />
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** A cited source as a small pill: number, kind, title, and page or site; a preview on hover. */
+function SourcePill({ source, numbers, index }: { source: Source; numbers: number[]; index: number }) {
+  const web = source.kind === "web";
+  const where = web ? siteOf(source.source) : numbers.length === 1 && source.page ? `p. ${source.page}` : null;
+  const className =
+    "group inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-full border bg-card py-1 pr-2.5 pl-1 text-xs shadow-xs transition-[border-color,background-color] duration-150 hover:border-brand/40 hover:bg-brand-soft/40 sm:max-w-[20rem]";
+  const body = (
+    <>
+      <span className="flex shrink-0 gap-0.5">
+        {numbers.map((n) => (
+          <span
+            key={n}
             className={cn(
-              "grid transition-[grid-template-rows,opacity] duration-250 ease-(--ease-out) motion-reduce:transition-none",
-              showAll ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+              "grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] font-semibold text-brand tabular-nums",
+              web ? "border border-brand/40" : "bg-brand-soft",
             )}
           >
-            <div className="min-h-0 overflow-hidden">
-              <ol className="grid gap-2 pt-2 opacity-80">
-                {others.map((s) => (
-                  <SourceCard key={s.n} source={s} animate={false} />
-                ))}
-              </ol>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            {n}
+          </span>
+        ))}
+      </span>
+      {web ? <Globe className="size-3.5 shrink-0 text-muted-foreground" aria-hidden /> : <SourceIcon type={source.source_type} className="size-3.5" />}
+      <span className="min-w-0 truncate font-medium">{sourceName(source)}</span>
+      {where && <span className="shrink-0 text-muted-foreground">{where}</span>}
+    </>
+  );
+  return (
+    <li className="min-w-0 max-w-full animate-enter" style={{ "--i": Math.min(index, 6) } as React.CSSProperties}>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            web ? (
+              <a href={source.source} target="_blank" rel="noreferrer" className={className} />
+            ) : (
+              <Link href={passageHref(source)} className={className} />
+            )
+          }
+        >
+          {body}
+        </TooltipTrigger>
+        <TooltipContent className="block max-w-sm p-3 text-left">
+          <span className="block font-medium">{sourceName(source)}</span>
+          <span className="mt-1 line-clamp-5 opacity-80">{source.text}</span>
+        </TooltipContent>
+      </Tooltip>
+    </li>
   );
 }
 
@@ -146,15 +211,33 @@ export function FromTheWeb({ partly }: { partly: boolean }) {
   );
 }
 
-export function SourceCard({ source, index = 0, animate = true }: { source: Source; index?: number; animate?: boolean }) {
-  if (source.kind === "web") return <WebSourceCard source={source} index={index} animate={animate} />;
+export function SourceCard({
+  source,
+  n = source.n,
+  index = 0,
+  animate = true,
+  uncited = false,
+}: {
+  source: Source;
+  /** The number it's shown as, when that isn't its search rank. */
+  n?: number;
+  index?: number;
+  animate?: boolean;
+  /** Looked at but not cited: shown quieter. */
+  uncited?: boolean;
+}) {
+  if (source.kind === "web") return <WebSourceCard source={source} n={n} index={index} animate={animate} uncited={uncited} />;
   return (
     <li
       style={{ "--i": Math.min(index, 5) } as React.CSSProperties}
-      className={cn("group relative rounded-xl border bg-card shadow-xs p-4 transition-colors duration-150 hover:border-brand/40", animate && "animate-enter")}
+      className={cn(
+        "group relative min-w-0 rounded-xl border bg-card p-4 shadow-xs transition-colors duration-150 hover:border-brand/40",
+        animate && "animate-enter",
+        uncited && "opacity-70",
+      )}
     >
       <div className="flex items-center gap-2 text-sm">
-        <span className="grid size-5 shrink-0 place-items-center rounded-md bg-brand-soft text-xs font-semibold text-brand tabular-nums">{source.n}</span>
+        <span className="grid size-5 shrink-0 place-items-center rounded-md bg-brand-soft text-xs font-semibold text-brand tabular-nums">{n}</span>
         <SourceIcon type={source.source_type} className="size-3.5" />
         <Link href={passageHref(source)} className="min-w-0 truncate font-medium after:absolute after:inset-0">
           {sourceName(source)}
@@ -170,19 +253,24 @@ export function SourceCard({ source, index = 0, animate = true }: { source: Sour
           <ExternalLink className="size-3.5" />
         </a>
       </div>
-      <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{source.text}</p>
+      <p className="mt-2 line-clamp-3 text-sm break-words text-muted-foreground">{source.text}</p>
+      {uncited && <p className="mt-1.5 text-[11px] text-muted-foreground">Looked at, not cited</p>}
     </li>
   );
 }
 
-function WebSourceCard({ source, index, animate }: { source: Source; index: number; animate: boolean }) {
+function WebSourceCard({ source, n, index, animate, uncited }: { source: Source; n: number; index: number; animate: boolean; uncited: boolean }) {
   return (
     <li
       style={{ "--i": Math.min(index, 5) } as React.CSSProperties}
-      className={cn("group relative rounded-xl border border-dashed bg-card p-4 transition-colors duration-150 hover:border-brand/40", animate && "animate-enter")}
+      className={cn(
+        "group relative min-w-0 rounded-xl border border-dashed bg-card p-4 transition-colors duration-150 hover:border-brand/40",
+        animate && "animate-enter",
+        uncited && "opacity-70",
+      )}
     >
       <div className="flex items-center gap-2 text-sm">
-        <span className="grid size-5 shrink-0 place-items-center rounded-md border border-brand/30 text-xs font-semibold text-brand tabular-nums">{source.n}</span>
+        <span className="grid size-5 shrink-0 place-items-center rounded-md border border-brand/30 text-xs font-semibold text-brand tabular-nums">{n}</span>
         <Globe className="size-3.5 shrink-0 text-muted-foreground" aria-label="Web page" />
         <a href={source.source} target="_blank" rel="noreferrer" className="min-w-0 truncate font-medium after:absolute after:inset-0">
           {source.title}
@@ -190,7 +278,8 @@ function WebSourceCard({ source, index, animate }: { source: Source; index: numb
         <span className="ml-auto shrink-0 text-xs text-muted-foreground">{siteOf(source.source)}</span>
         <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </div>
-      <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{source.text}</p>
+      <p className="mt-2 line-clamp-3 text-sm break-words text-muted-foreground">{source.text}</p>
+      {uncited && <p className="mt-1.5 text-[11px] text-muted-foreground">Looked at, not cited</p>}
     </li>
   );
 }
@@ -221,9 +310,10 @@ export function AnswerActions({
     onError: (err) => toast.error(err.message),
   });
   const cited = (message.cited ?? []).filter((n) => sources[n - 1]);
+  const shown = displayNumbers(sources, cited);
   const plain =
-    message.content.trim() +
-    (cited.length ? "\n\nSources:\n" + cited.map((n) => `[${n}] ${sources[n - 1].title}`).join("\n") : "");
+    renumber(message.content.trim(), shown) +
+    (cited.length ? "\n\nSources:\n" + cited.map((n) => `[${shown.get(n)}] ${sources[n - 1].title}`).join("\n") : "");
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -263,5 +353,30 @@ export function AnswerActions({
         {copied ? "Copied" : "Copy"}
       </button>
     </div>
+  );
+}
+
+/** Under the latest answer: follow-up questions to ask with one click. */
+export function SuggestedQuestions({ questions, onAsk }: { questions: string[]; onAsk: (q: string) => void }) {
+  if (!questions.length) return null;
+  return (
+    <section aria-label="Ask next" className="space-y-2">
+      <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Ask next</h3>
+      <ul className="grid gap-1.5">
+        {questions.map((q, i) => (
+          <li key={q} className="animate-enter" style={{ "--i": i } as React.CSSProperties}>
+            <button
+              type="button"
+              onClick={() => onAsk(q)}
+              className="group flex w-full items-center gap-2.5 rounded-xl border bg-card px-3.5 py-2.5 text-left text-sm shadow-xs transition-[border-color,background-color,transform] duration-150 ease-(--ease-out) hover:border-brand/40 hover:bg-brand-soft/30 active:scale-[0.995]"
+            >
+              <CornerDownRight className="size-4 shrink-0 text-brand" aria-hidden />
+              <span className="min-w-0 flex-1">{q}</span>
+              <ArrowUp className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

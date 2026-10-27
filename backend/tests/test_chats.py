@@ -1,5 +1,6 @@
 import json
 
+from app.api.chats import answer_note
 from app.services.llm import LLMError
 
 
@@ -180,3 +181,10 @@ def test_an_answer_can_be_kept_as_a_note(client, session, library, fake_llm):
     assert client.get(f"/chats/{chat_id}").json()["messages"][1]["saved_item_id"] == note["id"]
     question = client.get(f"/chats/{chat_id}").json()["messages"][0]
     assert client.post(f"/chats/{chat_id}/messages/{question['id']}/save").status_code == 404
+
+
+def test_a_saved_answer_numbers_its_sources_in_the_order_it_uses_them():
+    sources = [{"title": "One"}, {"title": "Two", "page": 4}, {"title": "Three"}]
+    note = answer_note("Keys stay sorted [3]. Pages split [2, 3].", sources, [3, 2])
+    assert note.startswith("Keys stay sorted [1]. Pages split [2, 1].")
+    assert note.endswith("Sources:\n[1] Three\n[2] Two, page 4")

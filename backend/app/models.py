@@ -279,6 +279,8 @@ class ChatMessage(Base):
     context: Mapped[dict | None] = mapped_column(JSONB)
     # On answers saved to the library: the note they became.
     saved_item_id: Mapped[int | None] = mapped_column(ForeignKey("items.id", ondelete="SET NULL"))
+    # On answers: follow-up questions to offer next.
+    suggestions: Mapped[list | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     chat: Mapped[Chat] = relationship(back_populates="messages")

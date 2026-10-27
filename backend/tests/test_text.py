@@ -6,6 +6,34 @@ def _words(n: int, word: str = "alpha") -> str:
     return " ".join(f"{word}{i}" for i in range(n))
 
 
+def test_navigation_lines_and_reference_lists_are_dropped():
+    body = "\n\n".join(
+        [
+            "Part of a series on Network science",
+            "Okapi BM25 is a ranking function used by search engines to estimate relevance. " * 6,
+            "Vaswani et al. (2017) proposed the transformer, and it is cited here in prose.",
+            "It ranks documents by how often the query terms appear in them. " * 6,
+            "References",
+            "Robertson, S. E. (1994). Okapi at TREC-3. doi:10.1016/0306-4573. pp. 109-126.",
+            "^ Retrieved 2 May 2020.",
+            '- ↑ "Last Call: HTTP/1.1 Message Syntax and Routing to Proposed Standard". The '
+            "IESG. Retrieved September 20, 2014.",
+            "- 1 2 Cormen, Thomas H.; Leiserson, Charles E. Introduction to Algorithms, third "
+            "edition, chapter on hash tables.",
+            "Official site",
+            "An appendix that explains the parameters k1 and b in more detail, long enough to be "
+            "real text rather than a link.",
+        ]
+    )
+    text = clean_pages([PageText(None, body)])[0].text
+    assert "Part of a series" not in text
+    assert "Vaswani et al. (2017)" in text  # citing in prose is not a reference list
+    assert "References" not in text and "Robertson" not in text and "Retrieved" not in text
+    assert "Last Call" not in text and "Cormen" not in text  # footnotes with a back-link
+    assert "Official site" not in text
+    assert "An appendix that explains" in text
+
+
 def test_cleaning_removes_running_headers_and_page_numbers():
     topics = ["Hashing.", "B-trees.", "Joins.", "Sorting."]
     pages = [

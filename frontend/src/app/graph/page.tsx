@@ -400,6 +400,27 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
   const hovered = hover !== selected ? nodes.find((n) => n.id === hover) : undefined;
   const chosen = nodes.find((n) => n.id === selected);
 
+  // Labels never print over one another. They're placed most important first (what's hovered
+  // or selected and its neighbours, then group names, then the best-connected items) and a
+  // label that would overlap one already placed is left out. Boxes are in screen pixels.
+  const short = (n: SimNode) => (n.title.length > 34 ? n.title.slice(0, 33) + "…" : n.title);
+  const taken: [number, number, number, number][] = [];
+  const place = (x: number, baseline: number, text: string) => {
+    const w = text.length * 6.6 + 8;
+    const box: [number, number, number, number] = [x * view.k + view.x - w / 2, baseline - 12, x * view.k + view.x + w / 2, baseline + 4];
+    if (taken.some((t) => box[0] < t[2] && t[0] < box[2] && box[1] < t[3] && t[1] < box[3])) return false;
+    taken.push(box);
+    return true;
+  };
+  const nodeBaseline = (n: SimNode) => (n.y + radius(n)) * view.k + view.y + 13;
+  const near = (n: SimNode) => active === n.id || (active !== null && lit(n.id));
+  const labelled = new Set<number>();
+  for (const n of nodes.filter((n) => near(n) && showLabel(n)).sort((a, b) => (b.id === active ? 1 : 0) - (a.id === active ? 1 : 0)))
+    if (place(n.x, nodeBaseline(n), short(n)) || n.id === active) labelled.add(n.id);
+  const namedGroups = new Set(halos.filter((h) => place(h.cx, (h.cy - h.r) * view.k + view.y - 7, groupName(h.cluster))).map((h) => h.cluster.id));
+  for (const n of nodes.filter((n) => !near(n) && showLabel(n)).sort((a, b) => b.degree - a.degree))
+    if (place(n.x, nodeBaseline(n), short(n))) labelled.add(n.id);
+
   return (
     <div ref={box} className="relative h-[68vh] min-h-96 overflow-hidden rounded-xl border bg-card shadow-xs">
       <svg
@@ -418,7 +439,7 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
           {halos.map(({ cluster, cx, cy, r, on }) => (
             <g key={cluster.id} className="pointer-events-none transition-opacity duration-200" opacity={on ? 1 : 0.35}>
               <circle cx={cx} cy={cy} r={r} fill={cluster.color ?? "var(--foreground)"} fillOpacity={0.06} stroke={cluster.color ?? "var(--foreground)"} strokeOpacity={0.18} strokeWidth={1 / view.k} />
-              <text
+              {namedGroups.has(cluster.id) && <text
                 x={cx}
                 y={cy - r - 7 / view.k}
                 textAnchor="middle"
@@ -430,7 +451,7 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
                 strokeWidth={3 / view.k}
               >
                 {groupName(cluster)}
-              </text>
+              </text>}
             </g>
           ))}
           {links.map(([a, b, s]) => {
@@ -488,7 +509,7 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
                   strokeWidth={(orphan ? 1.6 : 2) / view.k}
                   className="transition-[fill-opacity,stroke-opacity,r] duration-200 ease-(--ease-out)"
                 />
-                {showLabel(n) && (
+                {labelled.has(n.id) && (
                   <text
                     x={n.x}
                     y={n.y + radius(n) + 13 / view.k}
@@ -501,7 +522,7 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
                     strokeWidth={3 / view.k}
                     className="pointer-events-none"
                   >
-                    {n.title.length > 34 ? n.title.slice(0, 33) + "…" : n.title}
+                    {short(n)}
                   </text>
                 )}
               </a>
@@ -562,7 +583,7 @@ function Canvas({ data, tag, focus }: { data: Graph; tag: string | null; focus: 
         </button>
       )}
       {!chosen && (
-        <p className="pointer-events-none absolute right-3 bottom-3 hidden text-xs text-muted-foreground sm:block">
+        <p className="pointer-events-none absolute right-3 bottom-3 hidden text-xs text-muted-foreground sm:block pointer-coarse:hidden">
           Click to see connections · double-click to open · drag · scroll to zoom
         </p>
       )}

@@ -8,6 +8,30 @@ import { cn } from "@/lib/utils";
 
 const CITATION = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
 
+/** The source numbers an answer cites, in the order it first uses them. */
+export function citedInOrder(text: string, count: number): number[] {
+  const seen: number[] = [];
+  for (const match of text.matchAll(CITATION))
+    for (const n of match[1].split(",").map((x) => Number(x.trim())))
+      if (n >= 1 && n <= count && !seen.includes(n)) seen.push(n);
+  return seen;
+}
+
+/**
+ * What each source is called on screen. The model cites passages by search rank, which reads
+ * as [2][3] with no [1]; shown, the cited ones are 1, 2, 3… in the order the answer uses them,
+ * and the passages it didn't cite follow.
+ */
+export function displayNumbers(sources: Source[], cited: number[]): Map<number, number> {
+  const order = [...cited, ...sources.map((s) => s.n).filter((n) => !cited.includes(n))];
+  return new Map(order.map((n, i) => [n, i + 1]));
+}
+
+/** The answer text with its [n] markers in the numbers it's shown with. */
+export function renumber(text: string, numbers: Map<number, number>): string {
+  return text.replace(CITATION, (_, group: string) => `[${group.split(",").map((x) => numbers.get(Number(x.trim())) ?? x.trim()).join(", ")}]`);
+}
+
 /**
  * Renders an answer: paragraphs, "- " bullets and **bold**, with each [n] turned into a
  * numbered chip that previews the passage and opens it in the item it came from.
@@ -16,6 +40,7 @@ export function AnswerText({ text, sources, streaming }: { text: string; sources
   // The model is told to write plain text, but papers bring their maths along: unwrap
   // inline LaTeX ($h = 8$) and turn the common commands into the symbols they stand for.
   const blocks = toBlocks(plainMath(text.replace(/\$([^$\n]{1,60})\$/g, "$1")));
+  const numbers = displayNumbers(sources, citedInOrder(text, sources.length));
   return (
     <div className={cn("space-y-3 font-heading text-[19px] leading-relaxed", streaming && "streaming")}>
       {blocks.map((block, i) =>
@@ -23,13 +48,13 @@ export function AnswerText({ text, sources, streaming }: { text: string; sources
           <ul key={i} className="list-disc space-y-1.5 pl-6 marker:text-muted-foreground">
             {block.lines.map((line, j) => (
               <li key={j}>
-                <Inline text={line} sources={sources} />
+                <Inline text={line} sources={sources} numbers={numbers} />
               </li>
             ))}
           </ul>
         ) : (
           <p key={i}>
-            <Inline text={block.lines.join(" ")} sources={sources} />
+            <Inline text={block.lines.join(" ")} sources={sources} numbers={numbers} />
           </p>
         ),
       )}
@@ -77,7 +102,7 @@ function toBlocks(text: string): Block[] {
   return blocks.filter((b) => b.lines.length);
 }
 
-function Inline({ text, sources }: { text: string; sources: Source[] }) {
+function Inline({ text, sources, numbers }: { text: string; sources: Source[]; numbers: Map<number, number> }) {
   const parts: React.ReactNode[] = [];
   let last = 0;
   for (const match of text.matchAll(CITATION)) {
@@ -86,7 +111,7 @@ function Inline({ text, sources }: { text: string; sources: Source[] }) {
     parts.push(
       <span key={`c${match.index}`} className="whitespace-nowrap">
         {nums.map((n) => (
-          <Citation key={n} source={sources[n - 1]} n={n} />
+          <Citation key={n} source={sources[n - 1]} n={numbers.get(n) ?? n} />
         ))}
       </span>,
     );
@@ -125,7 +150,8 @@ function Citation({ source, n }: { source: Source | undefined; n: number }) {
   if (!source) return null; // a number the model made up; the server strips these too
   const web = source.kind === "web";
   const chip = cn(
-    "mx-0.5 inline-grid h-[1.15rem] animate-pop min-w-[1.15rem] -translate-y-0.5 place-items-center rounded-md px-1 align-middle font-sans text-[11px] font-semibold text-brand tabular-nums no-underline transition-colors duration-150 hover:bg-brand hover:text-brand-foreground",
+    // 20px chips, with a 32px hit area on touch screens.
+    "relative mx-0.5 inline-grid h-5 animate-pop min-w-5 -translate-y-0.5 place-items-center rounded-md px-1 align-middle pointer-coarse:after:absolute pointer-coarse:after:-inset-1.5 font-sans text-[11px] font-semibold text-brand tabular-nums no-underline transition-colors duration-150 hover:bg-brand hover:text-brand-foreground",
     // Web sources look different from library ones: an outline instead of a fill.
     web ? "border border-brand/40" : "bg-brand-soft",
   );

@@ -1,4 +1,6 @@
-"""Title, summaries and tags for an item: one LLM call (FR-3, FR-4).
+"""Title, summaries and tags for an item: one LLM call (FR-3, FR-4), plus a small second one
+in the rare case the short summary describes the container ("This web page…") instead of
+the subject.
 
 Two summaries come back: a short one for the library list, and a page-long one (an overview,
 key points, and notes that follow the document's own sections) for the item page.
@@ -118,6 +120,8 @@ def enrich(
     summary = _clean(data.get("summary"))
     if not summary:
         raise LLMError("The model returned an empty summary", retryable=True)
+    if META_OPENING.match(summary):
+        summary = _restate(llm, summary)
     details = {
         "overview": _clean(data.get("overview")),
         "key_points": [p for p in (_clean(k) for k in data.get("key_points") or []) if p],
@@ -135,6 +139,33 @@ def enrich(
         details=details,
         tags=normalize_tags(data.get("tags") or []),
     )
+
+
+# Summaries that describe the container instead of the subject: "This web page explains…".
+META_OPENING = re.compile(
+    r"^(this|the)\s+(\w+\s+){0,2}(document|web ?page|page|article|video|transcript|note|"
+    r"paper|text|pdf|report|resource|post|entry|guide)\b",
+    re.IGNORECASE,
+)
+
+RESTATE = """Rewrite this summary so it starts with the subject itself, the way an encyclopedia \
+entry starts ("Transformers are a neural network architecture that…"), never with "This \
+document", "This web page", "This video" or similar. Keep every fact, add none, keep it to 2 or \
+3 sentences, plain text.
+
+<summary>
+{summary}
+</summary>"""
+
+
+def _restate(llm: LLMClient, summary: str) -> str:
+    """One small extra call to fix a summary's opening; the original stands if it fails."""
+    try:
+        rewritten = _clean(llm.generate(RESTATE.format(summary=summary), system=SYSTEM))
+    except LLMError:
+        return summary
+    good = rewritten and not META_OPENING.match(rewritten) and len(rewritten) < len(summary) * 2
+    return rewritten if good else summary
 
 
 def _concepts(raw: list, text: str) -> list[str]:

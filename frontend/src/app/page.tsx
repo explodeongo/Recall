@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layers, LayoutGrid, Loader2, Plus, RotateCw, Rows3, Search, Settings2, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -314,9 +314,22 @@ function LayoutSwitch({ layout, onChange }: { layout: Layout; onChange: (l: Layo
 }
 
 /** A library item as a card with its cover, for the grid. */
+/** Starts what an item's page asks for (its connections and quiz cards) as the pointer or
+ * focus reaches it, so the page is ready by the time it opens. The item itself is already in
+ * the list's cache. */
+function usePreload(item: Item) {
+  const queryClient = useQueryClient();
+  return () => {
+    if (item.status !== "ready") return;
+    queryClient.prefetchQuery({ queryKey: ["connections", item.id], queryFn: () => api.connections(item.id), staleTime: 60_000 });
+    queryClient.prefetchQuery({ queryKey: ["cards", item.id], queryFn: () => api.itemCards(item.id) });
+  };
+}
+
 function ItemCard({ item, index }: { item: Item; index: number }) {
+  const preload = usePreload(item);
   return (
-    <li className="group relative animate-enter" style={{ "--i": Math.min(index, 8) } as React.CSSProperties}>
+    <li className="group relative animate-enter" style={{ "--i": Math.min(index, 8) } as React.CSSProperties} onPointerEnter={preload} onFocus={preload}>
       <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-xs transition-[border-color,box-shadow,transform] duration-200 ease-(--ease-out) group-hover:-translate-y-0.5 group-hover:border-brand/40 group-hover:shadow-md">
         <Cover item={item} className="aspect-[16/9] w-full border-b" />
         <div className="flex flex-1 flex-col p-4">
@@ -427,8 +440,9 @@ function Resurface() {
 }
 
 function ItemRow({ item, filter }: { item: Item; filter: TagFilterState }) {
+  const preload = usePreload(item);
   return (
-    <li className="group relative px-4 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-muted/40 sm:px-5">
+    <li className="group relative px-4 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-muted/40 sm:px-5" onPointerEnter={preload} onFocus={preload}>
       <div className="flex items-start gap-3">
         {item.cover_url ? (
           <Cover item={item} className="mt-0.5 size-14 shrink-0 rounded-lg border sm:h-16 sm:w-20" />

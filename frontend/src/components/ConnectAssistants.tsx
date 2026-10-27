@@ -73,7 +73,7 @@ export function ConnectAssistants() {
         <label htmlFor={nameId} className="sr-only">
           Token name
         </label>
-        <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name it, e.g. Claude on my laptop" maxLength={80} />
+        <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name, e.g. My laptop" maxLength={80} />
         <Button type="submit" disabled={create.isPending}>
           {create.isPending ? <Loader2 className="animate-spin" /> : <KeyRound />} Make a token
         </Button>
@@ -147,7 +147,7 @@ function CopyField({ value, label, mono, multiline }: { value: string; label: st
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex items-start gap-2 rounded-lg border bg-background p-2">
-      <pre className={cn("min-w-0 flex-1 overflow-x-auto px-1 py-0.5 text-xs leading-relaxed", mono && "font-mono", !multiline && "whitespace-pre-wrap break-all")}>{value}</pre>
+      <pre className={cn("min-w-0 flex-1 overflow-x-auto px-1 py-0.5 text-xs leading-relaxed", mono && "font-mono", !multiline && "whitespace-pre")}>{value}</pre>
       <Button
         type="button"
         variant="ghost"

@@ -20,7 +20,7 @@ const GRADES: { grade: Grade; label: string; key: string; tone: string }[] = [
 
 const STAGES: Record<CardStage, { label: string; className: string }> = {
   new: { label: "New", className: "bg-brand-soft text-brand" },
-  learning: { label: "Learning", className: "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200" },
+  learning: { label: "Learning", className: "bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200" },
   practiced: { label: "Practiced", className: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
   confident: { label: "Confident", className: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200" },
   mastered: { label: "Mastered", className: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200" },
@@ -170,7 +170,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
           <span className={cn("rounded-full px-2 py-0.5 font-medium", STAGES[card.stage].className)}>{STAGES[card.stage].label}</span>
           <span className="text-muted-foreground">{card.kind === "true_false" ? "True or false?" : card.kind === "multiple_choice" ? "Pick one" : "Recall it"}</span>
         </div>
-        <p className="font-heading text-2xl leading-snug text-balance">{card.question}</p>
+        <p className="font-heading text-2xl leading-snug text-pretty">{card.question}</p>
         {choice && (
           <div className={cn("mt-6 grid gap-2", card.kind === "true_false" && "grid-cols-2")} role="group" aria-label="Answers">
             {card.options!.map((option, i) => {
@@ -219,7 +219,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
           </div>
         ) : choice ? null : (
           <Button className="mt-8 w-full" size="lg" variant="outline" onClick={() => setRevealed(true)}>
-            Show answer <kbd className="ml-2 rounded border bg-muted px-1.5 font-sans text-[11px] text-muted-foreground">Space</kbd>
+            Show answer <kbd className="ml-2 rounded pointer-coarse:hidden border bg-muted px-1.5 font-sans text-[11px] text-muted-foreground">Space</kbd>
           </Button>
         )}
       </div>
@@ -227,7 +227,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
       {revealed && choice && (
         <Button className="w-full animate-enter" size="lg" onClick={next} autoFocus>
           Next <span className="ml-1 text-xs opacity-70">· back in {card.next[correct ? "good" : "again"]}</span>
-          <kbd className="ml-2 rounded border border-current/20 px-1.5 font-sans text-[11px] opacity-70">Enter</kbd>
+          <kbd className="ml-2 rounded pointer-coarse:hidden border border-current/20 px-1.5 font-sans text-[11px] opacity-70">Enter</kbd>
         </Button>
       )}
 

@@ -8,7 +8,7 @@ TEXT = (
 )
 
 
-def _item(session, user, title, text, concepts=()):
+def _item(session, user, title, text, concepts=(), summary=None):
     item = Item(
         user_id=user.id,
         title=title,
@@ -16,6 +16,7 @@ def _item(session, user, title, text, concepts=()):
         source="https://x",
         status="ready",
         content=[{"page": None, "text": text}],
+        summary=text if summary is None else summary,
         details={"concepts": list(concepts)},
     )
     session.add(item)
@@ -46,6 +47,15 @@ def test_terms_from_other_items_link_to_them_with_the_passage(client, session, u
     _item(session, user, "Okapi BM25", "BM25 ranks documents.")
     _item(session, user, "Recurrent networks", "An RNN reads one token at a time.", ["RNN"])
     _item(session, user, "Notes", "Generic.", ["memory", "data"])  # too generic to link
+    # Named in passing, not what this item is about: no link for "pineal gland".
+    _item(
+        session,
+        user,
+        "Bones",
+        "The pineal gland is small, but this is about bones.",
+        ["pineal gland"],
+        summary="How bones grow and heal.",
+    )
     session.commit()
 
     links = client.get(f"/items/{reading.id}/links").json()

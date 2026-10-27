@@ -1,6 +1,6 @@
 # Recall evaluation results
 
-Generated 2026-10-25 at commit `be6a71f`+uncommitted changes (the evaluation work itself, committed right after) by `python -m eval.run --llm`. 20 documents (390 chunks), 36 answerable and 10 unanswerable questions. Embeddings: BAAI/bge-small-en-v1.5; chunks of about 400 tokens; top 6 passages sent to the model.
+Generated 2026-10-27 at commit `74532f5+uncommitted changes` by `python -m eval.run --llm`. 20 documents (265 chunks), 36 answerable and 10 unanswerable questions. Embeddings: BAAI/bge-small-en-v1.5; chunks of about 400 tokens; top 6 passages sent to the model.
 
 ## Retrieval: hybrid vs vector-only vs keyword-only, with and without reranking
 
@@ -8,18 +8,18 @@ Generated 2026-10-25 at commit `be6a71f`+uncommitted changes (the evaluation wor
 
 | Mode | Source recall@3 | Source MRR | Passage@1 | Passage@3 | In context | p50 / p95 latency |
 | --- | --- | --- | --- | --- | --- | --- |
-| hybrid | **100%** | 0.97 | 83% | **92%** | 94% | 11 / 16 ms |
-| vector | **100%** | 0.94 | 72% | **89%** | 97% | 8 / 10 ms |
-| keyword | **100%** | 0.99 | 64% | **86%** | 92% | 12 / 14 ms |
-| rerank | **100%** | 1.00 | 83% | **92%** | 100% | 626 / 686 ms |
+| hybrid | **100%** | 0.97 | 81% | **92%** | 94% | 13 / 18 ms |
+| vector | **100%** | 0.94 | 67% | **92%** | 97% | 11 / 13 ms |
+| keyword | **97%** | 0.96 | 61% | **89%** | 92% | 12 / 16 ms |
+| rerank | **100%** | 1.00 | 83% | **92%** | 97% | 668 / 895 ms |
 
 Passage@3 by question style: *paraphrase* questions avoid the document's own words, *keyword* questions use its names and jargon.
 
 | Mode | Paraphrase | Keyword |
 | --- | --- | --- |
 | hybrid | 88% (n=17) | 95% (n=19) |
-| vector | 76% (n=17) | 100% (n=19) |
-| keyword | 76% (n=17) | 95% (n=19) |
+| vector | 82% (n=17) | 100% (n=19) |
+| keyword | 82% (n=17) | 95% (n=19) |
 | rerank | 88% (n=17) | 95% (n=19) |
 
 ## Saying "not found"
@@ -39,7 +39,7 @@ The threshold is tuned on the same questions it is scored on, so these numbers a
 | Answerable questions answered | 94% | |
 | Unanswerable questions refused | 100% | |
 | Answers citing the expected document | 100% | |
-| Answer time, p50 / p95 | 1.2 s / 1.6 s | 5 to 10 s |
-| First words on screen, p50 | 1.2 s | |
+| Answer time, p50 / p95 | 1.1 s / 1.5 s | 5 to 10 s |
+| First words on screen, p50 | 0.9 s | |
 
 Faithfulness (target: at least 90% of sampled answers supported by the cited passage) is checked by hand in `eval/review/faithfulness.csv`; summary and tag quality (target: 4 out of 5) in `eval/review/summaries.csv`.

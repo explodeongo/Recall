@@ -67,7 +67,8 @@ export function Cover({
         loading="lazy"
         onLoad={(e) => setTall(e.currentTarget.naturalHeight > e.currentTarget.naturalWidth)}
         className={cn(
-          "block bg-muted object-cover object-top",
+          // White diagrams and page scans glare on the dark page; dim them a little there.
+          "block bg-muted object-cover object-top dark:brightness-[0.85]",
           shape && (tall === null ? "invisible " + shape.wide : tall ? shape.tall : shape.wide),
           className,
         )}

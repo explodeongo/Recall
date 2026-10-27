@@ -13,7 +13,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
     () =>
       new QueryClient({
-        defaultOptions: { queries: { staleTime: 5_000, retry: 1, refetchOnWindowFocus: true } },
+        // Every change made here invalidates what it touches, so data only goes stale through
+        // other devices or the assistants: re-check after 30 s, not on every page switch.
+        defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true } },
       }),
   );
   return (

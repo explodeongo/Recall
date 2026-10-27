@@ -1,4 +1,5 @@
 import json
+import re
 from collections.abc import Iterator
 
 from fastapi import APIRouter, HTTPException, Request, Response
@@ -12,7 +13,7 @@ from app.deps import CurrentUser, EmbedderDep, LLMDep, SessionDep
 from app.models import Chat, ChatMessage, Item, SourceType
 from app.schemas import ChatCreate, ChatOut, ChatRename, ChatSummary, ItemOut, MessageIn
 from app.services import jobs, quota
-from app.services.answer import Answer, Turn, stream_answer
+from app.services.answer import CITATION, Answer, Turn, cited_numbers, stream_answer
 from app.services.chat import HISTORY_TURNS, chat_title, standalone_question
 from app.services.llm import LLMError
 from app.services.ratelimit import limit
@@ -151,6 +152,7 @@ def send_message(
             sources=sources,
             cited=answer.cited,
             not_found=answer.not_found,
+            suggestions=answer.suggestions or None,
         )
         session.add_all([asked, reply])
         if chat.title == NEW_CHAT:
@@ -164,6 +166,7 @@ def send_message(
                 "not_found": answer.not_found,
                 "web_used": answer.web_used,
                 "cited": answer.cited,
+                "suggestions": answer.suggestions,
                 "timings": answer.timings.as_dict(),
                 "message_ids": [asked.id, reply.id],
                 "title": chat.title,
@@ -240,16 +243,24 @@ def save_answer(chat_id: int, message_id: int, session: SessionDep, user: Curren
 
 
 def answer_note(text: str, sources: list[dict], cited: list[int]) -> str:
-    """An answer as a note: its text, then the sources it cited, numbered as in the text."""
+    """An answer as a note: its text, then the sources it cited. The model cites by search rank
+    ([2][3] with no [1]), so they're renumbered 1, 2, 3… in the order the text uses them, as
+    the chat shows them."""
+    in_order = cited_numbers(text, len(sources)) + cited
+    valid = [n for n in dict.fromkeys(in_order) if 0 < n <= len(sources)]
+    shown = {n: i for i, n in enumerate(valid, 1)}
     lines = []
-    for n in sorted(set(cited)):
-        if not 0 < n <= len(sources):
-            continue
+    for n in valid:
         source = sources[n - 1]
-        where = source.get("source") if source.get("kind") == "web" else None
+        where = f" ({source.get('source')})" if source.get("kind") == "web" else ""
         page = f", page {source['page']}" if source.get("page") else ""
-        lines.append(f"[{n}] {source.get('title', '')}{page}" + (f" ({where})" if where else ""))
-    body = text.strip()
+        lines.append(f"[{shown[n]}] {source.get('title', '')}{page}{where}")
+
+    def renumber(match: re.Match) -> str:
+        nums = [int(x) for x in match.group(1).split(",")]
+        return "[" + ", ".join(str(shown.get(n, n)) for n in nums) + "]"
+
+    body = CITATION.sub(renumber, text.strip())
     return body + ("\n\nSources:\n" + "\n".join(lines) if lines else "")
 
 

@@ -169,6 +169,7 @@ class AskOut(BaseModel):
     web_used: bool = False
     sources: list[SourceOut]
     cited: list[int]
+    suggestions: list[str] = []
     timings: dict[str, float | None]
 
 
@@ -203,6 +204,7 @@ class MessageOut(BaseModel):
     search_query: str | None
     context: dict | None = None
     saved_item_id: int | None = None
+    suggestions: list[str] | None = None
     created_at: datetime
 
 

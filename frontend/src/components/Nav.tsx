@@ -41,25 +41,30 @@ export function Nav() {
           </span>
           <span className="hidden font-heading text-xl font-semibold tracking-tight sm:inline">Recall</span>
         </Link>
-        {!authPage && links.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            aria-current={isActive(href) ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2.5",
-              isActive(href) && "bg-brand-soft font-medium text-brand hover:bg-brand-soft hover:text-brand",
-            )}
-          >
-            <Icon className="size-4" aria-hidden />
-            <span className="hidden sm:inline">{label}</span>
-            {href === "/review" && !!stats.data?.due && (
-              <span className="min-w-4 rounded-full bg-brand px-1 text-center text-[11px] leading-4 font-semibold text-brand-foreground tabular-nums" aria-label={`${stats.data.due} cards due`}>
-                {stats.data.due > 99 ? "99+" : stats.data.due}
-              </span>
-            )}
-          </Link>
-        ))}
+        {!authPage && links.map(({ href, label, icon: Icon }) => {
+          const due = href === "/review" ? stats.data?.due : 0;
+          return (
+            <Link
+              key={href}
+              href={href}
+              // On phones only the icon shows, so the name has to come from here.
+              aria-label={due ? `${label}, ${due} cards due` : label}
+              aria-current={isActive(href) ? "page" : undefined}
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:min-h-11 pointer-coarse:min-w-11 sm:px-2.5",
+                isActive(href) && "bg-brand-soft font-medium text-brand hover:bg-brand-soft hover:text-brand",
+              )}
+            >
+              <Icon className="size-4" aria-hidden />
+              <span className="hidden sm:inline">{label}</span>
+              {!!due && (
+                <span className="min-w-4 rounded-full bg-brand px-1 text-center text-[11px] leading-4 font-semibold text-brand-foreground tabular-nums" aria-hidden>
+                  {due > 99 ? "99+" : due}
+                </span>
+              )}
+            </Link>
+          );
+        })}
         {!authPage && (
           <button
             onClick={openSearch}
@@ -92,7 +97,8 @@ function AccountMenu() {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
-  if (!me.data) return null;
+  // Hold the avatar's place while it loads, so the search box doesn't jump.
+  if (!me.data) return <span className="size-8 shrink-0" aria-hidden />;
   const initial = (me.data.name || me.data.email).trim()[0]?.toUpperCase() ?? "?";
 
   async function logout() {

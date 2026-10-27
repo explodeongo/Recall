@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Globe, Hash, Highlighter, MessageSquareText, NotebookPen, Plus, Sparkles } from "lucide-react";
+import { FileText, Globe, Hash, Highlighter, Layers, MessageSquareText, Network, NotebookPen, Plus, Settings, Sparkles } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -92,6 +92,15 @@ export function SearchPalette() {
               </CommandItem>
               <CommandItem value="highlights" onSelect={() => go("/highlights")}>
                 <Highlighter /> All highlights
+              </CommandItem>
+              <CommandItem value="review" onSelect={() => go("/review")}>
+                <Layers /> Review cards
+              </CommandItem>
+              <CommandItem value="graph" onSelect={() => go("/graph")}>
+                <Network /> Graph of linked ideas
+              </CommandItem>
+              <CommandItem value="settings" onSelect={() => go("/settings")}>
+                <Settings /> Settings and export
               </CommandItem>
             </CommandGroup>
           )}

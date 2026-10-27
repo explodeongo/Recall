@@ -81,5 +81,6 @@ def _ask_out(answer: Answer, session=None) -> AskOut:
         web_used=answer.web_used,
         sources=sources_json(answer.sources, session),
         cited=answer.cited,
+        suggestions=answer.suggestions,
         timings=answer.timings.as_dict(),
     )

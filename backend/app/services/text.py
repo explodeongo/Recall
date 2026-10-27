@@ -24,19 +24,63 @@ def count_tokens(text: str) -> int:
 # --- cleaning -------------------------------------------------------------------------------
 
 
+# Navigation and housekeeping lines that pages carry around the article itself.
+_BOILERPLATE = re.compile(
+    r"^(part of a series on\b|this article is about\b|for other uses\b|not to be confused with\b"
+    r"|main articles?:|further information:|jump to (navigation|search)|retrieved \d"
+    r"|archived from the original\b|\^ )",
+    re.IGNORECASE,
+)
+# Headings after which a document lists its references and links rather than saying things.
+_BACK_MATTER = re.compile(
+    r"^(references|external links|further reading|notes|bibliography|sources|citations"
+    r"|footnotes|works cited|notes and references)\s*$",
+    re.IGNORECASE,
+)
+_CITATION_BITS = re.compile(
+    r"doi[:\s]|\bisbn\b|arxiv[:\s]|\bpp?\.\s*\d|retrieved (on )?(\d|[a-z]+ \d)|\bet al\."
+    r"|in proceedings|\bvol\.\s*\d|\(\d{4}[a-z]?\)|https?://",
+    re.IGNORECASE,
+)
+# A footnote's link back to where it's cited: "↑", "^", or "1 2 3" before the entry itself.
+_BACKLINK = re.compile(r"^(-\s*)?(↑|\^|(\d{1,3} )+(?=[A-Z\"'“]))")
+
+
+def _is_reference(paragraph: str) -> bool:
+    """A bibliography entry: several citation markers, a footnote back-link, or a numbered
+    entry with one marker."""
+    if _BACKLINK.match(paragraph):
+        return True
+    hits = len(_CITATION_BITS.findall(paragraph))
+    numbered = re.match(r"^(\[\d+\]|\d+\.\s)", paragraph)
+    return hits >= 2 or (hits >= 1 and bool(numbered))
+
+
 def clean_pages(pages: list[PageText]) -> list[PageText]:
-    """Drop running headers, footers and page numbers; repair line wrapping; tidy whitespace."""
+    """Drop running headers, footers, page numbers and navigation lines; once a document's
+    references begin (in its later part), drop the reference entries and link lists but keep
+    real paragraphs such as an appendix; repair line wrapping; tidy whitespace."""
     repeated = _repeated_paragraphs(pages)
+    total = sum(len(p.text) for p in pages) or 1
+    seen = 0
+    in_back_matter = False
     cleaned = []
     for page in pages:
         paragraphs = []
         for para in _paragraphs(page.text):
+            seen += len(para)
             if _norm(para) in repeated or _PAGE_NUMBER.match(para.strip()):
                 continue
             para = _HYPHEN_BREAK.sub(r"\1\2", para)
             para = re.sub(r"\s+", " ", para).strip()
-            if para:
-                paragraphs.append(para)
+            if not para or _BOILERPLATE.match(para):
+                continue
+            if _BACK_MATTER.match(para) and seen > total * 0.4:
+                in_back_matter = True
+                continue
+            if in_back_matter and (_is_reference(para) or len(para) < 80):
+                continue
+            paragraphs.append(para)
         cleaned.append(PageText(page=page.page, text="\n\n".join(paragraphs)))
     return cleaned
 

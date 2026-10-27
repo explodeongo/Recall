@@ -6,6 +6,7 @@ Everything else depends on the LLMClient protocol, so the provider can be swappe
 
 import json
 import logging
+import time
 from collections.abc import Iterator
 from typing import Any, Protocol
 
@@ -36,10 +37,14 @@ class GeminiClient:
     """Calls the Gemini REST API. The key comes from GEMINI_API_KEY, never from code.
 
     `models` are tried in order: when one is rate-limited or overloaded (429, 5xx, timeout),
-    the next one gets the request, so a busy free-tier model doesn't fail the user.
+    the next one gets the request, so a busy free-tier model doesn't fail the user. When all
+    of them are busy, they're tried once more after a short wait: free-tier overloads are
+    usually over within seconds.
     """
 
     base_url = "https://generativelanguage.googleapis.com/v1beta"
+    ROUNDS = 2
+    WAIT_S = 2.0
 
     def __init__(self, api_key: str, models: list[str], timeout: float = 30.0):
         if not models:
@@ -47,18 +52,27 @@ class GeminiClient:
         self._models = models
         self._http = httpx.Client(timeout=timeout, headers={"x-goog-api-key": api_key})
 
+    def _attempts(self):
+        """(model, is the last attempt) in order: every model, then every model again."""
+        tries = [(r, m) for r in range(self.ROUNDS) for m in self._models]
+        for n, (round_, model) in enumerate(tries):
+            if n and round_ != tries[n - 1][0]:
+                log.warning("every model is busy; waiting %.0fs and trying again", self.WAIT_S)
+                time.sleep(self.WAIT_S)
+            yield model, n == len(tries) - 1
+
     def generate(
         self, prompt: str, *, system: str | None = None, json_schema: dict | None = None
     ) -> str:
         body = self._body(prompt, system, json_schema)
-        for i, model in enumerate(self._models):
+        for model, last in self._attempts():
             try:
                 resp = self._http.post(f"{self.base_url}/models/{model}:generateContent", json=body)
                 self._raise_for_status(resp.status_code, resp.text)
             except (httpx.TransportError, LLMError) as exc:
                 err = _as_llm_error(exc)
-                if err.retryable and i + 1 < len(self._models):
-                    log.warning("%s unavailable (%s); trying %s", model, err, self._models[i + 1])
+                if err.retryable and not last:
+                    log.warning("%s unavailable (%s)", model, err)
                     continue
                 raise err from exc
             text = _text_of(resp.json())
@@ -69,7 +83,7 @@ class GeminiClient:
 
     def stream(self, prompt: str, *, system: str | None = None) -> Iterator[str]:
         body = self._body(prompt, system, None)
-        for i, model in enumerate(self._models):
+        for model, last in self._attempts():
             url = f"{self.base_url}/models/{model}:streamGenerateContent?alt=sse"
             started = False
             try:
@@ -88,8 +102,8 @@ class GeminiClient:
             except (httpx.TransportError, LLMError) as exc:
                 err = _as_llm_error(exc)
                 # Once text has reached the user, switching models would garble the answer.
-                if err.retryable and not started and i + 1 < len(self._models):
-                    log.warning("%s unavailable (%s); trying %s", model, err, self._models[i + 1])
+                if err.retryable and not started and not last:
+                    log.warning("%s unavailable (%s)", model, err)
                     continue
                 raise err from exc
 
@@ -108,14 +122,23 @@ class GeminiClient:
     def _raise_for_status(status: int, text: str) -> None:
         if status == 200:
             return
-        retryable = status == 429 or status >= 500
-        raise LLMError(f"Gemini returned {status}: {text[:300]}", retryable=retryable)
+        log.info("Gemini returned %s: %s", status, text[:300])
+        # What people see is the message; the provider's details go to the log.
+        if status == 429:
+            raise LLMError(BUSY + " (it's limiting how often it can be asked)", retryable=True)
+        if status >= 500:
+            raise LLMError(BUSY, retryable=True)
+        raise LLMError(f"Gemini refused the request ({status}).")
+
+
+BUSY = "Gemini, the AI behind answers, is busy right now. Try again in a moment"
 
 
 def _as_llm_error(exc: Exception) -> LLMError:
     if isinstance(exc, LLMError):
         return exc
-    return LLMError(f"Couldn't reach Gemini: {exc or type(exc).__name__}", retryable=True)
+    log.info("couldn't reach Gemini: %s", exc or type(exc).__name__)
+    return LLMError(BUSY, retryable=True)
 
 
 def _text_of(payload: dict) -> str:

@@ -97,8 +97,35 @@ class FreeEngineSearcher:
                 if r.get("href", "").startswith(("http://", "https://"))
             ]
             if results:
-                return results
+                return unglue(results)
         return []
+
+
+def _cut_at_others(text: str, others: list[str]) -> str:
+    """`text` up to where any of `others` begins inside it."""
+    cut = len(text)
+    for other in others:
+        if len(other) >= 12:
+            at = text.find(other[:40], 1)
+            if 0 < at < cut:
+                cut = at
+    return text[:cut].strip()
+
+
+def unglue(results: list[WebResult]) -> list[WebResult]:
+    """Some engines' pages come back with each result's title and snippet running on into the
+    next ones' ("Name - LinkedInName (@name) • Instagram…"); cut each where another's starts."""
+    titles = [r.title for r in results]
+    bodies = [r.snippet for r in results]
+    return [
+        WebResult(
+            _cut_at_others(r.title, titles[:i] + titles[i + 1 :]) or r.title,
+            r.url,
+            _cut_at_others(r.snippet, bodies[:i] + bodies[i + 1 :]) or r.snippet,
+            r.content,
+        )
+        for i, r in enumerate(results)
+    ]
 
 
 class WikipediaSearcher:

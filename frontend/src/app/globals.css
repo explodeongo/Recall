@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-heading: var(--font-newsreader), ui-serif, Georgia, serif;
   --color-brand: var(--brand);
@@ -148,6 +148,11 @@
   html {
     @apply font-sans;
   }
+  /* Light text on a dark page reads heavier and tighter than the same text on paper; open it
+     up a touch. */
+  .dark body {
+    letter-spacing: 0.005em;
+  }
 }
 @layer base {
   .font-heading {
@@ -262,6 +267,11 @@
   textarea {
     caret-color: var(--brand);
   }
+  /* The browser's own placeholder grey is too faint on paper; every field uses the muted ink. */
+  ::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
+  }
   a {
     text-underline-offset: 0.2em;
   }
@@ -276,7 +286,7 @@
 @utility tag-chip {
   border-color: color-mix(in oklab, var(--tag) 38%, var(--background));
   background: color-mix(in oklab, var(--tag) 12%, var(--background));
-  color: color-mix(in oklab, var(--tag) 50%, var(--foreground));
+  color: color-mix(in oklab, var(--tag) 42%, var(--foreground));
   &:is(a, button):hover {
     border-color: color-mix(in oklab, var(--tag) 65%, var(--background));
     background: color-mix(in oklab, var(--tag) 18%, var(--background));

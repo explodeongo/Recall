@@ -1,5 +1,5 @@
 id,question,answer,cited passages,supported (y/n),notes
-q01,Which company's research lab were the inventors of the B-tree working at?,The inventors of the B-tree were working at Boeing Research Labs [1].,"B-tree
+q01,Which company's research lab were the inventors of the B-tree working at?,Rudolf Bayer and Edward M. McCreight were working at Boeing Research Labs when they invented B-trees [1].,"B-tree
 
 B-tree
 
@@ -38,7 +38,7 @@ Bayer and McCreight never explained what, if anything, the B stands for; Boeing,
 Everybody does!
 
 So you just have no idea what a lunchtime conversation can turn into. So there we were, Rudy and I, at lunch. We had to give the thing a name....",,
-q02,When was Bayer and McCreight's paper on large ordered indices first circulated?,Bayer and McCreight's paper on large ordered indices was first circulated in July 1970 [1].,"B-tree
+q02,When was Bayer and McCreight's paper on large ordered indices first circulated?,"Rudolf Bayer and Edward M. McCreight's paper titled ""Organization and maintenance of large ordered indices"" was first circulated in July 1970 [1].","B-tree
 
 B-tree
 
@@ -77,7 +77,7 @@ Bayer and McCreight never explained what, if anything, the B stands for; Boeing,
 Everybody does!
 
 So you just have no idea what a lunchtime conversation can turn into. So there we were, Rudy and I, at lunch. We had to give the thing a name....",,
-q03,"Besides keeping a linked list per slot, how can a hash table place an item whose slot is already taken?","- Open addressing, which searches for the next available slot according to a probing sequence [1][3].","Hash table
+q03,"Besides keeping a linked list per slot, how can a hash table place an item whose slot is already taken?","- Open addressing can be used, which searches for the next available slot according to a probing sequence [1][4].","Hash table
 
 Hash table
 
@@ -130,8 +130,7 @@ search for an element with key k in linked list T[h(k)]
 Chained-Hash-Delete(T, x)
 
 delete x from the linked list T[h(k)]",,
-q04,How is the load factor of a hash table defined?,"- The load factor ($\alpha$) of a hash table is defined as the ratio of the number of stored elements ($n$) to the number of available slots or buckets ($m$).
-- Expressed as a formula: $\alpha = \frac{n}{m}$, where $n$ is the number of key-value pairs and $m$ is the number of buckets [1].","Overview
+q04,How is the load factor of a hash table defined?,"The load factor of a hash table is defined as the ratio of the number of stored elements to the number of available slots [1]. Specifically, it is defined as where is the number of key-value pairs and is the number of buckets [1].","Overview
 
 An associative array stores a set of (key, value) pairs and allows insertion, deletion, and lookup (search), with the constraint of unique keys. In the hash table implementation of associative arrays, an array of length is partially filled with elements, where . A key is hashed using a hash function to compute an index location in the hash table, where . At this index, both the key and its associated value are stored. Storing the key alongside the value ensures that lookups can verify the key at the index to retrieve the correct value, even in the presence of collisions. Under reasonable assumptions, hash tables have better time complexity bounds on search, delete, and insert operations in comparison to self-balancing binary search trees.: 1
 
@@ -152,8 +151,9 @@ Load factor for open addressing
 With open addressing, each slot of the bucket array holds exactly one item. Therefore an open-addressed hash table cannot have a load factor greater than 1.
 
 The performance of open addressing becomes very bad when the load factor approaches 1. Therefore a hash table that uses open addressing must be resized or rehashed if the load factor approaches 1.",,
-q05,What is a covering index?,"- A covering index is a special case of a database index where the index itself contains the required data fields to answer a query, eliminating the need to look up the data record in the table [1].
-- While standard indexes are typically used only to locate data records rather than return data, a covering index can directly provide the requested information [1].","Covering index
+q05,What is a covering index?,"- A covering index is a special case of an index that contains the required data fields and can directly answer the required data, eliminating the need to look up the underlying record [1].
+- It can dramatically speed up data retrieval, but its additional keys can make the index large, which slows down data insertion and updates [1].
+- To reduce the size of a covering index, some systems allow non-key fields to be included at the leaf level without being part of the index ordering [1].","Covering index
 
 In most cases, an index is used to quickly locate the data records from which the required data is read. In other words, the index is only used to locate data records in the table and not to return data.
 
@@ -187,12 +187,8 @@ See also
 
 - Inverted index – Type of database index
 
-- Search engine indexing – Method for data management
-
-References
-
-- ↑ Mitchell, Sarah (2025-12-03).",,
-q06,"In a non-clustered index, what does the leaf level of the tree contain?","- The leaf level of a non-clustered index tree contains the pointer to the record, which consists of the page and the row number in the data page in page-organized engines, or the row offset in file-organized engines [1].","Index architecture and indexing methods
+- Search engine indexing – Method for data management",,
+q06,"In a non-clustered index, what does the leaf level of the tree contain?","In a non-clustered index, the leaf level of the tree contains pointers to records, which are the page and row number in data pages for page-organized engines, or the row offset for file-organized engines [1].","Index architecture and indexing methods
 
 Non-clustered
 
@@ -242,7 +238,7 @@ In computer science, the log-structured merge-tree (also known as LSM tree, or L
 One simple version of the LSM tree is a two-level LSM tree. As described by Patrick O'Neil, a two-level LSM tree comprises two tree-like structures, called C0 and C1. C0 is smaller and entirely resident in memory, whereas C1 is resident on disk. New records are inserted into the memory-resident C0 component. If the insertion causes the C0 component to exceed a certain size threshold, a contiguous segment of entries is removed from C0 and merged into C1 on disk. The performance characteristics of LSM trees stem from the fact that each component is tuned to the characteristics of its underlying storage medium, and that data is efficiently migrated across media in rolling batches, using an algorithm reminiscent of merge sort. Such tuning involves writing data in a sequential manner as opposed to as a series of separate random access requests. This optimization reduces total seek time in hard-disk drives (HDDs) and latency in solid-state drives (SSDs).
 
 Most LSM trees used in practice employ multiple levels.",,
-q08,Who invented the log-structured merge-tree?,"The log-structured merge-tree was invented by Patrick O'Neil, Edward Cheng, Dieter Gawlick, and Elizabeth O'Neil in 1996 [1].","Log-structured merge-tree
+q08,Who invented the log-structured merge-tree?,"The log-structured merge-tree was invented by Patrick O'Neil, Edward Cheng, Dieter Gawlick, and Elizabeth O'Neil [1].","Log-structured merge-tree
 
 Log-structured merge-tree
 
@@ -269,9 +265,7 @@ In computer science, the log-structured merge-tree (also known as LSM tree, or L
 One simple version of the LSM tree is a two-level LSM tree. As described by Patrick O'Neil, a two-level LSM tree comprises two tree-like structures, called C0 and C1. C0 is smaller and entirely resident in memory, whereas C1 is resident on disk. New records are inserted into the memory-resident C0 component. If the insertion causes the C0 component to exceed a certain size threshold, a contiguous segment of entries is removed from C0 and merged into C1 on disk. The performance characteristics of LSM trees stem from the fact that each component is tuned to the characteristics of its underlying storage medium, and that data is efficiently migrated across media in rolling batches, using an algorithm reminiscent of merge sort. Such tuning involves writing data in a sequential manner as opposed to as a series of separate random access requests. This optimization reduces total seek time in hard-disk drives (HDDs) and latency in solid-state drives (SSDs).
 
 Most LSM trees used in practice employ multiple levels.",,
-q09,Can a probabilistic set-membership structure that answers 'possibly in set' ever wrongly say an element is absent?,"No, false negatives are not possible in a Bloom filter [1]. A query will return either ""possibly in set"" or ""definitely not in set"" [1].","Bloom filter
-
-Part of a series on
+q09,Can a probabilistic set-membership structure that answers 'possibly in set' ever wrongly say an element is absent?,"No, false negative matches are not possible [1]. A query returns either ""possibly in set"" or ""definitely not in set"" [1].","Bloom filter
 
 Probabilistic data structures
 
@@ -288,7 +282,7 @@ More generally, fewer than 10 bits per element are required for a 1% false posit
 Algorithm description
 
 An empty Bloom filter is a bit array of m bits, all set to 0. It is equipped with k different hash functions, which map set elements to one of the m possible array positions. To be optimal, the hash functions should be uniformly distributed and independent. Typically, k is a small constant which depends on the desired false error rate ε, while m is proportional to k and the number of elements to be added.",,
-q11,"In Raft, what makes a server become a candidate and start a leader election?","A server becomes a candidate and starts a leader election if it receives no communication from the leader over a period known as the election timeout, causing it to assume there is no acting leader anymore [1][2].","A leader leads until it fails or disconnects, in which case surviving servers elect a new leader.
+q11,"In Raft, what makes a server become a candidate and start a leader election?","A server becomes a candidate and starts a leader election if it receives no communication from the leader over a period called the election timeout, causing it to assume there is no acting leader anymore [1][2]. To start the election, the server increases the term counter, votes for itself as the new leader, and sends a message to all other servers requesting their votes [1].","A leader leads until it fails or disconnects, in which case surviving servers elect a new leader.
 
 The consensus problem is decomposed in Raft into two relatively independent subproblems listed down below.
 
@@ -327,7 +321,7 @@ Raft implements consensus by a leader approach. The cluster has one and only one
 The consensus problem is decomposed in Raft into two relatively independent subproblems listed down below.
 
 Leader election",,
-q12,What was the main design goal of the consensus algorithm built as an alternative to Paxos?,- The consensus algorithm (Raft) was designed to be more understandable than Paxos by means of separation of logic [3].,"Raft (algorithm)
+q12,What was the main design goal of the consensus algorithm built as an alternative to Paxos?,The consensus algorithm built as an alternative to Paxos (named Raft) was designed to be more understandable than Paxos by means of separation of logic [3].,"Raft (algorithm)
 
 Raft
 
@@ -348,10 +342,7 @@ Raft implements consensus by a leader approach. The cluster has one and only one
 The consensus problem is decomposed in Raft into two relatively independent subproblems listed down below.
 
 Leader election",,
-q13,What three roles does each process play in a typical Paxos deployment?,"In a typical deployment of Paxos, each participating process acts in the following three roles:
-- Proposer [1]
-- Acceptor [1]
-- Learner [1]","- Termination (or liveness)
+q13,What three roles does each process play in a typical Paxos deployment?,"In a typical deployment of Paxos, each participating process acts in three roles: Proposer, Acceptor, and Learner [1].","- Termination (or liveness)
 
 - If value C has been proposed, then eventually learner L will learn some value (if sufficient processors remain non-faulty).
 
@@ -376,7 +367,7 @@ Phase 1
 Phase 1a: Prepare
 
 - A Proposer creates a message, which we call a Prepare.",,
-q14,What does partition tolerance mean in the CAP theorem?,"In the CAP theorem, partition tolerance means that the system continues to operate despite an arbitrary number of messages being dropped or delayed by the network between nodes [1].","CAP theorem
+q14,What does partition tolerance mean in the CAP theorem?,Partition tolerance in the CAP theorem means that the system continues to operate despite an arbitrary number of messages being dropped or delayed by the network between nodes [1].,"CAP theorem
 
 In database theory, the CAP theorem, also named Brewer's theorem after computer scientist Eric Brewer, states that any distributed data store can provide at most two of the following three guarantees:
 
@@ -405,7 +396,7 @@ During times of normal operations, a data store covers all three.
 Explanation
 
 No distributed system is safe from network failures, thus network partitioning generally has to be tolerated. In the presence of a partition, one is then left with two options: consistency or availability. When choosing consistency over availability, the system will return an error or a time out if particular information cannot be guaranteed to be up to date due to network partitioning.",,
-q15,"Which computer scientist is the theorem about consistency, availability and partition tolerance named after?",The CAP theorem is also named Brewer's theorem after computer scientist Eric Brewer [1].,"CAP theorem
+q15,"Which computer scientist is the theorem about consistency, availability and partition tolerance named after?","The theorem about consistency, availability, and partition tolerance (the CAP theorem) is also named Brewer's theorem after computer scientist Eric Brewer [1].","CAP theorem
 
 In database theory, the CAP theorem, also named Brewer's theorem after computer scientist Eric Brewer, states that any distributed data store can provide at most two of the following three guarantees:
 
@@ -434,7 +425,7 @@ During times of normal operations, a data store covers all three.
 Explanation
 
 No distributed system is safe from network failures, thus network partitioning generally has to be tolerated. In the presence of a partition, one is then left with two options: consistency or availability. When choosing consistency over availability, the system will return an error or a time out if particular information cannot be guaranteed to be up to date due to network partitioning.",,
-q16,"Who introduced the term consistent hashing, and where?","The term ""consistent hashing"" was introduced by David Karger et al. at MIT in an academic paper from 1997 presented at the Symposium on Theory of Computing [1].","Consistent hashing
+q16,"Who introduced the term consistent hashing, and where?","The term ""consistent hashing"" was introduced by David Karger and colleagues at MIT [1]. It was introduced in an academic paper presented at the 1997 Symposium on Theory of Computing [1].","Consistent hashing
 
 In computer science, consistent hashing is a special kind of hashing technique such that when a hash table is resized, only keys need to be remapped on average where is the number of keys and is the number of slots. Consistent hashing evenly distributes cache keys across shards, even if some of the shards crash or become unavailable. In contrast, in most traditional hash tables, a change in the number of array slots causes nearly all keys to be remapped because the mapping between the keys and the slots is defined by a modular operation.
 
@@ -445,7 +436,7 @@ History
 The term ""consistent hashing"" was introduced by David Karger et al. at MIT for use in distributed caching, particularly for the web. This academic paper from 1997 in Symposium on Theory of Computing introduced the term ""consistent hashing"" as a way of distributing requests among a changing population of web servers. Each slot is then represented by a server in a distributed system or cluster. The addition of a server and the removal of a server (during scalability or outage) requires only items to be re-shuffled when the number of slots (i.e. servers) change. The authors mention linear hashing and its ability to handle sequential server addition and removal, while consistent hashing allows servers to be added and removed in an arbitrary order. The paper was later re-purposed to address technical challenge of keeping track of a file in peer-to-peer networks such as a distributed hash table.
 
 Teradata used this technique in their distributed database, released in 1986, although they did not use this term. Teradata still uses the concept of a hash table to fulfill exactly this purpose. Akamai Technologies was founded in 1998 by the scientists Daniel Lewin and F.",,
-q17,"When a cache cluster grows or shrinks, why does hashing keys onto a ring avoid moving most of them?","When using consistent hashing, only a minimal fraction of keys (on average, $K/N$ where $K$ is the number of keys and $N$ is the number of slots or servers) need to be remapped or re-shuffled when the cluster grows or shrinks [4]. In contrast, traditional hash tables map keys to slots via a modular operation, meaning a change in the number of slots forces nearly all keys to be remapped [4].","Consistent hashing
+q17,"When a cache cluster grows or shrinks, why does hashing keys onto a ring avoid moving most of them?","When using consistent hashing, adding or removing slots (such as servers) requires only a fraction of the items—specifically $K/N$ items, where $K$ is the number of keys and $N$ is the number of slots—to be re-shuffled or remapped [4]. Unlike traditional hash tables where a change in slots causes nearly all keys to be remapped due to modular arithmetic, consistent hashing evenly distributes and maps keys along a ring such that changes only affect the localized neighborhood of the added or removed server [1][4].","Consistent hashing
 
 In computer science, consistent hashing is a special kind of hashing technique such that when a hash table is resized, only keys need to be remapped on average where is the number of keys and is the number of slots. Consistent hashing evenly distributes cache keys across shards, even if some of the shards crash or become unavailable. In contrast, in most traditional hash tables, a change in the number of array slots causes nearly all keys to be remapped because the mapping between the keys and the slots is defined by a modular operation.
 
@@ -455,12 +446,68 @@ History
 
 The term ""consistent hashing"" was introduced by David Karger et al. at MIT for use in distributed caching, particularly for the web. This academic paper from 1997 in Symposium on Theory of Computing introduced the term ""consistent hashing"" as a way of distributing requests among a changing population of web servers. Each slot is then represented by a server in a distributed system or cluster. The addition of a server and the removal of a server (during scalability or outage) requires only items to be re-shuffled when the number of slots (i.e. servers) change. The authors mention linear hashing and its ability to handle sequential server addition and removal, while consistent hashing allows servers to be added and removed in an arbitrary order. The paper was later re-purposed to address technical challenge of keeping track of a file in peer-to-peer networks such as a distributed hash table.
 
-Teradata used this technique in their distributed database, released in 1986, although they did not use this term. Teradata still uses the concept of a hash table to fulfill exactly this purpose. Akamai Technologies was founded in 1998 by the scientists Daniel Lewin and F.",,
-q18,What happens in the commit-request phase of two-phase commit?,"During the commit-request (or voting) phase of the two-phase commit protocol:
+Teradata used this technique in their distributed database, released in 1986, although they did not use this term. Teradata still uses the concept of a hash table to fulfill exactly this purpose. Akamai Technologies was founded in 1998 by the scientists Daniel Lewin and F.
+---
+However, in the case of web page caches, in most implementations there is no involvement of moving or copying, assuming the cached BLOB is small enough. When a request hits a newly added cache server, a cache miss happens and a request to the actual web server is made and the BLOB is cached locally for future requests. The redundant BLOBs on the previously used cache servers would be removed as per the cache eviction policies.
 
-- The coordinator sends a query to commit message to all participants and waits for a reply from all of them [1][2][3].
-- The participants execute the transaction up to the point where they will be asked to commit, writing an entry to their undo log and an entry to their redo log [1][2].
-- Each participant votes ""Yes"" (sending an agreement message) if its actions succeeded and local portion execution ended properly, or votes ""No"" (sending an abort message) if a failure or problem makes it impossible to commit [1][2][3].","They each write an entry to their undo log and an entry to their redo log.
+Implementation
+
+Let and be the hash functions used for the BLOB and server's unique identifier respectively. In practice, a binary search tree (BST) is used to dynamically maintain the within a cluster or hashring, and to find the successor or minimum within the BST, tree traversal is used.
+
+- Inserting into the cluster
+
+- Let be the hash value of a BLOB such that, where and . To insert , find the successor of in the BST of s. If is larger than all of the s, the BLOB is placed in the server with smallest value.
+
+- Deleting from the cluster
+
+- Find the successor of in the BST, remove the BLOB from the returned . If has no successor, remove the BLOB from the smallest of the s.
+
+- Insert a server into cluster
+
+- Let be the hash value of a server's identifier such that, where and . Move all the BLOBs, whose hash value is smaller than , from the server whose is successor of . If is largest of all the s, move the relevant BLOBs from the smallest of the s into .
+
+- Delete a server from cluster
+
+- Find the successor of in the BST, move the BLOBs from into its successor server. If doesn't have a successor, move the BLOBs into the smallest of the s.
+
+Variance reduction
+
+To avoid skewness of multiple nodes within the radian, which happen due to lack of uniform distribution of the servers within the cluster, multiple labels are used. Those duplicate labels are called ""virtual nodes"" i.e. multiple labels which point to a single ""real"" label or server within the cluster.",,
+q18,What happens in the commit-request phase of two-phase commit?,"- The coordinator sends a query to commit message to all participants and waits for a reply from all of them [2].
+- The participants execute the transaction up to the point where they are asked to commit, writing an entry to their undo log and an entry to their redo log [1][2].
+- Each participant replies with an agreement message (voting Yes to commit) if their actions succeeded, or an abort message (voting No to commit) if they experience a failure making it impossible to commit [1][3].","- The commit phase, in which, based on voting of the participants, the coordinator decides whether to commit (only if all have voted ""Yes"") or abort the transaction (otherwise), and notifies the result to all the participants. The participants then follow with the needed actions (commit or abort) with their local transactional resources (also called recoverable resources; e.g., database data) and their respective portions in the transaction's other output (if applicable).
+
+The two-phase commit (2PC) protocol should not be confused with the two-phase locking (2PL) protocol, a concurrency control protocol.
+
+Assumptions
+
+The protocol works in the following manner: one node is a designated coordinator, which is the master site, and the rest of the nodes in the network are designated the participants. The protocol assumes that:
+
+- there is stable storage at each node with a write-ahead log,
+
+- no node crashes forever,
+
+- the data in the write-ahead log is never lost or corrupted in a crash, and
+
+- any two nodes can communicate with each other.
+
+The last assumption is not too restrictive, as network communication can typically be rerouted. The first two assumptions are much stronger; if a node is totally destroyed then data can be lost.
+
+The protocol is initiated by the coordinator after the last step of the transaction has been reached. The participants then respond with an agreement message or an abort message depending on whether the transaction has been processed successfully at the participant.
+
+Basic algorithm
+
+Commit request (or voting) phase
+
+- The coordinator sends a query to commit message to all participants and waits until it has received a reply from all participants.
+
+- The participants execute the transaction up to the point where they will be asked to commit. They each write an entry to their undo log and an entry to their redo log.
+
+- Each participant replies with:
+
+- either an agreement message (participant votes Yes to commit), if the participant's actions succeeded;
+---
+They each write an entry to their undo log and an entry to their redo log.
 
 - Each participant replies with:
 
@@ -518,38 +565,6 @@ Disadvantages
 
 - A two-phase commit protocol cannot dependably recover from a failure of both the coordinator and a cohort member during the commit phase. If only the coordinator had failed, and no cohort members had received a commit message, it could safely be inferred that no commit had happened.
 ---
-- The commit phase, in which, based on voting of the participants, the coordinator decides whether to commit (only if all have voted ""Yes"") or abort the transaction (otherwise), and notifies the result to all the participants. The participants then follow with the needed actions (commit or abort) with their local transactional resources (also called recoverable resources; e.g., database data) and their respective portions in the transaction's other output (if applicable).
-
-The two-phase commit (2PC) protocol should not be confused with the two-phase locking (2PL) protocol, a concurrency control protocol.
-
-Assumptions
-
-The protocol works in the following manner: one node is a designated coordinator, which is the master site, and the rest of the nodes in the network are designated the participants. The protocol assumes that:
-
-- there is stable storage at each node with a write-ahead log,
-
-- no node crashes forever,
-
-- the data in the write-ahead log is never lost or corrupted in a crash, and
-
-- any two nodes can communicate with each other.
-
-The last assumption is not too restrictive, as network communication can typically be rerouted. The first two assumptions are much stronger; if a node is totally destroyed then data can be lost.
-
-The protocol is initiated by the coordinator after the last step of the transaction has been reached. The participants then respond with an agreement message or an abort message depending on whether the transaction has been processed successfully at the participant.
-
-Basic algorithm
-
-Commit request (or voting) phase
-
-- The coordinator sends a query to commit message to all participants and waits until it has received a reply from all participants.
-
-- The participants execute the transaction up to the point where they will be asked to commit. They each write an entry to their undo log and an entry to their redo log.
-
-- Each participant replies with:
-
-- either an agreement message (participant votes Yes to commit), if the participant's actions succeeded;
----
 Two-phase commit protocol
 
 In transaction processing, databases, and computer networking, the two-phase commit protocol (2PC, tupac) is a type of atomic commitment protocol (ACP). It is a distributed algorithm that coordinates all the processes that participate in a distributed atomic transaction on whether to commit or abort (roll back) the transaction. This protocol (a specialised type of consensus protocol) achieves its goal even in many cases of temporary system failure (involving either process, network node, communication, etc. failures), and is thus widely used. However, it is not resilient to all possible failure configurations, and in rare cases, manual intervention is needed to remedy an outcome. To accommodate recovery from failure (automatic in most cases) the protocol's participants use logging of the protocol's states. Log records, which are typically slow to generate but survive failures, are used by the protocol's recovery procedures. Many protocol variants exist that primarily differ in logging strategies and recovery mechanisms. Though usually intended to be used infrequently, recovery procedures compose a substantial portion of the protocol, due to many possible failure scenarios to be considered and supported by the protocol.
@@ -557,7 +572,7 @@ In transaction processing, databases, and computer networking, the two-phase com
 In a ""normal execution"" of any single distributed transaction (i.e., when no failure occurs, which is typically the most frequent situation), the protocol consists of two phases:
 
 - The commit-request phase (or voting phase), in which a coordinator process attempts to prepare all the transaction's participating processes (named participants, cohorts, or workers) to take the necessary steps for either committing or aborting the transaction and to vote, either ""Yes"": commit (if the transaction participant's local portion execution has ended properly), or ""No"": abort (if a problem has been detected with the local portion), and",,
-q19,What is the biggest weakness of the atomic commit protocol where a coordinator collects votes from every participant?,The greatest disadvantage of the two-phase commit protocol is that it is a blocking protocol [1].,"They each write an entry to their undo log and an entry to their redo log.
+q19,What is the biggest weakness of the atomic commit protocol where a coordinator collects votes from every participant?,"The greatest disadvantage of the two-phase commit protocol is that it is a blocking protocol [1]. If the coordinator fails permanently, participants that have already sent an agreement message will remain blocked until they receive a commit or rollback [1].","They each write an entry to their undo log and an entry to their redo log.
 
 - Each participant replies with:
 
@@ -614,9 +629,7 @@ Disadvantages
 - If the coordinator fails permanently, some participants will never resolve their transactions: After a participant has sent an agreement message as a response to the commit-request message from the coordinator, it will block until a commit or rollback is received.
 
 - A two-phase commit protocol cannot dependably recover from a failure of both the coordinator and a cohort member during the commit phase. If only the coordinator had failed, and no cohort members had received a commit message, it could safely be inferred that no commit had happened.",,
-q20,"Which paper first proposed the transformer architecture, and in what year?","The original version of the transformer architecture was proposed in the 2017 paper titled ""Attention Is All You Need"" [1][6].","Transformer (deep learning)
-
-Part of a series on
+q20,"Which paper first proposed the transformer architecture, and in what year?","The original version of the transformer architecture was proposed in the 2017 paper titled ""Attention Is All You Need"" by researchers at Google [1].","Transformer (deep learning)
 
 Machine learning and data mining
 
@@ -630,20 +643,8 @@ History
 
 Predecessors
 
-Before transformers, recurrent neural networks (RNNs) were widely used for sequence modelling and generation. A well-cited early example was the Elman network (1990). In theory, the information from one token can propagate arbitrarily far down the sequence, but in practice the vanishing-gradient problem leaves the model's state at the end of a long sentence without precise, extractable information about preceding tokens.
----
-The new model was a seq2seq model where the encoder and the decoder were both 8 layers of bidirectional LSTM. It took nine months to develop, and it outperformed the statistical approach, which took ten years to develop.
-
-Parallelizing attention
-
-Seq2seq models with attention (including self-attention) still suffered from the same issue with recurrent networks, which is that they are hard to parallelize, which prevented them from being accelerated on GPUs. In 2016, decomposable attention applied a self-attention mechanism to feedforward networks, which are easy to parallelize, and achieved state-of-the-art (SOTA) results in textual entailment with an order of magnitude fewer parameters than LSTMs. One of its authors, Jakob Uszkoreit, suspected that attention without recurrence would be sufficient for language translation, thus the title ""attention is All you need"". That hypothesis was against conventional wisdom at the time, and even his father Hans Uszkoreit, a well-known computational linguist, was skeptical. In the same year, self-attention (called intra-attention or intra-sentence attention) was proposed for LSTMs.
-
-On 2017-06-12, the original (100M-parameter) encoder–decoder transformer model was published in the ""Attention is All you need"" paper. At the time, the focus of the research was on improving seq2seq for machine translation, by removing its recurrence to process all tokens in parallel, but preserving its dot-product attention mechanism to keep its text processing performance. This led to the introduction of a multi-head attention model that was easier to parallelize due to the use of independent heads and the lack of recurrence. Its parallelizability was an important factor to its widespread use in large neural networks.
-
-AI boom era
-
-In spring 2017, before the ""Attention is All you need"" preprint was published, one of the co-authors applied the ""decoder-only"" variation of the architecture to generate fictitious Wikipedia articles. Transformer architecture is now used alongside many generative models that contribute to the ongoing AI boom.",,
-q22,What is Bahdanau-style attention also called?,Bahdanau-style attention is also referred to as additive attention [1][2].,"I | love | you
+Before transformers, recurrent neural networks (RNNs) were widely used for sequence modelling and generation. A well-cited early example was the Elman network (1990). In theory, the information from one token can propagate arbitrarily far down the sequence, but in practice the vanishing-gradient problem leaves the model's state at the end of a long sentence without precise, extractable information about preceding tokens.",,
+q22,What is Bahdanau-style attention also called?,Bahdanau-style attention is also referred to as additive attention [2].,"I | love | you
 
 je | 0.94 | 0.02 | 0.04
 
@@ -675,35 +676,7 @@ These variants recombine the encoder-side inputs to redistribute those effects t
 
 Legend
 
-Label | Description
----
-Similar properties hold for multi-head attention, which is defined below.
-
-Masked attention
-
-When QKV attention is used as a building block for an autoregressive decoder, and when at training time all input and output matrices have rows, a masked attention variant is used: where the mask, is a strictly upper triangular matrix, with zeros on and below the diagonal and in every element above the diagonal. The softmax output, in is then lower triangular, with zeros in all elements above the diagonal. The masking ensures that for all , row of the attention output is independent of row of any of the three input matrices. The permutation invariance and equivariance properties of standard QKV attention do not hold for the masked variant.
-
-Multi-head attention
-
-Multi-head attention where each head is computed with QKV attention as: and , and are parameter matrices.
-
-The permutation properties of (standard, unmasked) QKV attention apply here also. For permutation matrices, : from which we also see that multi-head self-attention: is equivariant with respect to re-ordering of the rows of input matrix .
-
-Bahdanau (additive) attention
-
-where and are learnable weight matrices.
-
-Luong attention (general)
-
-where is a learnable weight matrix.
-
-Self-attention
-
-Self-attention is essentially the same as cross-attention, except that query, key, and value vectors all come from the same model. Both encoder and decoder can use self-attention, but with subtle differences.
-
-For encoder self-attention, we can start with a simple encoder without self-attention, such as an ""embedding layer"", which simply converts each input word into a vector by a fixed lookup table. This gives a sequence of hidden vectors . These can then be applied to a dot-product attention mechanism, to obtainor more succinctly, . This can be applied repeatedly, to obtain a multilayered encoder. This is the ""encoder self-attention"", sometimes called the ""all-to-all attention"", as the vector at every position can attend to every other.
-
-Masking",,
+Label | Description",,
 q23,What is Luong-style attention known as?,Luong-style attention is known as multiplicative attention [1].,"I | love | you
 
 je | 0.94 | 0.02 | 0.04
@@ -737,9 +710,7 @@ These variants recombine the encoder-side inputs to redistribute those effects t
 Legend
 
 Label | Description",,
-q24,What two model architectures can Word2Vec use?,"Word2Vec can use either of the following two model architectures:
-- Continuous bag of words (CBOW) [1]
-- Continuously sliding skip-gram [1]","Word2Vec
+q24,What two model architectures can Word2Vec use?,Word2Vec can use either the continuous bag of words (CBOW) architecture or the continuously sliding skip-gram architecture [1].,"Word2Vec
 
 In natural language processing, Word2Vec is a technique for obtaining vector representations of words as word embeddings. These vectors capture information about the meaning of a word based on its surrounding words in a piece of text, following the principles of distributional semantics. Once trained, the model can be used to find words with similar meanings or usage, while its embeddings can serve as inputs to systems for search and classification.
 
@@ -769,10 +740,10 @@ Word2Vec can use either of two model architectures to produce these distributed 
 The CBOW can be viewed as a ""fill in the blank"" task, where the word embedding represents the way the word influences the relative probabilities of other words in the context window. Words which are semantically similar should influence these probabilities in similar ways, because semantically similar words should be used in similar contexts. The order of context words does not influence prediction (bag of words assumption).
 
 In the continuous skip-gram architecture, the model uses the current word to predict the surrounding window of context words. The skip-gram architecture weighs nearby context words more heavily than more distant context words.",,
-q26,What two objectives is BERT trained with?,"BERT is trained with the following two objectives:
+q26,What two objectives is BERT trained with?,"BERT is trained with two simultaneous objectives:
 
-- Masked language modeling (MLM) [2]
-- Next sentence prediction (NSP) [2]","The notation for encoder stack is written as L/H. For example, BERTBASE is written as 12L/768H, BERTLARGE as 24L/1024H, and BERTTINY as 2L/128H.
+- Masked language modeling (MLM): The model ingests a sequence of words where one random word may be changed or ""masked,"" and it must predict the original word [2].
+- Next sentence prediction (NSP): The model is trained to predict whether one sentence logically follows another in the training corpus [2][5].","The notation for encoder stack is written as L/H. For example, BERTBASE is written as 12L/768H, BERTLARGE as 24L/1024H, and BERTTINY as 2L/128H.
 
 Training
 
@@ -794,8 +765,30 @@ In masked language modeling, 15% of tokens would be randomly selected for masked
 
 - not replaced with probability 10%.
 
-The reason not all selected tokens are masked is to avoid the dataset shift problem. The dataset shift problem arises when the distribution of inputs seen during training differs significantly from the distribution encountered during inference. A trained BERT model might be applied to word representation (like Word2Vec), where it would be run over sentences not containing any [MASK] tokens. It is later found that more diverse training objectives are generally better.",,
-q27,When did Google AI release its bidirectional encoder language model?,Google AI introduced and released the bidirectional encoder representations from transformers (BERT) language model in October 2018 [1].,"BERT (language model)
+The reason not all selected tokens are masked is to avoid the dataset shift problem. The dataset shift problem arises when the distribution of inputs seen during training differs significantly from the distribution encountered during inference. A trained BERT model might be applied to word representation (like Word2Vec), where it would be run over sentences not containing any [MASK] tokens. It is later found that more diverse training objectives are generally better.
+---
+A trained BERT model might be applied to word representation (like Word2Vec), where it would be run over sentences not containing any [MASK] tokens. It is later found that more diverse training objectives are generally better.
+
+As an illustrative example, consider the sentence ""my dog is cute"". It would first be divided into tokens like ""my1 dog2 is3 cute4"". Then a random token in the sentence would be picked. Let it be the 4th one ""cute4"". Next, there would be three possibilities:
+
+- with probability 80%, the chosen token is masked, resulting in ""my1 dog2 is3 [MASK]4"";
+
+- with probability 10%, the chosen token is replaced by a uniformly sampled random token, such as ""happy"", resulting in ""my1 dog2 is3 happy4"";
+
+- with probability 10%, nothing is done, resulting in ""my1 dog2 is3 cute4"".
+
+After processing the input text, the model's 4th output vector is passed to its decoder layer, which outputs a probability distribution over its 30,000-dimensional vocabulary space.
+
+Next sentence prediction
+
+Given two sentences, the model predicts if they appear sequentially in the training corpus, outputting either [IsNext] or [NotNext]. During training, the algorithm sometimes samples two sentences from a single continuous span in the training corpus, while at other times, it samples two sentences from two discontinuous spans.
+
+The first sentence starts with a special token, [CLS] (for ""classify""). The two sentences are separated by another special token, [SEP] (for ""separate""). After processing the two sentences, the final vector for the [CLS] token is passed to a linear layer for binary classification into [IsNext] and [NotNext].
+
+For example:
+
+- Given ""[CLS] my dog is cute [SEP] he likes playing [SEP]"", the model should predict [IsNext].",,
+q27,When did Google AI release its bidirectional encoder language model?,Google AI released the bidirectional encoder representations from transformers (BERT) language model in October 2018 [1].,"BERT (language model)
 
 Bidirectional encoder representations from transformers (BERT)
 
@@ -826,7 +819,7 @@ BERT is an ""encoder-only"" transformer architecture. At a high level, BERT cons
 - Embedding: This module converts the sequence of tokens into an array of real-valued vectors representing the tokens. It represents the conversion of discrete token types into a lower-dimensional Euclidean space.
 
 - Encoder: a stack of Transformer blocks with self-attention, but without causal masking.",,
-q28,How does letting a chatbot look up documents before answering help with made-up answers?,"Blending the LLM process with document look-up processes helps large language models stick to the facts, which reduces AI hallucinations such as chatbots describing non-existent policies [1].","Retrieval-augmented generation
+q28,How does letting a chatbot look up documents before answering help with made-up answers?,"Letting a chatbot look up documents before answering helps it stick to the facts, which reduces AI hallucinations where chatbots might otherwise describe policies that do not exist or recommend nonexistent legal cases [1].","Retrieval-augmented generation
 
 Retrieval-augmented generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external data sources. With RAG, LLMs first refer to a specified set of documents, then respond to user queries. These documents supplement information from the LLM's pre-existing training data. This allows LLMs to use domain-specific and/or updated information that is not available in the training data. For example, this enables LLM-based chatbots to access internal company data or generate responses based on authoritative sources. The technique was first proposed in 2020 and has since become a widely adopted approach in modern AI systems.
 
@@ -839,7 +832,7 @@ The term retrieval-augmented generation (RAG) was introduced in a 2020 paper tha
 RAG and LLM limitations
 
 LLMs can provide incorrect information. For example, when Google first demonstrated its LLM tool ""Bard"" (later re-branded to Google Gemini), the LLM provided incorrect information about the James Webb Space Telescope.",,
-q29,How does TCP CUBIC grow its congestion window?,"TCP CUBIC grows its congestion window as a cubic function of time since the last congestion event, with the inflection point set to the window prior to the event [1].","Hybla improvements are based on analytical evaluation of the congestion window dynamics.
+q29,How does TCP CUBIC grow its congestion window?,"TCP CUBIC grows its congestion window as a cubic function of time since the last congestion event, with the inflection point set to the window prior to that event [1].","Hybla improvements are based on analytical evaluation of the congestion window dynamics.
 
 TCP BIC
 
@@ -856,7 +849,7 @@ Agile-SD is a Linux-based CCA that is designed for the real Linux kernel. It is 
 TCP Westwood+
 
 Westwood+ is a sender-only modification of TCP Reno that optimizes the performance of TCP congestion control over both wired and wireless networks. TCP Westwood+ is based on end-to-end bandwidth estimation to set the congestion window and slow-start threshold after a congestion episode, that is, after three duplicate acknowledgments or a timeout. The bandwidth is estimated by averaging the rate of returning acknowledgment packets. In contrast with TCP Reno, which blindly halves the congestion window after three duplicate ACKs, TCP Westwood+ adaptively sets a slow-start threshold and a congestion window that takes into account an estimate of bandwidth available at the time congestion is experienced.",,
-q30,Which Linux kernel versions used BIC as the default congestion control?,BIC was used by default in Linux kernels 2.6.8 through 2.6.18 [1][3].,"Hybla improvements are based on analytical evaluation of the congestion window dynamics.
+q30,Which Linux kernel versions used BIC as the default congestion control?,BIC was used by default in Linux kernels version 2.6.8 through 2.6.18 [1][4].,"Hybla improvements are based on analytical evaluation of the congestion window dynamics.
 
 TCP BIC
 
@@ -917,7 +910,7 @@ Linux usage
 - CUBIC is used by default in Linux kernels since version 2.6.19. (November 2006)
 
 - PRR is incorporated in Linux kernels to improve loss recovery since version 3.2. (January 2012)",,
-q31,How does the second major version of the web's transfer protocol avoid head-of-line blocking between requests?,HTTP/2 (the second major version of the protocol) avoids HTTP-transaction-level head-of-line blocking by allowing multiple concurrent HTTP transactions to be multiplexed over a single TCP connection [1][3].,"RFC7258/BCP188 mandates that pervasive monitoring be considered as an attack, and protocols designed by IETF should take steps to protect against passive monitoring (for example, through the use of opportunistic encryption). A number of specifications for opportunistic encryption of HTTP/2 have been provided, of which draft-nottingham-http2-encryption was adopted as an official work item of the working group, leading to the publication of RFC 8164 in May 2017.
+q31,How does the second major version of the web's transfer protocol avoid head-of-line blocking between requests?,HTTP/2 avoids HTTP-transaction-level head-of-line blocking by allowing multiple concurrent HTTP transactions to be multiplexed over a single TCP connection [1][3].,"RFC7258/BCP188 mandates that pervasive monitoring be considered as an attack, and protocols designed by IETF should take steps to protect against passive monitoring (for example, through the use of opportunistic encryption). A number of specifications for opportunistic encryption of HTTP/2 have been provided, of which draft-nottingham-http2-encryption was adopted as an official work item of the working group, leading to the publication of RFC 8164 in May 2017.
 
 TCP head-of-line blocking
 
@@ -982,7 +975,7 @@ Differences from HTTP/1.1
 The changes do not require any changes to how existing web applications work, but new applications can take advantage of new features for increased speed. HTTP/2 leaves all of HTTP/1.1's high-level semantics, such as methods, status codes, header fields, and URIs, the same. What is new is how the data is framed and transported between the client and the server.
 
 Websites that are efficient minimize the number of requests required to render an entire page by minifying (reducing the amount of code and packing smaller pieces of code into bundles, without reducing its ability to function) resources such as images and scripts. However, minification is not necessarily convenient nor efficient and may still require separate HTTP connections to get the page and the minified resources. HTTP/2 allows the server to ""push"" content, that is, to respond with data for more queries than the client requested.",,
-q32,"Who invented automatic reclamation of unused memory, and for which programming language?",Garbage collection was invented by American computer scientist John McCarthy around 1959 for Lisp [1].,"Garbage collection (computer science)
+q32,"Who invented automatic reclamation of unused memory, and for which programming language?",Garbage collection was invented by American computer scientist John McCarthy around 1959 for the Lisp programming language [1].,"Garbage collection (computer science)
 
 In computer science, garbage collection (GC) is a form of automatic memory management. The garbage collector attempts to reclaim memory that was allocated by the program, but is no longer referenced; such memory is called garbage. Garbage collection was invented by American computer scientist John McCarthy around 1959 to simplify manual memory management in Lisp.
 
@@ -995,7 +988,7 @@ Overview
 Many programming languages require garbage collection, either as part of the language specification (e.g., RPL, Java, C#, D, Go, and most scripting languages) or effectively for practical implementation (e.g., formal languages like lambda calculus). These are said to be garbage-collected languages. Other languages, such as C and C++, were designed for use with manual memory management, but have garbage-collected implementations available. Some languages, like Ada, Modula-3, and C++/CLI, allow both garbage collection and manual memory management to co-exist in the same application by using separate heaps for collected and manually managed objects. Still others, like D, are garbage-collected but allow the user to manually delete objects or even disable garbage collection entirely when speed is required.
 
 Although many languages integrate GC into their compiler and runtime system, post-hoc GC systems also exist, such as Automatic Reference Counting (ARC).",,
-q33,Why can counting references fail to free two objects that point at each other?,"If two or more objects refer to each other, they can create a cycle where their mutual references prevent their reference counts from ever reaching zero, meaning neither will be collected [1][2].","There are a number of disadvantages to reference counting; this can generally be solved or mitigated by more sophisticated algorithms:
+q33,Why can counting references fail to free two objects that point at each other?,"Two or more objects that refer to each other create a cycle, which prevents their reference counts from ever reaching zero so that neither object will be collected [1][2].","There are a number of disadvantages to reference counting; this can generally be solved or mitigated by more sophisticated algorithms:
 
 - Cycles
 
@@ -1026,7 +1019,7 @@ There are a number of disadvantages to reference counting; this can generally be
 - Cycles
 
 - If two or more objects refer to each other, they can create a cycle whereby neither will be collected as their mutual references never let their reference counts become zero.",,
-q34,In what year did the Dutch computer scientist come up with his shortest-path algorithm?,The Dutch computer scientist conceived of his shortest-path algorithm in 1956 [1][2][4].,"Frana, Communications of the ACM, 2001
+q34,In what year did the Dutch computer scientist come up with his shortest-path algorithm?,Edsger Dijkstra conceived the shortest-path algorithm in 1956 [1][2]. He designed it while sitting on a café terrace in Amsterdam with his fiancée [4].,"Frana, Communications of the ACM, 2001
 
 Dijkstra thought about the shortest path problem while working as a programmer at the Mathematical Center in Amsterdam in 1956. He wanted to demonstrate the capabilities of the new ARMAC computer. His objective was to choose a problem and a computer solution that non-computing people could understand. He designed the shortest path algorithm and later implemented it for ARMAC for a slightly simplified transportation map of 64 cities in the Netherlands (he limited it to 64, so that 6 bits would be sufficient to encode the city number). A year later, he came across another problem advanced by hardware engineers working on the institute's next computer: minimize the amount of wire needed to connect the pins on the machine's back panel. As a solution, he re-discovered Prim's minimal spanning tree algorithm (known earlier to Jarník, and also rediscovered by Prim). Dijkstra published the algorithm in 1959, two years after Prim and 29 years after Jarník.
 
@@ -1069,7 +1062,7 @@ What is the shortest way to travel from Rotterdam to Groningen, in general: from
 — Edsger Dijkstra, in an interview with Philip L. Frana, Communications of the ACM, 2001
 
 Dijkstra thought about the shortest path problem while working as a programmer at the Mathematical Center in Amsterdam in 1956. He wanted to demonstrate the capabilities of the new ARMAC computer. His objective was to choose a problem and a computer solution that non-computing people could understand.",,
-q35,What data structure is Dijkstra's algorithm usually implemented with?,- Dijkstra's algorithm is usually used with a priority queue or heap for optimization [1].,"Dijkstra's algorithm
+q35,What data structure is Dijkstra's algorithm usually implemented with?,Dijkstra's algorithm is usually used with a priority queue or a heap for optimization [1].,"Dijkstra's algorithm
 
 Dijkstra's algorithm
 
@@ -1086,7 +1079,7 @@ Dijkstra's algorithm finds the shortest path from a given source node to every o
 The algorithm uses a min-priority queue data structure for selecting the shortest paths known so far. Before more advanced priority queue structures were discovered, Dijkstra's original algorithm ran in time, where is the number of nodes. Fredman & Tarjan 1984 proposed a Fibonacci heap priority queue to optimize the running time complexity to , where is the number of edges. This is asymptotically the fastest known single-source shortest-path algorithm for arbitrary directed graphs with unbounded non-negative weights. However, specialized cases (such as bounded/integer weights, directed acyclic graphs etc.) can be improved further. If preprocessing is allowed, algorithms such as contraction hierarchies can be up to seven orders of magnitude faster.
 
 Dijkstra's algorithm is commonly used on graphs where the edge weights are positive integers or real numbers.",,
-q36,"In asymmetric cryptography, what does each key pair consist of?",Each key pair consists of a public key and a corresponding private key [1].,"Public-key cryptography
+q36,"In asymmetric cryptography, what does each key pair consist of?","In asymmetric cryptography, each key pair consists of a public key and a corresponding private key [1].","Public-key cryptography
 
 Public-key cryptography, or asymmetric cryptography, is the field of cryptographic systems that use pairs of related keys. Each key pair consists of a public key and a corresponding private key. Key pairs are generated with algorithms based on mathematical problems termed one-way functions. Security of public-key cryptography depends on keeping the private key secret; the public key can be openly distributed without compromising security. There are many kinds of public-key cryptosystems, with different security goals, including digital signature, Diffie–Hellman key exchange, public-key key encapsulation, and public-key encryption.
 
