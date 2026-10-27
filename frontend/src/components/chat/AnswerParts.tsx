@@ -7,6 +7,7 @@ import { useId, useState } from "react";
 import { displayNumbers, renumber } from "@/components/AnswerText";
 import { SourceIcon } from "@/components/ItemBits";
 import { ListenButton } from "@/components/Listen";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -30,7 +31,7 @@ export function Thinking({ searching, status }: { searching: boolean; status?: s
   );
 }
 
-export function NotFound({ searchedWeb = false }: { searchedWeb?: boolean }) {
+export function NotFound({ searchedWeb = false, onSearchWeb }: { searchedWeb?: boolean; onSearchWeb?: () => void }) {
   return (
     <div className="flex gap-4 rounded-xl border bg-card shadow-xs p-5">
       <FileQuestion className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
@@ -46,6 +47,11 @@ export function NotFound({ searchedWeb = false }: { searchedWeb?: boolean }) {
           </Link>{" "}
           that covers it.
         </p>
+        {!searchedWeb && onSearchWeb && (
+          <Button size="sm" variant="outline" className="mt-3" onClick={onSearchWeb}>
+            <Globe /> Search the web instead
+          </Button>
+        )}
       </div>
     </div>
   );

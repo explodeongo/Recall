@@ -59,11 +59,13 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
     if (last?.context) setPinned({ items: last.context.items, tags: last.context.tags });
   }, [chat.data]);
 
+  // `from` overrides where this one answer may come from, e.g. the web after the library had
+  // nothing; the chosen default stays as it is.
   const ask = useCallback(
-    async (raw: string) => {
+    async (raw: string, from?: AnswerSource) => {
       const question = raw.trim();
       if (!question || busy) return;
-      const context: MessageContext = { ...pinned, source };
+      const context: MessageContext = { ...pinned, source: from ?? source };
       setPending({ question, context, query: null, sources: null, text: "", error: null, status: null });
 
       let id = chatId;
@@ -194,6 +196,7 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
                   key={question.id}
                   // Follow-ups only under the latest answer, and not while another is coming.
                   onAsk={i === all.length - 1 && !pending ? ask : undefined}
+                  onSearchWeb={i === all.length - 1 && !pending ? (q) => ask(q, "web") : undefined}
                   chatId={chatId}
                   question={question.content}
                   context={question.context ?? null}
@@ -287,8 +290,11 @@ function Exchange({
   searchQuery,
   answer,
   onAsk,
+  onSearchWeb,
 }: {
   onAsk?: (q: string) => void;
+  /** Ask the same question of the web, offered when the library had nothing. */
+  onSearchWeb?: (q: string) => void;
   chatId: number | null;
   question: string;
   context: MessageContext | null;
@@ -302,7 +308,7 @@ function Exchange({
     <section className="space-y-4">
       <Question text={question} context={context} searchQuery={searchQuery} />
       {answer.not_found ? (
-        <NotFound searchedWeb={answer.content.includes("web")} />
+        <NotFound searchedWeb={answer.content.includes("web")} onSearchWeb={onSearchWeb && (() => onSearchWeb(question))} />
       ) : (
         <>
           {fromWeb && context?.source !== "web" && <FromTheWeb partly={cited.some((s) => s.kind !== "web")} />}

@@ -196,9 +196,11 @@ export function SourceSwitch({ value, onChange }: { value: AnswerSource; onChang
   );
 }
 
-/** The answer source, remembered per browser (the older on/off web switch carries over). */
+/** The answer source, remembered per browser (the older on/off web switch carries over).
+ * Your library unless chosen otherwise: answers cited from what you saved are the point, and
+ * a question the library can't answer offers the web from there. */
 export function useAnswerSource(): [AnswerSource, (s: AnswerSource) => void] {
-  const [source, setSource] = useState<AnswerSource>("both");
+  const [source, setSource] = useState<AnswerSource>("library");
   useEffect(() => {
     try {
       const saved = localStorage.getItem("recall-source");
