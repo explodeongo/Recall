@@ -215,6 +215,7 @@ class ChatSummary(BaseModel):
     item_title: str | None
     message_count: int
     updated_at: datetime
+    match: str | None = None  # with a search: the line it was found in, if not just the title
 
 
 class ChatOut(BaseModel):

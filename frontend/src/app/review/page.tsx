@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Check, Flame, Layers, X } from "lucide-react";
+import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowUpRight, BookOpen, Check, Flame, Layers, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
@@ -17,6 +17,20 @@ const GRADES: { grade: Grade; label: string; key: string; tone: string }[] = [
   { grade: "good", label: "Good", key: "3", tone: "hover:border-emerald-400/60 hover:bg-emerald-500/5" },
   { grade: "easy", label: "Easy", key: "4", tone: "hover:border-sky-400/60 hover:bg-sky-500/5" },
 ];
+
+const STAGE_ORDER: CardStage[] = ["new", "learning", "practiced", "confident", "mastered"];
+
+/** The server's short intervals ("10m", "3d", "2mo") in words: "10 min", "3 days", "2 months". */
+function inWords(short: string) {
+  const m = /^([\d.]+)(mo|m|h|d|y)$/.exec(short);
+  if (!m) return short;
+  const one = Number(m[1]) === 1;
+  const unit = { m: "min", h: one ? "hour" : "hours", d: one ? "day" : "days", mo: one ? "month" : "months", y: one ? "year" : "years" }[m[2]];
+  return `${m[1]} ${unit}`;
+}
+
+/** One answer in this session: a card missed comes back, so it can appear more than once. */
+type Answered = { card: DueCard; grade: Grade };
 
 const STAGES: Record<CardStage, { label: string; className: string }> = {
   new: { label: "New", className: "bg-brand-soft text-brand" },
@@ -55,13 +69,15 @@ function Review() {
               <Flame className={cn("size-4", stats.data.streak_days ? "text-orange-500" : "text-muted-foreground")} aria-hidden />
               <dt className="sr-only">Streak</dt>
               <dd className="tabular-nums">
-                {stats.data.streak_days} {stats.data.streak_days === 1 ? "day" : "days"}
+                {stats.data.streak_days}-day streak
               </dd>
             </div>
             <div className="flex items-center gap-1.5">
               <Layers className="size-4 text-muted-foreground" aria-hidden />
               <dt className="sr-only">Reviewed today</dt>
-              <dd className="tabular-nums">{stats.data.reviewed_today} today</dd>
+              <dd className="tabular-nums">
+                {stats.data.reviewed_today} {stats.data.reviewed_today === 1 ? "review" : "reviews"} today
+              </dd>
             </div>
           </dl>
         )}
@@ -87,13 +103,20 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
   // For choice questions: the option picked. Picking reveals the answer.
   const [picked, setPicked] = useState<string | null>(null);
   const [done, setDone] = useState(0);
+  // What happened, for the recap at the end: each answer, and each card's stage afterwards.
+  const [log, setLog] = useState<Answered[]>([]);
+  const [stageNow, setStageNow] = useState<Record<number, CardStage>>({});
   const card = queue[0];
   const choice = !!card?.options?.length && card.kind !== "flashcard";
   const correct = picked !== null && picked === card?.answer;
 
   const review = useMutation({
+    mutationKey: ["review-card"],
     mutationFn: ({ id, grade }: { id: number; grade: Grade }) => api.reviewCard(id, grade),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["review-stats"] }),
+    onSuccess: (updated) => {
+      setStageNow((s) => ({ ...s, [updated.id]: updated.stage }));
+      queryClient.invalidateQueries({ queryKey: ["review-stats"] });
+    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -101,6 +124,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
     (g: Grade) => {
       if (!card || !revealed) return;
       review.mutate({ id: card.id, grade: g });
+      setLog((l) => [...l, { card, grade: g }]);
       setRevealed(false);
       setPicked(null);
       setDone((n) => n + 1);
@@ -145,7 +169,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
   }, [revealed, card, grade, choice, pick, next]);
 
   if (!card) {
-    return <AllDone reviewed={done} hasCards={(totalCards ?? cards.length) > 0} nextDue={nextDue} />;
+    return <AllDone log={log} stageNow={stageNow} hasCards={(totalCards ?? cards.length) > 0} nextDue={nextDue} />;
   }
 
   const total = done + queue.length;
@@ -226,7 +250,7 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
 
       {revealed && choice && (
         <Button className="w-full animate-enter" size="lg" onClick={next} autoFocus>
-          Next <span className="ml-1 text-xs opacity-70">· back in {card.next[correct ? "good" : "again"]}</span>
+          Next <span className="ml-1 text-xs opacity-70">· back in {inWords(card.next[correct ? "good" : "again"])}</span>
           <kbd className="ml-2 rounded pointer-coarse:hidden border border-current/20 px-1.5 font-sans text-[11px] opacity-70">Enter</kbd>
         </Button>
       )}
@@ -237,15 +261,17 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
             <button
               key={g}
               onClick={() => grade(g)}
+              aria-keyshortcuts={key}
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-xl border bg-card shadow-xs px-3 py-3 text-sm font-medium transition-[background-color,border-color,transform] duration-150 active:scale-[0.97]",
+                "relative flex flex-col items-center gap-0.5 rounded-xl border bg-card shadow-xs px-3 py-3 text-sm font-medium transition-[background-color,border-color,transform] duration-150 active:scale-[0.97]",
                 tone,
               )}
             >
               {label}
-              <span className="text-xs font-normal text-muted-foreground tabular-nums">
-                {card.next[g]} · {key}
-              </span>
+              <span className="text-xs font-normal text-muted-foreground tabular-nums">back in {inWords(card.next[g])}</span>
+              <kbd className="absolute top-1.5 right-1.5 rounded border bg-muted px-1 font-sans text-[10px] leading-4 font-normal text-muted-foreground pointer-coarse:hidden" aria-hidden>
+                {key}
+              </kbd>
             </button>
           ))}
         </div>
@@ -254,7 +280,19 @@ function Session({ cards, totalCards, nextDue }: { cards: DueCard[]; totalCards:
   );
 }
 
-function AllDone({ reviewed, hasCards, nextDue }: { reviewed: number; hasCards: boolean; nextDue: string | null }) {
+function AllDone({
+  log,
+  stageNow,
+  hasCards,
+  nextDue,
+}: {
+  log: Answered[];
+  stageNow: Record<number, CardStage>;
+  hasCards: boolean;
+  nextDue: string | null;
+}) {
+  // The last answers may still be on their way; stages are only told once they've all landed.
+  const saving = useIsMutating({ mutationKey: ["review-card"] }) > 0;
   if (!hasCards) {
     return (
       <div className="rounded-2xl border border-dashed p-8 text-center">
@@ -270,17 +308,100 @@ function AllDone({ reviewed, hasCards, nextDue }: { reviewed: number; hasCards: 
       </div>
     );
   }
+  if (!log.length) {
+    return (
+      <div className="animate-enter rounded-2xl border bg-card shadow-xs p-8 text-center">
+        <p className="font-heading text-2xl">All caught up</p>
+        {nextDue && <p className="mt-2 text-sm text-muted-foreground">The next card is due {dueIn(nextDue)}.</p>}
+        <Link href="/" className={buttonVariants({ variant: "outline", className: "mt-5" })}>
+          Back to the library
+        </Link>
+      </div>
+    );
+  }
+
+  // Each card once, judged by its first answer: anything but "again" means it was remembered.
+  const first = new Map<number, Answered>();
+  for (const a of log) if (!first.has(a.card.id)) first.set(a.card.id, a);
+  const cards = [...first.values()];
+  const missed = cards.filter((a) => a.grade === "again");
+  const rose = cards.filter((a) => {
+    const now = stageNow[a.card.id];
+    return now && STAGE_ORDER.indexOf(now) > STAGE_ORDER.indexOf(a.card.stage);
+  });
+  const byStage = STAGE_ORDER.map((st) => ({ st, n: rose.filter((a) => stageNow[a.card.id] === st).length })).filter((x) => x.n);
+  const docs = new Map<number, { title: string; n: number }>();
+  for (const a of cards) docs.set(a.card.item_id, { title: a.card.item_title, n: (docs.get(a.card.item_id)?.n ?? 0) + 1 });
+
   return (
-    <div className="animate-enter rounded-2xl border bg-card shadow-xs p-8 text-center">
-      <p className="font-heading text-2xl">{reviewed ? "Done for now" : "All caught up"}</p>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {reviewed ? `You reviewed ${reviewed} ${reviewed === 1 ? "card" : "cards"}. ` : ""}
-        {nextDue ? `The next card is due ${dueIn(nextDue)}.` : ""}
-      </p>
-      <Link href="/" className={buttonVariants({ variant: "outline", className: "mt-5" })}>
-        Back to the library
-      </Link>
-    </div>
+    <section aria-labelledby="recap-title" className="animate-enter space-y-6 rounded-2xl border bg-card p-6 shadow-xs sm:p-8">
+      <header className="text-center">
+        <p id="recap-title" className="font-heading text-3xl">
+          Done for now
+        </p>
+        <p className="mt-2 text-muted-foreground">
+          {cards.length} {cards.length === 1 ? "card" : "cards"},{" "}
+          {missed.length === 0
+            ? "every one remembered on the first try."
+            : `${cards.length - missed.length} remembered on the first try, ${missed.length} after another go.`}
+        </p>
+      </header>
+
+      {!saving && byStage.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Stronger now</h2>
+          <ul className="flex flex-wrap gap-1.5">
+            {byStage.map(({ st, n }) => (
+              <li key={st} className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium", STAGES[st].className)}>
+                <ArrowUpRight className="size-3.5" aria-hidden />
+                {n} to {STAGES[st].label.toLowerCase()}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {missed.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Worth another read</h2>
+          <ul className="divide-y rounded-xl border">
+            {missed.slice(0, 5).map(({ card }) => (
+              <li key={card.id} className="px-4 py-3">
+                <p className="text-[15px] leading-snug">{card.question}</p>
+                <Link
+                  href={card.start_char !== null && card.end_char !== null ? `/items/${card.item_id}?from=${card.start_char}&to=${card.end_char}` : `/items/${card.item_id}`}
+                  className="mt-1 inline-flex max-w-full items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  <BookOpen className="size-3.5 shrink-0" aria-hidden />
+                  <span className="truncate">{card.start_char !== null ? `See it in ${card.item_title}` : card.item_title}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">From</h2>
+        <ul className="flex flex-wrap gap-1.5">
+          {[...docs.entries()].map(([id, d]) => (
+            <li key={id} className="min-w-0 max-w-full">
+              <Link href={`/items/${id}`} className="inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors duration-150 hover:border-brand/40 hover:bg-brand-soft/40">
+                <span className="truncate">{d.title}</span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{d.n}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-5">
+        <p className="text-sm text-muted-foreground">{nextDue ? `The next card is due ${dueIn(nextDue)}.` : "Nothing else is scheduled yet."}</p>
+        <Link href="/" className={buttonVariants({ variant: "outline" })}>
+          Back to the library
+        </Link>
+      </footer>
+    </section>
   );
 }
 

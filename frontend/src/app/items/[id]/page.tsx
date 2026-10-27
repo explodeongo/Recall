@@ -68,7 +68,18 @@ function ItemView() {
   const opened = useRef(false);
   const title = item.data?.title;
   useEffect(() => {
-    if (title) document.title = `${title} · Recall`;
+    if (!title) return;
+    const want = `${title} · Recall`;
+    const keep = () => {
+      if (document.title !== want) document.title = want;
+    };
+    keep();
+    // Next writes the default title back when the page re-renders (a tag change, say), so
+    // put the item's name back whenever that happens. Its <title> is streamed into the body,
+    // not the head, so the whole document is watched; the check is a string comparison.
+    const observer = new MutationObserver(keep);
+    observer.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
+    return () => observer.disconnect();
   }, [title]);
   useEffect(() => {
     if (opened.current || !item.data || item.data.status !== "ready") return;
@@ -442,7 +453,16 @@ function TagEditor({ item }: { item: Item }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5 pt-2" aria-label="Tags">
       {item.tags.map((t) => (
-        <TagChip key={t.name} tag={t} href={`/?tags=${encodeURIComponent(t.name)}`} onRemove={() => save.mutate(names.filter((n) => n !== t.name))} />
+        <TagChip
+          key={t.name}
+          tag={t}
+          href={`/?tags=${encodeURIComponent(t.name)}`}
+          onRemove={() => {
+            save.mutate(names.filter((n) => n !== t.name));
+            // One click takes a tag off, so one click puts it back.
+            toast(`Removed #${t.name}`, { duration: 8000, action: { label: "Undo", onClick: () => save.mutate(names) } });
+          }}
+        />
       ))}
       <TagPicker
         item={item}
@@ -630,6 +650,7 @@ function ItemMenu({ item, onRename }: { item: Item; onRename: () => void }) {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       if (updated.archived) {
         toast.success("Archived. It's out of your main list but still searchable.", {
+          duration: 8000,
           action: { label: "Undo", onClick: () => archive.mutate(false) },
         });
       }

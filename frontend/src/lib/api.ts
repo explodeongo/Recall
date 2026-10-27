@@ -293,6 +293,8 @@ export interface ChatSummary {
   item_title: string | null;
   message_count: number;
   updated_at: string;
+  /** With a search: the line of the conversation it was found in (null when only the title matched). */
+  match?: string | null;
 }
 
 export interface ChatMessage {
@@ -446,7 +448,7 @@ export const api = {
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 
   saveAnswer: (chatId: number, messageId: number) => request<Item>(`/chats/${chatId}/messages/${messageId}/save`, { method: "POST" }),
-  chats: () => request<ChatSummary[]>("/chats"),
+  chats: (q?: string) => request<ChatSummary[]>(q ? `/chats?q=${encodeURIComponent(q)}` : "/chats"),
   chat: (id: number) => request<Chat>(`/chats/${id}`),
   createChat: (itemId?: number) => request<Chat>("/chats", json("POST", { item_id: itemId ?? null })),
   renameChat: (id: number, title: string) => request<Chat>(`/chats/${id}`, json("PATCH", { title })),

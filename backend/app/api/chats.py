@@ -25,17 +25,37 @@ NEW_CHAT = "New chat"
 
 
 @router.get("", response_model=list[ChatSummary])
-def list_chats(session: SessionDep, user: CurrentUser) -> list[ChatSummary]:
-    """Saved chats, most recently used first."""
+def list_chats(session: SessionDep, user: CurrentUser, q: str | None = None) -> list[ChatSummary]:
+    """Saved chats, most recently used first. `q` keeps the chats whose title or any question
+    or answer contains it, each with the line it was found in."""
     count = (
         select(func.count(ChatMessage.id)).where(ChatMessage.chat_id == Chat.id).scalar_subquery()
     )
-    rows = session.execute(
+    query = (
         select(Chat, count.label("message_count"), Item.title.label("item_title"))
         .outerjoin(Item, Item.id == Chat.item_id)
         .where(Chat.user_id == user.id)
         .order_by(Chat.updated_at.desc(), Chat.id.desc())
-    ).all()
+    )
+    needle = (q or "").strip()
+    like = "%" + re.sub(r"([\\%_])", r"\\\1", needle) + "%"
+    if needle:
+        query = query.where(
+            Chat.title.ilike(like, escape="\\")
+            | Chat.messages.any(ChatMessage.content.ilike(like, escape="\\"))
+        )
+    rows = session.execute(query).all()
+
+    found: dict[int, str] = {}
+    if needle and rows:
+        messages = session.execute(
+            select(ChatMessage.chat_id, ChatMessage.content)
+            .where(ChatMessage.chat_id.in_([chat.id for chat, *_ in rows]))
+            .where(ChatMessage.content.ilike(like, escape="\\"))
+            .order_by(ChatMessage.id)
+        ).all()
+        for chat_id, content in messages:
+            found.setdefault(chat_id, _excerpt(content, needle))
     return [
         ChatSummary(
             id=chat.id,
@@ -44,9 +64,21 @@ def list_chats(session: SessionDep, user: CurrentUser) -> list[ChatSummary]:
             item_title=item_title,
             message_count=message_count,
             updated_at=chat.updated_at,
+            match=found.get(chat.id),
         )
         for chat, message_count, item_title in rows
     ]
+
+
+def _excerpt(text: str, needle: str, width: int = 90) -> str:
+    """The stretch of `text` around the first place `needle` appears, on one line."""
+    flat = " ".join(CITATION.sub("", text).split())
+    at = flat.lower().find(needle.lower())
+    if at < 0:
+        return flat[:width] + ("…" if len(flat) > width else "")
+    start = max(0, at - width // 3)
+    end = min(len(flat), start + width)
+    return ("…" if start else "") + flat[start:end].strip() + ("…" if end < len(flat) else "")
 
 
 @router.post("", response_model=ChatOut, status_code=201)

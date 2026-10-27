@@ -188,3 +188,15 @@ def test_a_saved_answer_numbers_its_sources_in_the_order_it_uses_them():
     note = answer_note("Keys stay sorted [3]. Pages split [2, 3].", sources, [3, 2])
     assert note.startswith("Keys stay sorted [1]. Pages split [2, 1].")
     assert note.endswith("Sources:\n[1] Three\n[2] Two, page 4")
+
+
+def test_chats_can_be_searched_by_what_was_said(client, library, fake_llm):
+    fake_llm.answer = "A B-tree keeps keys sorted, so it serves range scans [1]."
+    found = client.post("/chats", json={}).json()["id"]
+    _ask(client, found, "which index serves range scans?")
+    client.post("/chats", json={})  # an empty chat, never matched
+
+    hits = client.get("/chats", params={"q": "keys SORTED"}).json()
+    assert [c["id"] for c in hits] == [found]
+    assert "keeps keys sorted" in hits[0]["match"] and "[1]" not in hits[0]["match"]
+    assert client.get("/chats", params={"q": "100%_"}).json() == []  # wildcards are literal

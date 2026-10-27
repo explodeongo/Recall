@@ -121,10 +121,11 @@ export function TagPicker({ item, trigger }: { item: Item; trigger: React.ReactE
   );
 }
 
-/** An item's tags as removable colored chips. */
+/** An item's tags as removable colored chips. With a mouse, the × appears on hover or focus,
+ * so it isn't hit on the way to the tag's link; on touch screens it's always there, and bigger. */
 export function TagChip({ tag, href, onRemove }: { tag: Pick<Tag, "name" | "color">; href: string; onRemove?: () => void }) {
   return (
-    <span style={tagStyle(tag.color)} className="tag-chip inline-flex animate-pop items-center rounded-full border text-xs">
+    <span style={tagStyle(tag.color)} className="group/chip tag-chip inline-flex animate-pop items-center rounded-full border text-xs">
       <Link href={href} className="py-0.5 pr-1 pl-2.5 hover:underline">
         #{tag.name}
       </Link>
@@ -133,7 +134,7 @@ export function TagChip({ tag, href, onRemove }: { tag: Pick<Tag, "name" | "colo
           type="button"
           onClick={onRemove}
           aria-label={`Remove tag ${tag.name}`}
-          className="mr-0.5 grid size-5 place-items-center rounded-full opacity-70 transition-opacity hover:opacity-100"
+          className="mr-0.5 grid size-5 place-items-center rounded-full opacity-70 transition-opacity hover:bg-foreground/10 hover:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover/chip:opacity-70 pointer-fine:group-focus-within/chip:opacity-70 pointer-fine:hover:opacity-100 pointer-fine:focus-visible:opacity-100 pointer-coarse:size-6"
         >
           <X className="size-3" />
         </button>
