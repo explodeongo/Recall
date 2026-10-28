@@ -5,6 +5,7 @@ PDF_BYTES = b"%PDF-1.4\n%fake but starts like a pdf\n"
 
 def test_health(client):
     assert client.get("/health").json() == {"status": "ok"}
+    assert client.get("/ping").json() == {"status": "ok"}
 
 
 def test_save_url_queues_a_job(client, session):

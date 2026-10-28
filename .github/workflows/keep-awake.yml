@@ -2,7 +2,8 @@ name: Keep the demo awake
 
 # Render's free API sleeps after 15 idle minutes, and waking takes up to a minute: long enough
 # for someone opening the demo link to leave. A ping every 10 minutes keeps it up; one service
-# running all month fits inside Render's 750 free hours. Set the repository variable
+# running all month fits inside Render's 750 free hours. /ping doesn't touch the database, so
+# Neon still sleeps when nobody is using the demo. Set the repository variable
 # RECALL_API_URL (Settings > Secrets and variables > Actions > Variables) to the API's address.
 
 on:
@@ -15,4 +16,4 @@ jobs:
     runs-on: ubuntu-latest
     if: vars.RECALL_API_URL != ''
     steps:
-      - run: curl --fail --silent --show-error --max-time 90 --retry 2 "${{ vars.RECALL_API_URL }}/health"
+      - run: curl --fail --silent --show-error --max-time 90 --retry 2 "${{ vars.RECALL_API_URL }}/ping"

@@ -7,7 +7,9 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /health
+    # Next to the Neon database (us-east-2): a guest's copy takes many small queries.
+    region: ohio
+    healthCheckPath: /ping
     envVars:
       - key: DATABASE_URL
         sync: false

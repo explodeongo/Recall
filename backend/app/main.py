@@ -74,6 +74,13 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/ping", tags=["meta"])
+def ping() -> dict[str, str]:
+    """Up, without touching the database: for the host's health checks and keep-awake pings,
+    so a free database that sleeps when idle (Neon) isn't kept awake by them."""
+    return {"status": "ok"}
+
+
 # Last, so the API's own routes win: /mcp for AI assistants (app/mcp_server.py), and its
 # OAuth protected-resource metadata under /.well-known.
 app.mount("/", mcp_app)
