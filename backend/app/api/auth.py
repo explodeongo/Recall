@@ -17,7 +17,7 @@ from app.schemas import (
     SignupIn,
     UserOut,
 )
-from app.services import auth, files
+from app.services import auth, files, guest
 from app.services.export import build_export
 from app.services.ratelimit import limit
 
@@ -52,13 +52,38 @@ def auth_config() -> dict:
     return {
         "signup_requires_code": bool(settings.signup_code),
         "mcp_url": settings.public_api_url.rstrip("/") + "/mcp",
+        "guest_demo": bool(settings.guest_template_email),
+        "guest_hours": settings.guest_hours,
     }
+
+
+@router.post("/guest", response_model=UserOut, status_code=201)
+def start_guest(request: Request, response: Response, session: SessionDep) -> User:
+    """Try the demo: a private copy of the demo library, signed in, for GUEST_HOURS."""
+    limit(request, "guest", per_minute=10)
+    settings = get_settings()
+    if not settings.guest_template_email:
+        raise HTTPException(404, "There's no demo on this server.")
+    stale = guest.remove_expired(session)
+    try:
+        user = guest.create_guest(session)
+    except guest.NoTemplate as exc:
+        raise HTTPException(503, "The demo library isn't set up yet.") from exc
+    _set_cookie(response, auth.start_session(session, user), hours=settings.guest_hours)
+    session.commit()
+    for key in stale:
+        files.delete(key)
+    return user
 
 
 @router.post("/login", response_model=UserOut)
 def login(body: LoginIn, request: Request, response: Response, session: SessionDep) -> User:
     limit(request, "auth", per_minute=10)
     user = session.scalars(select(User).where(User.email == body.email.strip().lower())).first()
+    # The demo's template library is only ever copied, never used, so it can't be changed.
+    template = (get_settings().guest_template_email or "").strip().lower()
+    if user is not None and user.email == template:
+        user = None
     # The same message either way, so the form can't be used to discover who has an account.
     if user is None or not auth.verify_password(body.password, user.password_hash):
         raise HTTPException(401, "That email and password don't match.")
@@ -82,6 +107,7 @@ def change_password(
 ) -> Response:
     """Change the password. Other signed-in browsers are signed out; this one stays in."""
     limit(request, "auth", per_minute=10)
+    _not_for_guests(user)
     if not auth.verify_password(body.current_password, user.password_hash):
         raise HTTPException(403, "Your current password isn't right.")
     user.password_hash = auth.hash_password(body.new_password)
@@ -96,6 +122,7 @@ def delete_account(
 ) -> Response:
     """Delete the account and everything in it, including uploaded files. Can't be undone."""
     limit(request, "auth", per_minute=10)
+    _not_for_guests(user)
     if not auth.verify_password(body.password, user.password_hash):
         raise HTTPException(403, "That password isn't right.")
     stored = [
@@ -132,11 +159,18 @@ def me(user: CurrentUser) -> User:
     return user
 
 
-def _set_cookie(response: Response, token: str) -> None:
+def _not_for_guests(user: User) -> None:
+    if user.is_guest:
+        raise HTTPException(
+            403, "That isn't available in the demo. It's deleted after a day anyway."
+        )
+
+
+def _set_cookie(response: Response, token: str, hours: int | None = None) -> None:
     response.set_cookie(
         SESSION_COOKIE,
         token,
-        max_age=auth.SESSION_DAYS * 24 * 3600,
+        max_age=(hours or auth.SESSION_DAYS * 24) * 3600,
         httponly=True,
         secure=get_settings().cookie_secure,
         samesite="lax",
@@ -157,6 +191,7 @@ def list_tokens(session: SessionDep, user: BrowserUser) -> list[ApiToken]:
 @router.post("/tokens", response_model=ApiTokenCreated, status_code=201)
 def create_token(body: ApiTokenIn, session: SessionDep, user: BrowserUser) -> dict:
     """Make a token. The token itself is in this response only; it isn't stored."""
+    _not_for_guests(user)
     count = session.scalar(select(func.count(ApiToken.id)).where(ApiToken.user_id == user.id))
     if count >= 20:
         raise HTTPException(409, "You have 20 tokens. Revoke one you don't use first.")

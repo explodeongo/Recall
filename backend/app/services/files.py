@@ -43,11 +43,32 @@ def read(key: str) -> bytes | None:
 
 
 def delete(key: str) -> None:
+    if _in_demo_template(key):
+        return
     if key.startswith(DB_PREFIX):
         with engine.begin() as conn:
             conn.execute(text("DELETE FROM stored_files WHERE key = :key"), {"key": key})
     else:
         Path(key).unlink(missing_ok=True)
+
+
+def _in_demo_template(key: str) -> bool:
+    """Guests' copies of the demo library share its files (services/guest.py), so a file the
+    template account still uses is never deleted."""
+    email = get_settings().guest_template_email
+    if not email:
+        return False
+    with engine.connect() as conn:
+        return bool(
+            conn.scalar(
+                text(
+                    "SELECT EXISTS (SELECT 1 FROM users u WHERE u.email = :email AND ("
+                    "EXISTS (SELECT 1 FROM items i WHERE i.user_id = u.id AND i.source = :key) OR "
+                    "EXISTS (SELECT 1 FROM item_images p WHERE p.user_id = u.id AND p.key = :key)))"
+                ),
+                {"email": email.strip().lower(), "key": key},
+            )
+        )
 
 
 def suffix(key: str) -> str:

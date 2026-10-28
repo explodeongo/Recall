@@ -322,38 +322,59 @@ so the endpoint and the links it returns use your real addresses.
 
 ## Deploy
 
-Recall is ready to put online for free, without anything else to run: the web app on
-[Vercel](https://vercel.com), the API on [Render](https://render.com) (the worker runs inside
-it), and the database on [Neon](https://neon.tech).
+Recall runs online for free: the web app on [Vercel](https://vercel.com), the API on
+[Render](https://render.com) (the worker runs inside it), and the database on
+[Neon](https://neon.tech). With the demo on, anyone can open `/demo` and get a private copy of
+the demo library for a day, without signing up.
 
-1. **Database (Neon):** create a project and copy the connection string. Change the
-   `postgresql://` prefix to `postgresql+psycopg://`, and keep `?sslmode=require`.
-2. **API (Render):** New → Blueprint → this repository. It reads `render.yaml`, builds
+1. **Database (Neon):** create a project (Postgres 17) and copy its connection string.
+2. **Demo library:** build it locally once (`uv run python -m demo.seed`), then copy it into
+   Neon. This creates the tables, copies the library and moves its pictures and PDFs into the
+   database:
+
+   ```bash
+   cd backend
+   uv run python -m demo.publish "postgresql://...neon.tech/neondb?sslmode=require"
+   ```
+
+3. **API (Render):** New → Blueprint → this repository. It reads `render.yaml`, builds
    `backend/Dockerfile` (the embedding model is baked in) and asks for:
 
    | Setting | Value |
    | --- | --- |
-   | `DATABASE_URL` | the Neon URL from step 1 |
-   | `GEMINI_API_KEY` | your key |
-   | `SIGNUP_CODE` | an invite code, so only people you give it to can sign up (leave empty for open sign-up) |
+   | `DATABASE_URL` | the Neon URL, starting `postgresql+psycopg://` instead of `postgresql://` |
+   | `GEMINI_API_KEY` | a key made for the deployment, separate from your local one |
+   | `SIGNUP_CODE` | an invite code, so only people you give it to can make accounts |
    | `FETCH_CONTACT` | your repo URL (Wikipedia requires a contact in the User-Agent) |
 
-   `RUN_WORKER_IN_API`, `FILE_STORE=database` (uploads kept in Postgres, since free disks are
-   wiped on restart) and `COOKIE_SECURE` are set by the blueprint. Migrations run on every start.
-3. **Web app (Vercel):** import the repository with **Root Directory** `frontend`, and set
+   The blueprint also sets `RUN_WORKER_IN_API`, `FILE_STORE=database` (free disks are wiped on
+   restart), `COOKIE_SECURE`, the demo (`GUEST_TEMPLATE_EMAIL`) and `DAILY_LLM_CALLS=400`, a
+   cap on Gemini calls a day across everyone. Migrations run on every start.
+4. **Web app (Vercel):** import the repository with **Root Directory** `frontend`, and set
    `API_PROXY_TARGET` to the Render URL (like `https://recall-api.onrender.com`). The browser
-   only ever talks to Vercel, which forwards `/api` to Render, so sign-in cookies are first-party.
+   only talks to Vercel, which forwards `/api` to Render, so sign-in cookies are first-party.
+5. **Keep it awake:** in the GitHub repository, add the Actions variable `RECALL_API_URL` (the
+   Render URL). [`keep-awake.yml`](.github/workflows/keep-awake.yml) pings it every 10 minutes,
+   so visitors don't wait a minute for a sleeping server.
 
-Limits that protect the Gemini quota on a public deployment, all settings: questions per person
-per minute (`ASK_PER_MINUTE`, 20) and per day (`DAILY_QUESTIONS`, 300), saved items per day
-(`DAILY_ITEMS`, 200), and "quiz me" runs per day (`DAILY_QUIZZES`, 50). Free Render services
-sleep when idle, so the first visit after a quiet spell takes about a minute.
+**How the demo stays safe and free** ([`services/guest.py`](backend/app/services/guest.py)):
+each visitor gets their own copy of the library, made inside the database in about 0.3 s with
+no LLM calls, so nobody sees anyone else's questions. Copies share the template's files and are
+deleted after 24 hours (or sooner when more than 40 are open), checked whenever a new visitor
+arrives, so no scheduled job is needed. Guests get smaller daily limits (30 questions, 5 saves,
+3 quizzes, 5 MB uploads), can't make API tokens, and the template account can't be logged into.
+When the day's Gemini calls run out, answers say so and come back tomorrow; search, reading, the
+graph and review need no LLM and keep working.
+
+Limits for everyone else, all settings: questions per person per minute (`ASK_PER_MINUTE`, 20)
+and per day (`DAILY_QUESTIONS`, 300), saved items per day (`DAILY_ITEMS`, 200), and "quiz me"
+runs per day (`DAILY_QUIZZES`, 50).
 
 ## Tests
 
 ```bash
 cd backend
-uv run pytest                            # 98 tests, against the recall_test database
+uv run pytest                            # 206 tests, against the recall_test database
 uv run ruff check . && uv run ruff format --check .
 uv run python -m eval.run                # retrieval evaluation (see backend/eval)
 

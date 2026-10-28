@@ -247,6 +247,8 @@ class UserOut(BaseModel):
     id: int
     email: str
     name: str | None
+    is_guest: bool = False
+    created_at: datetime
 
 
 class HighlightIn(BaseModel):

@@ -131,7 +131,7 @@ def send_message(
     the chat as it was."""
     limit(request, "ask", per_minute=get_settings().ask_per_minute, key=f"user:{user.id}")
     chat = _get_or_404(session, chat_id, user.id)
-    quota.check(session, user.id, "questions", get_settings().daily_questions)
+    quota.check(session, user, "questions")
     history = _turns(chat.messages)[-HISTORY_TURNS:]
     context = _context(session, user.id, body)
     if context["items"] or context["tags"]:
@@ -264,7 +264,7 @@ def save_answer(chat_id: int, message_id: int, session: SessionDep, user: Curren
         source_type=SourceType.note,
         source=answer_note(answer.content, answer.sources or [], answer.cited or []),
     )
-    quota.check(session, user.id, "items", get_settings().daily_items)
+    quota.check(session, user, "items")
     session.add(note)
     session.flush()
     jobs.enqueue(session, note)

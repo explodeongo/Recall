@@ -33,7 +33,10 @@ def clean_tables():
     yield
     with engine.begin() as conn:
         conn.execute(
-            text("TRUNCATE items, tags, jobs, chats, users, stored_files RESTART IDENTITY CASCADE")
+            text(
+                "TRUNCATE items, tags, jobs, chats, users, stored_files, llm_calls "
+                "RESTART IDENTITY CASCADE"
+            )
         )
     from app.services import ratelimit
 

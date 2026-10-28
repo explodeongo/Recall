@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC = ["/login", "/signup"];
+const PUBLIC = ["/login", "/signup", "/demo"];
 
 /** Send signed-out visitors to the log-in page. The API still checks every request; this only
  *  saves a round trip to an empty, failing page. */

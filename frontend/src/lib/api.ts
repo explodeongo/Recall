@@ -74,6 +74,16 @@ export interface User {
   id: number;
   email: string;
   name: string | null;
+  /** A visitor trying the public demo on their own copy of the demo library. */
+  is_guest: boolean;
+  created_at: string;
+}
+
+export interface AuthConfig {
+  signup_requires_code: boolean;
+  mcp_url: string;
+  guest_demo: boolean;
+  guest_hours: number;
 }
 
 export interface Chunk {
@@ -440,7 +450,8 @@ export const api = {
   me: () => request<User>("/auth/me"),
   signup: (email: string, password: string, name?: string, inviteCode?: string) =>
     request<User>("/auth/signup", json("POST", { email, password, name, invite_code: inviteCode })),
-  authConfig: () => request<{ signup_requires_code: boolean; mcp_url: string }>("/auth/config"),
+  authConfig: () => request<AuthConfig>("/auth/config"),
+  startGuest: () => request<User>("/auth/guest", { method: "POST" }),
   apiTokens: () => request<ApiToken[]>("/auth/tokens"),
   createApiToken: (name: string) => request<ApiToken & { token: string }>("/auth/tokens", json("POST", { name })),
   revokeApiToken: (id: number) => request<void>(`/auth/tokens/${id}`, { method: "DELETE" }),

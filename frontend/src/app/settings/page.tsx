@@ -26,18 +26,25 @@ export default function SettingsPage() {
         {me.data && (
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
             <p className="text-muted-foreground">
-              Signed in as <span className="text-foreground">{me.data.email}</span>
+              {me.data.is_guest ? (
+                "You're a demo guest. Your library and everything in it is deleted after a day."
+              ) : (
+                <>
+                  Signed in as <span className="text-foreground">{me.data.email}</span>
+                </>
+              )}
             </p>
             <Button variant="outline" size="sm" onClick={logOut}>
-              <LogOut /> Log out
+              <LogOut /> {me.data.is_guest ? "Leave the demo" : "Log out"}
             </Button>
           </div>
         )}
       </header>
-      <ConnectAssistants />
+      {/* A guest's account is temporary: no tokens for assistants, password or deletion. */}
+      {me.data && !me.data.is_guest && <ConnectAssistants />}
       <ExportSection />
-      <PasswordSection />
-      {me.data && <DeleteSection email={me.data.email} />}
+      {me.data && !me.data.is_guest && <PasswordSection />}
+      {me.data && !me.data.is_guest && <DeleteSection email={me.data.email} />}
     </div>
   );
 }

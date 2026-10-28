@@ -4,7 +4,6 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from app.config import get_settings
 from app.deps import CurrentUser, LLMDep, SessionDep
 from app.models import Card, Chunk, Item, ItemStatus, Review
 from app.pipeline import KINDS
@@ -32,7 +31,7 @@ def generate_cards(
         raise HTTPException(409, "This item has no text to make questions from.")
     # Limits count real attempts only, so a refused request doesn't block the next one.
     limit(request, "cards", per_minute=6, key=f"user:{user.id}")
-    quota.check(session, user.id, "quizzes", get_settings().daily_quizzes)
+    quota.check(session, user, "quizzes")
     existing = list(session.scalars(select(Card.question).where(Card.item_id == item.id)))
     try:
         made = make_cards(

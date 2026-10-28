@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.deps import CurrentUser, EmbedderDep, SessionDep
-from app.models import Card, Item, ItemImage, ItemStatus, SourceType, Tag, item_tags
+from app.models import Card, Item, ItemImage, ItemStatus, SourceType, Tag, User, item_tags
 from app.pipeline import get_or_create_tags
 from app.schemas import ContentOut, ItemOut, ItemPatch, ResurfaceOut, TagsIn
 from app.services import files, images, jobs, quota
@@ -62,10 +62,10 @@ def create_item(
         ).first()
         if existing is not None:
             return existing
-    quota.check(session, user.id, "items", get_settings().daily_items)
+    quota.check(session, user, "items")
 
     if file is not None:
-        kind, path = _store_upload(file)
+        kind, path = _store_upload(file, user)
         name = title.strip() if title and title.strip() else _title_from_filename(file.filename)
         item = Item(user_id=user.id, title=name, source_type=kind, source=path)
         item.title_edited = bool(title and title.strip())
@@ -271,7 +271,7 @@ def _title_from_filename(name: str | None) -> str:
     return stem or "Untitled"
 
 
-def _store_upload(file: UploadFile) -> tuple[SourceType, str]:
+def _store_upload(file: UploadFile, user: User) -> tuple[SourceType, str]:
     """Check the type and size of an upload and store it. PDFs are recognised by their first
     bytes, other documents by extension."""
     settings = get_settings()
@@ -285,12 +285,13 @@ def _store_upload(file: UploadFile) -> tuple[SourceType, str]:
                 415, "Recall can read PDF, Word (.docx), Markdown (.md) and text (.txt) files"
             )
         kind = SourceType.file
-    limit = settings.max_upload_mb * 1024 * 1024
+    max_mb = settings.guest_max_upload_mb if user.is_guest else settings.max_upload_mb
+    limit = max_mb * 1024 * 1024
     data = bytearray(head)
     while chunk := file.file.read(1024 * 1024):
         data.extend(chunk)
         if len(data) > limit:
-            raise HTTPException(413, f"Files can be up to {settings.max_upload_mb} MB")
+            raise HTTPException(413, f"Files can be up to {max_mb} MB")
     return kind, files.save(bytes(data), suffix)
 
 

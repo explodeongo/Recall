@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { cloneElement, useId, useState } from "react";
+import { DemoCard, WAKING, useSlow } from "@/components/Guest";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
@@ -16,7 +17,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const signup = mode === "signup";
-  const config = useQuery({ queryKey: ["auth-config"], queryFn: api.authConfig, enabled: signup });
+  const config = useQuery({ queryKey: ["auth-config"], queryFn: api.authConfig });
+  const waking = useSlow(config.isLoading);
 
   async function submit(form: FormData) {
     setBusy(true);
@@ -46,7 +48,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <p className="mt-2 text-sm text-muted-foreground">
           {signup ? "Save what you read. Ask it anything later." : "Log in to your Recall library."}
         </p>
+        {waking && (
+          <p aria-live="polite" className="mt-3 text-xs text-muted-foreground">
+            {WAKING}
+          </p>
+        )}
       </div>
+
+      {!signup && config.data?.guest_demo && <DemoCard hours={config.data.guest_hours} />}
 
       <form action={submit} className="space-y-4" noValidate={false}>
         {signup && (

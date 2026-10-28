@@ -150,9 +150,53 @@ def _text_of(payload: dict) -> str:
     return "".join(p.get("text", "") for p in parts if not p.get("thought"))
 
 
+DAY_IS_OVER = (
+    "The demo has used today's answers from Gemini, the AI behind them; they're back tomorrow. "
+    "Searching, reading and reviewing still work"
+)
+
+
+class DailyCap:
+    """Wraps a client so that no more than `cap` calls a day (UTC) are made, across every
+    process: the count is kept in Postgres. Keeps a public demo inside the free tier."""
+
+    def __init__(self, inner: LLMClient, cap: int):
+        self._inner = inner
+        self._cap = cap
+
+    def _count(self) -> None:
+        from sqlalchemy import text
+
+        from app.db import engine
+
+        with engine.begin() as conn:
+            calls = conn.scalar(
+                text(
+                    "INSERT INTO llm_calls (day, calls) "
+                    "VALUES ((now() AT TIME ZONE 'utc')::date, 1) ON CONFLICT (day) "
+                    "DO UPDATE SET calls = llm_calls.calls + 1 RETURNING calls"
+                )
+            )
+        if calls > self._cap:
+            raise LLMError(DAY_IS_OVER)
+
+    def generate(
+        self, prompt: str, *, system: str | None = None, json_schema: dict | None = None
+    ) -> str:
+        self._count()
+        return self._inner.generate(prompt, system=system, json_schema=json_schema)
+
+    def stream(self, prompt: str, *, system: str | None = None) -> Iterator[str]:
+        self._count()
+        yield from self._inner.stream(prompt, system=system)
+
+
 def get_llm() -> LLMClient:
     settings = get_settings()
     if not settings.gemini_api_key:
         raise LLMError("GEMINI_API_KEY is not set. Add it to backend/.env and reprocess the item.")
     models = [settings.gemini_model, *settings.gemini_fallback_models]
-    return GeminiClient(settings.gemini_api_key, models)
+    client: LLMClient = GeminiClient(settings.gemini_api_key, models)
+    if settings.daily_llm_calls > 0:
+        client = DailyCap(client, settings.daily_llm_calls)
+    return client

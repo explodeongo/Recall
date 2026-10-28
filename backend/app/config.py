@@ -31,6 +31,19 @@ class Settings(BaseSettings):
     daily_items: int = 200  # things one person can save per day
     daily_questions: int = 300  # questions (Ask and chats) one person can ask per day
     daily_quizzes: int = 50  # "quiz me" runs per person per day
+    # LLM calls a day across everyone; 0 means no cap. Keeps a public demo under the free
+    # Gemini tier's daily limit: past it, answers wait for tomorrow, the rest keeps working.
+    daily_llm_calls: int = 0
+
+    # The public demo: visitors get a private copy of this account's library for a day.
+    # Unset means no guests. The account itself can't be logged into while it's set.
+    guest_template_email: str | None = None
+    guest_hours: int = 24
+    max_guests: int = 40  # at once; the oldest goes first, to bound the database's size
+    guest_daily_items: int = 5
+    guest_daily_questions: int = 30
+    guest_daily_quizzes: int = 3
+    guest_max_upload_mb: int = 5
     embedding_dim: int = 384
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     model_cache_dir: str = "data/models"

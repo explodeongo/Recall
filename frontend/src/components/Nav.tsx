@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { GuestBanner } from "@/components/Guest";
 import { openSearch } from "@/components/SearchPalette";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,7 @@ const links = [
 export function Nav() {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
-  const authPage = pathname === "/login" || pathname === "/signup";
+  const authPage = pathname === "/login" || pathname === "/signup" || pathname === "/demo";
   const stats = useQuery({ queryKey: ["review-stats"], queryFn: api.reviewStats, enabled: !authPage, refetchInterval: 60_000 });
   const isActive = (href: string) => (href === "/" ? pathname === "/" || pathname.startsWith("/items") : pathname.startsWith(href));
 
@@ -89,6 +90,7 @@ export function Nav() {
         </Button>
         {!authPage && <AccountMenu />}
       </nav>
+      {!authPage && <GuestBanner />}
     </header>
   );
 }
@@ -99,7 +101,8 @@ function AccountMenu() {
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
   // Hold the avatar's place while it loads, so the search box doesn't jump.
   if (!me.data) return <span className="size-8 shrink-0" aria-hidden />;
-  const initial = (me.data.name || me.data.email).trim()[0]?.toUpperCase() ?? "?";
+  const guest = me.data.is_guest;
+  const initial = guest ? "G" : (me.data.name || me.data.email).trim()[0]?.toUpperCase() ?? "?";
 
   async function logout() {
     try {
@@ -112,7 +115,7 @@ function AccountMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="ghost" size="icon" aria-label={`Account: ${me.data.email}`} />}
+        render={<Button variant="ghost" size="icon" aria-label={guest ? "Account: demo guest" : `Account: ${me.data.email}`} />}
       >
         <span className="grid size-7 place-items-center rounded-full bg-brand-soft text-xs font-semibold text-brand">{initial}</span>
       </DropdownMenuTrigger>
@@ -124,8 +127,17 @@ function AccountMenu() {
             {initial}
           </span>
           <span className="min-w-0">
-            {me.data.name && <span className="block truncate text-sm font-medium text-foreground">{me.data.name}</span>}
-            <span className="block truncate text-xs text-muted-foreground">{me.data.email}</span>
+            {guest ? (
+              <>
+                <span className="block truncate text-sm font-medium text-foreground">Demo guest</span>
+                <span className="block truncate text-xs text-muted-foreground">A library of your own, for a day</span>
+              </>
+            ) : (
+              <>
+                {me.data.name && <span className="block truncate text-sm font-medium text-foreground">{me.data.name}</span>}
+                <span className="block truncate text-xs text-muted-foreground">{me.data.email}</span>
+              </>
+            )}
           </span>
         </div>
         <DropdownMenuSeparator />
@@ -140,7 +152,7 @@ function AccountMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
-          <LogOut /> Log out
+          <LogOut /> {guest ? "Leave the demo" : "Log out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -23,3 +23,10 @@ services:
         value: database
       - key: COOKIE_SECURE
         value: "true"
+      # The public demo: visitors get a day-long copy of this account's library (put there
+      # with `python -m demo.publish`). Remove it to turn the demo off.
+      - key: GUEST_TEMPLATE_EMAIL
+        value: demo@example.com
+      # Gemini calls a day across everyone, under the free tier's daily limit.
+      - key: DAILY_LLM_CALLS
+        value: "400"
