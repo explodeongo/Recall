@@ -1,7 +1,7 @@
 # Recall
 
 Save PDFs and web articles in one place, then ask questions in plain English and get answers built
-only from your own library, with a citation to the exact passage.
+only from your own library, with a citation to the exact passage
 
 ![CI](https://github.com/explodeongo/Recall/actions/workflows/ci.yml/badge.svg)
 
