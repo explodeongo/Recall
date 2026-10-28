@@ -3,6 +3,9 @@
 Save PDFs and web articles in one place, then ask questions in plain English and get answers built
 only from your own library, with a citation to the exact passage
 
+**[Try the live demo →](https://recall-dusky.vercel.app/demo)** No sign-up: you get your own copy of a 30-item library
+(papers, articles, lectures, chats and flashcards) to save to, ask and quiz.
+
 ![CI](https://github.com/explodeongo/Recall/actions/workflows/ci.yml/badge.svg)
 
 ![Ask a question, get an answer cited from your library, open a citation: the passage, highlighted in the paper](docs/screenshots/hero.gif)
@@ -19,6 +22,9 @@ only from your own library, with a citation to the exact passage
 - **Every claim is checkable:** each sentence carries a numbered citation that opens the source
   with the passage highlighted, PDFs included.
 - **An MCP server:** Claude, Cursor or any MCP app can search your library and get cited answers.
+- **A public demo that runs on free tiers:** each visitor gets a private copy of the demo
+  library in about a second (copied inside Postgres, no AI calls), deleted after a day, with a
+  daily cap on AI calls so strangers can't run up the quota. [How](#deploy)
 - **Built to be run, not just demoed:** a Postgres job queue (`SKIP LOCKED`, no Redis), Alembic
   migrations, ~200 tests against a real Postgres, Docker images, and CI for both apps.
 
@@ -285,7 +291,7 @@ The web app expects the API at `http://localhost:8000`. To point it somewhere el
 
 ### 8. Or try the demo library
 
-A ready-made library of about 30 articles, papers, videos and notes, with chats, highlights
+It's online at [recall-dusky.vercel.app/demo](https://recall-dusky.vercel.app/demo), no sign-up needed. To run it locally: a ready-made library of about 30 articles, papers, videos and notes, with chats, highlights
 and quizzes, in its own database (yours is untouched). [`docs/demo.md`](docs/demo.md) is a
 five-minute walkthrough of it.
 

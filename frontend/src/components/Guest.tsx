@@ -82,15 +82,11 @@ export function DemoCard({ hours }: { hours: number }) {
 /** A slim bar under the navigation while a guest is looking around. */
 export function GuestBanner() {
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
-  const config = useQuery({ queryKey: ["auth-config"], queryFn: api.authConfig, staleTime: Infinity, enabled: !!me.data?.is_guest });
   if (!me.data?.is_guest) return null;
-  const hours = config.data?.guest_hours ?? 24;
-  const until = new Date(new Date(me.data.created_at).getTime() + hours * 3600_000);
-  const when = until.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
   return (
     <div className="border-t bg-brand-soft/60 px-4 py-1.5 text-center text-xs text-pretty text-foreground/80 sm:text-[13px]">
-      You&apos;re in a demo library of your own until <span className="font-medium text-foreground">{when}</span>. Save, ask and
-      quiz freely; nobody else sees it.
+      <span className="font-medium text-foreground">This is your own copy of the demo library.</span> Save, ask and quiz freely;
+      nobody else sees it.
     </div>
   );
 }

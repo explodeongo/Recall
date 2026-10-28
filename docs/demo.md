@@ -113,9 +113,11 @@ Open **Settings → Connect AI assistants**.
   100% of the time.
 - **How does search work?** Hybrid: Postgres full-text search and vector similarity
   (pgvector, bge-small embeddings computed locally), merged with reciprocal rank fusion.
-  Hybrid beat either alone on passage ranking (Passage@1 83% vs 72% and 64%).
-- **What does it cost to run?** Embeddings run locally; summaries and answers use Gemini's
-  free tier. The whole stack runs on a laptop with Postgres.
+  Hybrid beat either alone on passage ranking (Passage@1 81% vs 67% and 61%).
+- **What does it cost to run?** Nothing. Embeddings run locally; summaries and answers use
+  Gemini's free tier. It runs on a laptop with Postgres, and online on free tiers (Vercel,
+  Render, Neon) at recall-dusky.vercel.app/demo, where every visitor gets a private copy of
+  the demo library and a daily cap keeps AI calls inside the free quota.
 - **Is my data private?** Each account sees only its own library; you can export everything
   as Markdown and JSON, or delete your account and all of it.
 - **What would you do next?** A browser extension for one-click saving, key moments for
@@ -127,4 +129,5 @@ Open **Settings → Connect AI assistants**.
   "Read again" button, and move on with the demo library.
 - **Gemini is slow or rate-limited:** answers fall back to a second model; if both are busy,
   show a chat already in the history (the left column of Ask has four).
-- **Total failure:** the screenshots in the README show every screen.
+- **Total failure:** open the live demo, recall-dusky.vercel.app/demo, from any laptop; failing
+  that, the README's GIF and screenshots show every screen.

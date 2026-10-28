@@ -94,3 +94,26 @@ space so the highlight doesn't slide away when they load.
   the user plainly that "Gemini is busy" instead of showing a provider error.
 - **Tests against real Postgres.** About 200 tests run against a throwaway Postgres with
   pgvector, not mocks, so SQL, vector search and migrations are what's tested.
+
+## 7. A public demo nobody can break or run up
+
+The live demo ([recall-dusky.vercel.app/demo](https://recall-dusky.vercel.app/demo)) had to work for a stranger in one
+click, on free hosting, without letting visitors see each other's questions or exhaust the
+Gemini quota.
+
+- **A private copy per visitor.** "Try the demo" copies the demo account's library into a new
+  guest account: items, passages with their vectors, tags, notes, highlights, pictures, chats
+  and flashcards. The passages are copied with `INSERT … SELECT` inside Postgres, ids are
+  remapped (chat citations point at the copy's passages and pictures), and dates shift so the
+  library always looks a few weeks old. It takes about a second and makes no AI calls.
+- **Shared files, never deleted.** Copies point at the template's PDFs and pictures instead of
+  duplicating them; deleting a file checks the template still doesn't use it.
+- **Clean-up without a scheduler.** Guests older than a day, or beyond the 40 newest, are
+  deleted whenever a new one arrives, which bounds the database (about 5 MB a guest) without a
+  paid cron job.
+- **A quota that can't be drained.** A daily cap on AI calls across everyone is counted in
+  Postgres. Past it, answers say they're back tomorrow, while search, reading, the graph and
+  review, which need no AI, keep working. Guests also get smaller per-day limits.
+- **Free tiers, used carefully.** The API sits in the same region as the database, since a
+  guest's copy is many small queries. Health checks and the keep-awake ping use a route that
+  doesn't touch the database, so the free database can still sleep when nobody's there.
