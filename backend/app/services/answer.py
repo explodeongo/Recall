@@ -316,7 +316,7 @@ def stream_answer(
     # now, while the model checks whether the conversation itself already answers it.
     early = None
     if web and gate_closed:
-        early = _pool.submit(_web_search, query, embedder, web_search)
+        early = _pool.submit(_web_search, query, web_search)
     # Without relevant passages there's still something to work with in a conversation (the
     # earlier answers); without either, skip straight to the web, or say "not found".
     if library and (passages or history):
@@ -352,9 +352,7 @@ def stream_answer(
     yield "status", "Searching the web…"
 
     found = (
-        early.result()
-        if early is not None and not more
-        else _web_search(more or query, embedder, web_search)
+        early.result() if early is not None and not more else _web_search(more or query, web_search)
     )
     if not found:
         timings.llm_ms = (time.perf_counter() - started) * 1000
@@ -397,10 +395,10 @@ def stream_answer(
 _pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="web")
 
 
-def _web_search(query, embedder, searcher) -> list[Passage]:
+def _web_search(query, searcher) -> list[Passage]:
     from app.services.web import web_passages
 
-    return web_passages(query, embedder, searcher)
+    return web_passages(query, searcher)
 
 
 def _finish(

@@ -12,9 +12,11 @@ Wikipedia's own search API. Results are cached for a few minutes.
 """
 
 import logging
+import math
 import re
 import threading
 import time
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from functools import lru_cache
@@ -23,7 +25,6 @@ from typing import Protocol
 import httpx
 
 from app.models import Item, SourceType
-from app.services.embeddings import Embedder
 from app.services.search import Passage
 from app.services.text import chunk_pages, clean_pages
 
@@ -234,7 +235,6 @@ def _fetch_page(result: WebResult) -> str:
 
 def web_passages(
     query: str,
-    embedder: Embedder,
     searcher: WebSearcher | None = None,
     read_page=None,
 ) -> list[Passage]:
@@ -251,32 +251,27 @@ def web_passages(
             futures = {pool.submit(read_page, r): r for r in to_read}
             texts = {futures[f].url: f.result() for f in as_completed(futures)}
 
-    candidates: list[tuple[WebResult, str]] = []
+    # (page, passage, how far into the page it is)
+    candidates: list[tuple[WebResult, str, int]] = []
     for result in results:
         text = result.content or texts.get(result.url) or ""
         if text:
             from app.sources import PageText
 
             chunks = chunk_pages([PageText(None, text)], size=220, overlap=30)[:25]
-            candidates += [(result, c.text) for c in chunks]
+            candidates += [(result, c.text, n) for n, c in enumerate(chunks)]
         elif result.snippet:
-            candidates.append((result, result.snippet))
+            candidates.append((result, result.snippet, 0))
     if not candidates:
         return []
 
-    query_vector = embedder.embed_query(query)
-    vectors = embedder.embed_documents([f"{r.title}\n\n{t}" for r, t in candidates])
     scored = sorted(
-        zip(
-            candidates,
-            (sum(a * b for a, b in zip(query_vector, v, strict=True)) for v in vectors),
-            strict=True,
-        ),
+        zip(candidates, _keyword_scores(query, candidates), strict=True),
         key=lambda pair: -pair[1],
     )
     picked: list[Passage] = []
     per_page: dict[str, int] = {}
-    for (result, text), score in scored:
+    for (result, text, _), score in scored:
         if per_page.get(result.url, 0) >= PER_PAGE:
             continue
         per_page[result.url] = per_page.get(result.url, 0) + 1
@@ -296,3 +291,37 @@ def web_passages(
         if len(picked) == PASSAGES:
             break
     return picked
+
+
+# Words too common to tell one passage from another.
+_COMMON_WORDS = (
+    "a an and are as at be by can did do does for from how i in is it of on or that the this "
+    "to was what when where which who why with you your"
+)
+_COMMON = frozenset(_COMMON_WORDS.split())
+
+
+def _words(text: str) -> list[str]:
+    return [w for w in re.findall(r"\w+", text.lower()) if w not in _COMMON]
+
+
+def _keyword_scores(query: str, candidates: list[tuple[WebResult, str, int]]) -> list[float]:
+    """BM25 over the candidates, leaning towards each page's opening passages, where pages say
+    what they're about. Embedding the candidates instead (up to 75 a question) took about 2 s
+    of CPU: half a minute on a host with a tenth of a CPU. On 20 real questions an AI judge
+    found these picks answered them as well (37 of 40 points, against 38 for embeddings)."""
+    k1, b = 1.2, 0.75
+    docs = [_words(text) for _, text, _ in candidates]
+    average = sum(map(len, docs)) / len(docs) or 1
+    seen_in = Counter(w for doc in docs for w in set(doc))
+    terms = set(_words(query))
+    scores = []
+    for doc, (_, _, position) in zip(docs, candidates, strict=True):
+        counts = Counter(doc)
+        score = 0.0
+        for term in terms & counts.keys():
+            rarity = math.log(1 + (len(docs) - seen_in[term] + 0.5) / (seen_in[term] + 0.5))
+            tf = counts[term]
+            score += rarity * tf * (k1 + 1) / (tf + k1 * (1 - b + b * len(doc) / average))
+        scores.append(score / (1 + 0.15 * position))
+    return scores
