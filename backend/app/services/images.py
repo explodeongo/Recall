@@ -13,7 +13,6 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
-import pymupdf
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -56,6 +55,8 @@ class Picture:
 def normalize(data: bytes, max_side: int = MAX_SIDE) -> Picture | None:
     """Decode any image MuPDF reads (JPEG, PNG, GIF, WebP, BMP, TIFF, SVG…), scale it down to
     `max_side`, and re-encode it as JPEG. None if it isn't a single image."""
+    import pymupdf  # here, not at the top: it adds about 130 MB to every process that loads it
+
     try:
         doc = pymupdf.open(stream=data)
     except Exception:
@@ -77,6 +78,8 @@ def normalize(data: bytes, max_side: int = MAX_SIDE) -> Picture | None:
 
 def render_pdf_page(data: bytes, page_number: int = 0, width: int = COVER_SIDE) -> bytes | None:
     """A page of a PDF as a PNG, `width` pixels wide: a PDF's cover."""
+    import pymupdf
+
     try:
         with pymupdf.open(stream=data, filetype="pdf") as doc:
             page = doc[page_number]

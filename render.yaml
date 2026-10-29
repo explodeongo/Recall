@@ -24,6 +24,10 @@ services:
       # The free plan has a tenth of a CPU: one model thread makes searches about 7x cheaper.
       - key: MODEL_THREADS
         value: "1"
+      # The free plan has 512 MB. glibc otherwise keeps a memory pool per thread, and what one
+      # request used stays with the process.
+      - key: MALLOC_ARENA_MAX
+        value: "2"
       - key: FILE_STORE
         value: database
       - key: COOKIE_SECURE

@@ -1,10 +1,13 @@
-import pymupdf
+from typing import TYPE_CHECKING
 
 from app.errors import PermanentError
 from app.models import Item
 from app.services import files
 from app.services.images import ExtractedImage, render_pdf_page
 from app.sources import ExtractedDoc, PageText
+
+if TYPE_CHECKING:
+    import pymupdf
 
 # Metadata titles that word processors fill in for you and that mean nothing to a reader.
 _JUNK_TITLE_PREFIXES = ("microsoft word", "untitled", "document", "slide 1", "powerpoint")
@@ -21,6 +24,8 @@ class PdfSource:
 
 
 def extract_pdf_bytes(data: bytes) -> ExtractedDoc:
+    import pymupdf  # here, not at the top: it adds about 130 MB to every process that loads it
+
     try:
         doc = pymupdf.open(stream=data, filetype="pdf")
     except (pymupdf.FileDataError, RuntimeError) as exc:
@@ -38,7 +43,7 @@ def extract_pdf_bytes(data: bytes) -> ExtractedDoc:
     return ExtractedDoc(title=title, pages=pages, images=images)
 
 
-def _pdf_figures(doc: pymupdf.Document, limit: int = 12) -> list[ExtractedImage]:
+def _pdf_figures(doc: "pymupdf.Document", limit: int = 12) -> list[ExtractedImage]:
     """Pictures embedded in the pages, in reading order, each with the paragraph before it."""
     found: list[ExtractedImage] = []
     for number, page in enumerate(doc, start=1):
@@ -63,7 +68,7 @@ def _pdf_figures(doc: pymupdf.Document, limit: int = 12) -> list[ExtractedImage]
     return found
 
 
-def _page_text(page: pymupdf.Page) -> str:
+def _page_text(page: "pymupdf.Page") -> str:
     # Each text block is roughly a paragraph. Joining its lines with spaces undoes the PDF's
     # line wrapping; the cleaning step then repairs words hyphenated across lines.
     paragraphs = []

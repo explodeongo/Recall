@@ -9,6 +9,7 @@ from functools import lru_cache
 from typing import Protocol
 
 from app.config import get_settings
+from app.services.embeddings import BATCH
 
 
 class Reranker(Protocol):
@@ -22,7 +23,7 @@ class CrossEncoderReranker:
         self._model = TextCrossEncoder(model_name=model_name, cache_dir=cache_dir, threads=threads)
 
     def score(self, query: str, passages: list[str]) -> list[float]:
-        return [float(s) for s in self._model.rerank(query, passages, batch_size=32)]
+        return [float(s) for s in self._model.rerank(query, passages, batch_size=BATCH)]
 
 
 @lru_cache
