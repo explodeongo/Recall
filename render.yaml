@@ -21,6 +21,9 @@ services:
         sync: false
       - key: RUN_WORKER_IN_API
         value: "true"
+      # The free plan has a tenth of a CPU: one model thread makes searches about 7x cheaper.
+      - key: MODEL_THREADS
+        value: "1"
       - key: FILE_STORE
         value: database
       - key: COOKIE_SECURE

@@ -23,10 +23,10 @@ class Embedder(Protocol):
 
 
 class FastEmbedder:
-    def __init__(self, model_name: str, cache_dir: str):
+    def __init__(self, model_name: str, cache_dir: str, threads: int | None = None):
         from fastembed import TextEmbedding
 
-        self._model = TextEmbedding(model_name=model_name, cache_dir=cache_dir)
+        self._model = TextEmbedding(model_name=model_name, cache_dir=cache_dir, threads=threads)
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [vec.tolist() for vec in self._model.embed(texts, batch_size=32)]
@@ -62,4 +62,4 @@ class HashingEmbedder:
 @lru_cache
 def get_embedder() -> Embedder:
     settings = get_settings()
-    return FastEmbedder(settings.embedding_model, settings.model_cache_dir)
+    return FastEmbedder(settings.embedding_model, settings.model_cache_dir, settings.model_threads)

@@ -16,10 +16,10 @@ class Reranker(Protocol):
 
 
 class CrossEncoderReranker:
-    def __init__(self, model_name: str, cache_dir: str):
+    def __init__(self, model_name: str, cache_dir: str, threads: int | None = None):
         from fastembed.rerank.cross_encoder import TextCrossEncoder
 
-        self._model = TextCrossEncoder(model_name=model_name, cache_dir=cache_dir)
+        self._model = TextCrossEncoder(model_name=model_name, cache_dir=cache_dir, threads=threads)
 
     def score(self, query: str, passages: list[str]) -> list[float]:
         return [float(s) for s in self._model.rerank(query, passages, batch_size=32)]
@@ -28,4 +28,6 @@ class CrossEncoderReranker:
 @lru_cache
 def get_reranker() -> Reranker:
     settings = get_settings()
-    return CrossEncoderReranker(settings.rerank_model, settings.model_cache_dir)
+    return CrossEncoderReranker(
+        settings.rerank_model, settings.model_cache_dir, settings.model_threads
+    )

@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     embedding_dim: int = 384
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     model_cache_dir: str = "data/models"
+    # CPU threads for the local models (embeddings, reranker); unset uses every core. Set 1 on a
+    # host with a fraction of a CPU (Render's free plan): idle threads spin while they wait, and
+    # one thread cuts a search's CPU time about 7x for the same speed.
+    model_threads: int | None = None
 
     # Fetching web articles
     fetch_timeout_s: float = 20.0
