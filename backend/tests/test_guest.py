@@ -110,6 +110,13 @@ def test_guests_have_smaller_daily_limits(client, template, monkeypatch):
     assert resp.status_code == 429 and "demo allows 1" in resp.json()["detail"]
 
 
+def test_guests_are_told_their_smaller_upload_limit(client, template):
+    """The Add page shows and checks this, so a guest isn't left uploading a file for nothing."""
+    settings = get_settings()
+    assert _guest().get("/auth/me").json()["max_upload_mb"] == settings.guest_max_upload_mb
+    assert client.get("/auth/me").json()["max_upload_mb"] == settings.max_upload_mb
+
+
 def test_old_guests_are_removed_but_the_templates_files_stay(client, template, session):
     key = files.save(b"%PDF-1.4 the template's file", ".pdf")
     item_id = template["items"]["Sourdough baking"]

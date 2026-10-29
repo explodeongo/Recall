@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, computed_field, model_validator
 
+from app.config import get_settings
 from app.models import ItemStatus, SourceType
 from app.services.review import Grade
 from app.services.search import SearchMode
@@ -249,6 +250,13 @@ class UserOut(BaseModel):
     name: str | None
     is_guest: bool = False
     created_at: datetime
+
+    @computed_field
+    @property
+    def max_upload_mb(self) -> int:
+        """The largest file this account can upload: the demo's guests get less."""
+        settings = get_settings()
+        return settings.guest_max_upload_mb if self.is_guest else settings.max_upload_mb
 
 
 class HighlightIn(BaseModel):

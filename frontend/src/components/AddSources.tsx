@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileUp, Link2, Loader2, NotebookPen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, type Item } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-const MAX_MB = 25;
 const EXTENSIONS = [".pdf", ".docx", ".md", ".markdown", ".txt"];
 
 /** Files, links (one per line) or a typed note. After saving, goes to the item (one) or the
@@ -74,13 +73,15 @@ export function AddSources() {
 function FileDrop({ busy, onFiles }: { busy: boolean; onFiles: (files: File[]) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
+  const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
+  const maxMb = me.data?.max_upload_mb ?? 25;
 
   function accept(list: FileList | null) {
     const files = Array.from(list ?? []);
     const readable = files.filter((f) => EXTENSIONS.some((ext) => f.name.toLowerCase().endsWith(ext)));
     if (readable.length < files.length) toast.error("Recall can read PDF, Word (.docx), Markdown and text files.");
-    const small = readable.filter((f) => f.size <= MAX_MB * 1024 * 1024);
-    if (small.length < readable.length) toast.error(`Files must be ${MAX_MB} MB or smaller.`);
+    const small = readable.filter((f) => f.size <= maxMb * 1024 * 1024);
+    if (small.length < readable.length) toast.error(`Files must be ${maxMb} MB or smaller.`);
     if (small.length) onFiles(small);
   }
 
@@ -109,7 +110,7 @@ function FileDrop({ busy, onFiles }: { busy: boolean; onFiles: (files: File[]) =
         </span>
       )}
       <p className="mt-4 font-medium">{busy ? "Uploading…" : "Drop files here"}</p>
-      <p className="mt-1 text-sm text-muted-foreground">PDF, Word, Markdown or text, up to {MAX_MB} MB each. Scanned images can&apos;t be read yet.</p>
+      <p className="mt-1 text-sm text-muted-foreground">PDF, Word, Markdown or text, up to {maxMb} MB each. Scanned images can&apos;t be read yet.</p>
       <Button className="mt-5" variant="outline" disabled={busy} onClick={() => input.current?.click()}>
         Choose files
       </Button>

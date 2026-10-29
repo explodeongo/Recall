@@ -56,10 +56,10 @@ export function Nav() {
                 isActive(href) && "bg-brand-soft font-medium text-brand hover:bg-brand-soft hover:text-brand",
               )}
             >
-              <Icon className="size-4" aria-hidden />
+              <Icon className="size-4 shrink-0" aria-hidden />
               <span className="hidden sm:inline">{label}</span>
               {!!due && (
-                <span className="min-w-4 rounded-full bg-brand px-1 text-center text-[11px] leading-4 font-semibold text-brand-foreground tabular-nums" aria-hidden>
+                <span className="min-w-4 shrink-0 rounded-full bg-brand px-1 text-center text-[11px] leading-4 font-semibold text-brand-foreground tabular-nums" aria-hidden>
                   {due > 99 ? "99+" : due}
                 </span>
               )}

@@ -3,7 +3,7 @@
 Save PDFs and web articles in one place, then ask questions in plain English and get answers built
 only from your own library, with a citation to the exact passage
 
-**[Try the live demo →](https://recall-dusky.vercel.app/demo)** No sign-up: you get your own copy of a 30-item library
+**[Try the live demo →](https://recall-dusky.vercel.app/demo)** No sign-up: you get your own copy of a library of about 30 items
 (papers, articles, lectures, chats and flashcards) to save to, ask and quiz.
 
 ![CI](https://github.com/explodeongo/Recall/actions/workflows/ci.yml/badge.svg)

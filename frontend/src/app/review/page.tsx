@@ -69,7 +69,7 @@ function Review() {
               <Flame className={cn("size-4", stats.data.streak_days ? "text-orange-500" : "text-muted-foreground")} aria-hidden />
               <dt className="sr-only">Streak</dt>
               <dd className="tabular-nums">
-                {stats.data.streak_days}-day streak
+                {stats.data.streak_days ? `${stats.data.streak_days}-day streak` : "No streak yet"}
               </dd>
             </div>
             <div className="flex items-center gap-1.5">

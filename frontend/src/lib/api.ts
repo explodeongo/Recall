@@ -77,6 +77,8 @@ export interface User {
   /** A visitor trying the public demo on their own copy of the demo library. */
   is_guest: boolean;
   created_at: string;
+  /** The largest file this account can upload. */
+  max_upload_mb: number;
 }
 
 export interface AuthConfig {

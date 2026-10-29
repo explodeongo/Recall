@@ -54,7 +54,7 @@ export function DemoCard({ hours }: { hours: number }) {
       <div className="rounded-2xl border bg-card p-5 shadow-xs">
         <h2 className="font-heading text-lg font-medium">Try it with a full library</h2>
         <p className="mt-1 text-sm text-pretty text-muted-foreground">
-          Thirty papers, articles and lectures, already read, with chats and flashcards. No sign-up: it&apos;s yours for{" "}
+          About thirty papers, articles and lectures, already read, with chats and flashcards. No sign-up: it&apos;s yours for{" "}
           {hours === 24 ? "a day" : `${hours} hours`}, and nobody else sees what you do.
         </p>
         <Button onClick={start} disabled={busy} size="lg" className="mt-4 h-10 w-full bg-brand text-brand-foreground hover:bg-brand/85">
