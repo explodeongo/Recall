@@ -116,4 +116,6 @@ Gemini quota.
   review, which need no AI, keep working. Guests also get smaller per-day limits.
 - **Free tiers, used carefully.** The API sits in the same region as the database, since a
   guest's copy is many small queries. Health checks and the keep-awake ping use a route that
-  doesn't touch the database, so the free database can still sleep when nobody's there.
+  doesn't touch the database, so the free database can still sleep when nobody's there. The
+  ping comes from an uptime monitor every 5 minutes: a GitHub Actions schedule set to every 10
+  minutes ran only every three hours or so, and the demo link was slow again.

@@ -359,9 +359,13 @@ the demo library for a day, without signing up.
 4. **Web app (Vercel):** import the repository with **Root Directory** `frontend`, and set
    `API_PROXY_TARGET` to the Render URL (like `https://recall-api.onrender.com`). The browser
    only talks to Vercel, which forwards `/api` to Render, so sign-in cookies are first-party.
-5. **Keep it awake:** in the GitHub repository, add the Actions variable `RECALL_API_URL` (the
-   Render URL). [`keep-awake.yml`](.github/workflows/keep-awake.yml) pings it every 10 minutes,
-   so visitors don't wait a minute for a sleeping server.
+5. **Keep it awake:** Render's free server sleeps after 15 idle minutes and takes up to a
+   minute to wake. A free uptime monitor ([UptimeRobot](https://uptimerobot.com) or
+   [cron-job.org](https://cron-job.org)) requesting `<Render URL>/ping` every 5 minutes keeps it
+   up; `/ping` doesn't touch the database, so Neon still sleeps. As a backup, add the Actions
+   variable `RECALL_API_URL` (the Render URL) for [`keep-awake.yml`](.github/workflows/keep-awake.yml),
+   but GitHub runs scheduled workflows hours late on small repositories, so it can't be the
+   only ping.
 
 **How the demo stays safe and free** ([`services/guest.py`](backend/app/services/guest.py)):
 each visitor gets their own copy of the library, made inside the database in about 0.3 s with

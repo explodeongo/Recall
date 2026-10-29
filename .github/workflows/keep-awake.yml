@@ -5,6 +5,9 @@ name: Keep the demo awake
 # running all month fits inside Render's 750 free hours. /ping doesn't touch the database, so
 # Neon still sleeps when nobody is using the demo. Set the repository variable
 # RECALL_API_URL (Settings > Secrets and variables > Actions > Variables) to the API's address.
+#
+# This is only a backup: GitHub delays scheduled runs, often by hours on small repositories, so
+# an uptime monitor (UptimeRobot, cron-job.org) pinging /ping every 5 minutes does the real work.
 
 on:
   schedule:
