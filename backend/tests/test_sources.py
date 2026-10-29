@@ -62,6 +62,33 @@ def test_url_extracts_article_without_boilerplate():
     assert "\n\n" in text  # paragraphs kept apart
 
 
+def test_url_read_up_to_keeps_the_start_of_a_long_page(monkeypatch):
+    long_page = b"<html><body><article>" + b"<p>Early words about indexes.</p>" * 20
+    long_page += b"<p>Words far down the page.</p>" * 50_000 + b"</article></body></html>"
+    monkeypatch.setattr("app.sources.url.get_settings", lambda: _settings_with(max_fetch_mb=1))
+    client = httpx.Client(
+        transport=httpx.MockTransport(
+            lambda req: httpx.Response(
+                200, content=long_page, headers={"content-type": "text/html"}
+            )
+        )
+    )
+
+    with pytest.raises(PermanentError, match="larger than 1 MB"):
+        UrlSource(client=client, resolve=lambda host: ["93.184.216.34"]).extract(_url_item())
+    doc = UrlSource(client=client, resolve=lambda host: ["93.184.216.34"], read_up_to=600).extract(
+        _url_item()
+    )
+    assert "Early words" in doc.pages[0].text
+    assert "far down" not in doc.pages[0].text
+
+
+def _settings_with(**changes):
+    from app.config import get_settings
+
+    return get_settings().model_copy(update=changes)
+
+
 def test_url_serving_a_pdf_is_read_as_pdf():
     pdf = make_pdf([["Page one text."], ["Page two text."]])
     source = _url_source(

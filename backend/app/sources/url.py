@@ -122,13 +122,21 @@ class UrlSource:
     A link that serves a PDF (an arXiv paper, say) is read as a PDF, page numbers included.
     """
 
-    def __init__(self, client: httpx.Client | None = None, resolve: Resolver = _resolve):
+    def __init__(
+        self,
+        client: httpx.Client | None = None,
+        resolve: Resolver = _resolve,
+        read_up_to: int | None = None,
+    ):
+        """`read_up_to`: keep only the first that many bytes of an HTML page instead of
+        refusing pages over MAX_FETCH_MB (web answers, which only use a page's opening part)."""
         settings = get_settings()
         self._client = client or httpx.Client(
             timeout=settings.fetch_timeout_s, headers={"User-Agent": user_agent()}
         )
         self._resolve = resolve
         self._max_bytes = settings.max_fetch_mb * 1024 * 1024
+        self._read_up_to = read_up_to
         self._allow_private = settings.allow_private_urls
 
     def extract(self, item: Item) -> ExtractedDoc:
@@ -207,9 +215,12 @@ class UrlSource:
         raise PermanentError("The link redirected too many times")
 
     def _read_capped(self, resp: httpx.Response) -> bytes:
+        enough = self._read_up_to if "html" in resp.headers.get("content-type", "") else None
         body = bytearray()
         for chunk in resp.iter_bytes():
             body.extend(chunk)
+            if enough and len(body) >= enough:
+                return bytes(body[:enough])
             if len(body) > self._max_bytes:
                 raise PermanentError(f"The page is larger than {self._max_bytes // 2**20} MB")
         return bytes(body)

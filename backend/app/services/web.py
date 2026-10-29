@@ -7,7 +7,7 @@ model never answers from its own memory, which is where made-up answers come fro
 Search providers sit behind `WebSearcher` and are tried in order until one returns results:
 Tavily when TAVILY_API_KEY is set (fast and reliable, made for this; free plan of 1,000
 searches a month, and it returns page text so pages needn't be fetched), then the free
-engines DuckDuckGo, Bing and Google (no key, but rate-limited under heavy use), then
+engines DuckDuckGo, Yahoo and Brave (no key, but rate-limited under heavy use), then
 Wikipedia's own search API. Results are cached for a few minutes.
 """
 
@@ -31,6 +31,9 @@ from app.services.text import chunk_pages, clean_pages
 log = logging.getLogger("recall.web")
 
 PAGES_TO_READ = 3
+# HTML read from each page: plenty for the passages used (the first 25), and a long page
+# (a big Wikipedia article is 2 MB) would otherwise take a fifth of a small server's memory.
+PAGE_BYTES = 600_000
 PASSAGES = 5
 PER_PAGE = 2  # passages from any one page, so answers draw on more than one source
 FETCH_TIMEOUT_S = 4.0
@@ -79,9 +82,11 @@ class TavilySearcher:
 
 
 class FreeEngineSearcher:
-    """DuckDuckGo, then Bing, then Google, through the ddgs library. No key needed."""
+    """DuckDuckGo, then Yahoo, then Brave, through the ddgs library. No key needed. Each fails
+    within a second or so when it's limiting requests. (ddgs dropped Bing, and its "google"
+    now runs "auto": half a dozen engines one after another, up to 30 s on a server.)"""
 
-    BACKENDS = ("duckduckgo", "bing", "google")
+    BACKENDS = ("duckduckgo", "yahoo", "brave")
 
     def search(self, query: str, n: int) -> list[WebResult]:
         from ddgs import DDGS
@@ -222,7 +227,7 @@ def _fetch_page(result: WebResult) -> str:
 
     client = httpx.Client(timeout=FETCH_TIMEOUT_S, headers={"User-Agent": user_agent()})
     try:
-        doc = UrlSource(client=client).extract(
+        doc = UrlSource(client=client, read_up_to=PAGE_BYTES).extract(
             Item(title=result.title, source_type=SourceType.url, source=result.url)
         )
         return "\n\n".join(p.text for p in clean_pages(doc.pages) if p.text)
