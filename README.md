@@ -343,6 +343,10 @@ the demo library for a day, without signing up.
    uv run python -m demo.publish "postgresql://...neon.tech/neondb?sslmode=require"
    ```
 
+   To change a published demo without rebuilding it: `demo.add FILE.pdf URL [--title ...]`
+   reads a PDF into the demo library, and `demo.pdfs URL` keeps its linked PDFs (the arXiv
+   paper) as files, so their pages can be read. New visitors get the changes.
+
 3. **API (Render):** New → Blueprint → this repository. It reads `render.yaml`, builds
    `backend/Dockerfile` (the embedding model is baked in) and asks for:
 
