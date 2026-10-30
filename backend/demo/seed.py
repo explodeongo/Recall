@@ -206,6 +206,10 @@ def main() -> None:
         ask(client, items, chat)
     say("Making quizzes…")
     quiz(client, items)
+    say("Keeping linked PDFs as files, so their pages can be read…")
+    from demo.pdfs import keep_pdfs
+
+    keep_pdfs(os.environ["DATABASE_URL"])
     say("Done. Run ./dev.sh --demo and log in as demo@example.com / recall-demo")
 
 
