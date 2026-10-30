@@ -1,13 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlignLeft, Archive, ArrowLeft, BookOpen, ExternalLink, Layers, Loader2, MessageSquareText, MoreHorizontal, Pencil, Plus, Quote, RotateCw, Trash2 } from "lucide-react";
+import { AlignLeft, Archive, ArrowLeft, BookOpen, ExternalLink, FileText, Layers, Loader2, MessageSquareText, MoreHorizontal, Pencil, Plus, Quote, RotateCw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Connections } from "@/components/Connections";
 import { Cover, NotePictures, NoteView, PictureButton, pictureIds, usePictureInsert, withoutPicture } from "@/components/Pictures";
 import { HighlightReader } from "@/components/HighlightReader";
+import { PdfPages } from "@/components/PdfPages";
 import { ListenButton } from "@/components/Listen";
 import { type Mark, joinPages } from "@/components/Reader";
 import { toast } from "sonner";
@@ -28,7 +29,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api, isBusy, sourceHref, type Item, type ItemDetails } from "@/lib/api";
+import { api, fileUrl, isBusy, sourceHref, type Item, type ItemDetails, type Page } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export default function ItemPage() {
@@ -479,12 +480,46 @@ function TagEditor({ item }: { item: Item }) {
   );
 }
 
-/** The full text inside Recall, with the cited passage (if any) highlighted and in view. */
+/** The page a character offset falls on, counting pages joined by a blank line as stored. */
+function pageOf(pages: Page[], offset: number) {
+  let end = 0;
+  for (const page of pages) {
+    end += page.text.length + 2;
+    if (offset < end) return page.page;
+  }
+  return null;
+}
+
+/** For PDFs, whether Read shows the pages themselves or their text. Remembered between items. */
+function useReadMode(initial: "pages" | "text" | null) {
+  const [mode, setMode] = useState<"pages" | "text">(() => {
+    if (initial) return initial;
+    try {
+      return localStorage.getItem("recall-pdf-view") === "text" ? "text" : "pages";
+    } catch {
+      return "pages";
+    }
+  });
+  const choose = (next: "pages" | "text") => {
+    setMode(next);
+    try {
+      localStorage.setItem("recall-pdf-view", next);
+    } catch {}
+  };
+  return [mode, choose, setMode] as const;
+}
+
+/** The document inside Recall: a PDF's own pages, or the full text with the cited passage (if
+ * any) highlighted and in view. A citation opens the text, where the exact passage is marked. */
 function DocumentText({ item, chunkId, range }: { item: Item; chunkId: number | null; range: { from: number; to: number } | null }) {
   const content = useQuery({ queryKey: ["content", item.id], queryFn: () => api.content(item.id), retry: false });
   const chunk = useQuery({ queryKey: ["chunk", chunkId], queryFn: () => api.chunk(chunkId!), enabled: chunkId !== null });
   // Linked ideas are a bonus: the text shows without them while they load, or if they fail.
   const links = useQuery({ queryKey: ["links", item.id], queryFn: () => api.links(item.id), staleTime: 60_000, retry: false });
+  const [hasFile, setHasFile] = useState(item.source_type === "pdf");
+  const [mode, chooseMode, setMode] = useReadMode(range || chunkId ? "text" : null);
+  const [startPage, setStartPage] = useState<number | null>(null);
+  const pages = hasFile && mode === "pages";
 
   const marks = useMemo<Mark[]>(() => {
     if (content.data && range) {
@@ -502,35 +537,97 @@ function DocumentText({ item, chunkId, range }: { item: Item; chunkId: number | 
     if (start === null) return [];
     return [{ id: `chunk-${chunk.data.id}`, start, end: start + chunk.data.chunk_text.length, kind: "cited", title: "The passage your answer cited" }];
   }, [content.data, chunk.data, item.id, range]);
+  const citedPage = chunk.data?.page ?? (content.data && marks[0] ? pageOf(content.data.pages, marks[0].start) : null);
 
+  let text;
   if (content.isPending) {
-    return (
+    text = (
       <div className="max-w-[68ch] space-y-3" aria-busy="true" aria-label="Loading the document">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-11/12" />
         <Skeleton className="h-4 w-4/5" />
       </div>
     );
-  }
-  if (content.isError) {
-    return (
+  } else if (content.isError) {
+    text = (
       <div className="space-y-6">
         {chunkId && <CitedPassage chunkId={chunkId} item={item} />}
         <NoDetails item={item} reason="This item was saved before Recall kept the full text to read here." action="Process it again" />
       </div>
     );
+  } else {
+    text = (
+      <div className="space-y-6">
+        {marks.length > 0 && (
+          <p className="flex max-w-[68ch] flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            <Quote className="size-4 shrink-0 text-brand" aria-hidden />
+            The passage your answer cited is highlighted below{citedPage ? `, on page ${citedPage}` : ""}.
+            {hasFile && citedPage && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartPage(citedPage);
+                  setMode("pages");
+                }}
+                className="text-brand underline-offset-4 hover:underline"
+              >
+                See it on the page
+              </button>
+            )}
+          </p>
+        )}
+        <HighlightReader itemId={item.id} pages={content.data.pages} cited={marks} figures={content.data.images} links={links.data} />
+      </div>
+    );
   }
+
   return (
     <div className="space-y-6">
-      <ListenButton id={`text-${item.id}`} title={item.title} text={joinPages(content.data.pages)} label="Read it aloud" />
-      {marks.length > 0 && (
-        <p className="flex max-w-[68ch] items-center gap-2 text-sm text-muted-foreground">
-          <Quote className="size-4 shrink-0 text-brand" aria-hidden />
-          The passage your answer cited is highlighted below
-          {chunk.data?.page ? `, on page ${chunk.data.page}` : ""}.
-        </p>
+      {(hasFile || content.data) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {hasFile && <ReadSwitch mode={mode} onChange={chooseMode} />}
+          {content.data && <ListenButton id={`text-${item.id}`} title={item.title} text={joinPages(content.data.pages)} label="Read it aloud" />}
+        </div>
       )}
-      <HighlightReader itemId={item.id} pages={content.data.pages} cited={marks} figures={content.data.images} links={links.data} />
+      {pages ? (
+        <PdfPages
+          url={fileUrl(item.id)}
+          startPage={startPage}
+          onUnavailable={() => {
+            setHasFile(false);
+            setMode("text");
+          }}
+        />
+      ) : (
+        text
+      )}
+    </div>
+  );
+}
+
+function ReadSwitch({ mode, onChange }: { mode: "pages" | "text"; onChange: (m: "pages" | "text") => void }) {
+  return (
+    <div role="radiogroup" aria-label="Show" className="flex rounded-lg border p-0.5 text-sm">
+      {(
+        [
+          { id: "pages", label: "Pages", icon: FileText },
+          { id: "text", label: "Text", icon: AlignLeft },
+        ] as const
+      ).map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          role="radio"
+          aria-checked={mode === id}
+          onClick={() => onChange(id)}
+          className={cn(
+            "flex h-7 items-center gap-1.5 rounded-md px-2.5 transition-colors duration-150 pointer-coarse:h-9 [&_svg]:size-4",
+            mode === id ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Icon aria-hidden /> {label}
+        </button>
+      ))}
     </div>
   );
 }

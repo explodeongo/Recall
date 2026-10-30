@@ -324,3 +324,63 @@
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.3);
 }
+
+/* A PDF page's text, laid invisibly over its picture so it can be selected and copied. The
+   rules PDF.js's own viewer uses for this layer, without the rest of its stylesheet. */
+.pdf-page {
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+  color-scheme: only light;
+}
+.pdf-page .textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.pdf-page .textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+.pdf-page .textLayer > :not(.markedContent),
+.pdf-page .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.pdf-page .textLayer .markedContent {
+  display: contents;
+}
+.pdf-page .textLayer span[role="img"] {
+  user-select: none;
+  cursor: default;
+}
+.pdf-page .textLayer ::selection {
+  background: color-mix(in oklch, var(--brand) 30%, transparent);
+}
+/* Where a selection ends, PDF.js adds this so dragging past the last line doesn't jump. */
+.pdf-page .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+.pdf-page .textLayer.selecting .endOfContent {
+  top: 0;
+}
