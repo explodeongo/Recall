@@ -160,6 +160,9 @@ class Item(Base):
     title_edited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     # The picture shown for it in lists (an ItemImage; no foreign key, it's replaced freely).
     cover_image_id: Mapped[int | None] = mapped_column(Integer)
+    # A saved web page's printable PDF (Wikipedia's), a stored-file key: the Read tab shows it
+    # as pages. Uploaded PDFs don't need one; their file is `source`.
+    pages_file: Mapped[str | None] = mapped_column(String)
     status: Mapped[ItemStatus] = mapped_column(
         Enum(ItemStatus, name="item_status"), default=ItemStatus.queued
     )

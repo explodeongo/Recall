@@ -6,7 +6,7 @@ highlights, pictures, chats and flashcards. The copy is made inside the database
 calls, in well under a second, so visitors can save, delete and ask freely and nobody sees
 anyone else's questions. Dates move with it, so the library always looks a few weeks old.
 
-Files (PDFs and pictures) aren't copied: the copies point at the template's, which
+Files (PDFs, web pages' PDFs and pictures) aren't copied: the copies point at the template's, which
 files.delete never removes. Guests older than GUEST_HOURS are deleted when the next one
 arrives, so a free host needs no scheduled job.
 """
@@ -77,6 +77,9 @@ def remove_expired(session: Session) -> list[str]:
                 Item.user_id.in_(ids), Item.source_type.in_([SourceType.pdf, SourceType.file])
             )
         )
+    )
+    keys += session.scalars(
+        select(Item.pages_file).where(Item.user_id.in_(ids), Item.pages_file.is_not(None))
     )
     keys += session.scalars(select(ItemImage.key).where(ItemImage.user_id.in_(ids)))
     session.execute(delete(User).where(User.id.in_(ids)))  # everything else cascades

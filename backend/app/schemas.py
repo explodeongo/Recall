@@ -78,6 +78,14 @@ class ItemOut(BaseModel):
     # Only on search results: where in the document the search matched.
     match: MatchOut | None = None
     cover_image_id: int | None = Field(default=None, exclude=True)
+    pages_file: str | None = Field(default=None, exclude=True)
+
+    @computed_field
+    @property
+    def has_pages(self) -> bool:
+        """Whether the Read tab can show it as pages: an uploaded PDF, or a saved web page
+        whose printable PDF Recall kept (Wikipedia's)."""
+        return self.source_type == SourceType.pdf or self.pages_file is not None
 
     @computed_field
     @property

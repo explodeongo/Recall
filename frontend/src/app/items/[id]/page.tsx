@@ -516,7 +516,7 @@ function DocumentText({ item, chunkId, range }: { item: Item; chunkId: number | 
   const chunk = useQuery({ queryKey: ["chunk", chunkId], queryFn: () => api.chunk(chunkId!), enabled: chunkId !== null });
   // Linked ideas are a bonus: the text shows without them while they load, or if they fail.
   const links = useQuery({ queryKey: ["links", item.id], queryFn: () => api.links(item.id), staleTime: 60_000, retry: false });
-  const [hasFile, setHasFile] = useState(item.source_type === "pdf");
+  const [hasFile, setHasFile] = useState(item.has_pages);
   const [mode, chooseMode, setMode] = useReadMode(range || chunkId ? "text" : null);
   const [startPage, setStartPage] = useState<number | null>(null);
   const pages = hasFile && mode === "pages";

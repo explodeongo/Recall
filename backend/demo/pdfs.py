@@ -1,14 +1,19 @@
-"""Keep the demo's linked PDFs as files: uv run python -m demo.pdfs [TARGET_URL]
+"""Keep the demo's PDFs as files: uv run python -m demo.pdfs [TARGET_URL]
 
-The demo saved the Attention paper as an arXiv link, so Recall read its text but kept no file,
-and the Read tab could only show that text. This downloads each linked PDF in the demo
-account's library, stores it in the database, and makes the item an uploaded PDF, so the Read
-tab shows its pages. Its text, passages, summary and everything made from them stay as they
-are. Visitors who start the demo afterwards get the PDF; copies made before keep the link.
+The Read tab shows a PDF's pages only when Recall has the file. This fills in what the demo
+library was built without:
+
+- Linked PDFs (the Attention paper, saved as an arXiv link): downloaded, stored, and the item
+  made an uploaded PDF.
+- Wikipedia articles: Wikipedia's printable PDF of each, kept beside the page (`pages_file`),
+  as Recall now does whenever a Wikipedia link is saved.
+
+Text, passages, summaries and everything made from them stay as they are. Visitors who start
+the demo afterwards get the PDFs; copies made before don't.
 
 TARGET_URL is the hosted database (Neon's connection string); without it, the local demo
-database (DEMO_DATABASE_URL, default recall_demo). Safe to run again: items already stored as
-PDFs are skipped.
+database (DEMO_DATABASE_URL, default recall_demo). Safe to run again: items that already have
+their PDF are skipped.
 """
 
 import argparse
@@ -26,46 +31,65 @@ from demo.seed import DEFAULT_DB, EMAIL
 PDF_LINK = re.compile(r"(\.pdf$|/pdf/)", re.IGNORECASE)
 
 
+def _store(conn, data: bytes) -> str:
+    key = f"db:{uuid.uuid4().hex}.pdf"
+    conn.execute(
+        text("INSERT INTO stored_files (key, data) VALUES (:key, :data)"),
+        {"key": key, "data": data},
+    )
+    return key
+
+
 def keep_pdfs(url: str) -> int:
-    """Store the demo's linked PDFs and make those items uploaded PDFs. Returns how many."""
+    """Store the demo's linked PDFs and Wikipedia articles' PDFs. Returns how many."""
+    from app.sources import wikipedia
     from app.sources.url import user_agent
 
     url = url.replace("postgresql://", "postgresql+psycopg://", 1).replace(
         "postgres://", "postgresql+psycopg://", 1
     )
     engine = create_engine(url)
-    stored = 0
-    with (
-        engine.begin() as conn,
-        httpx.Client(
-            timeout=60, follow_redirects=True, headers={"User-Agent": user_agent()}
-        ) as client,
-    ):
+    with engine.connect() as conn:
         items = conn.execute(
             text(
                 "SELECT i.id, i.title, i.source FROM items i JOIN users u ON u.id = i.user_id "
-                "WHERE u.email = :email AND i.source_type = 'url'"
+                "WHERE u.email = :email AND i.source_type = 'url' AND i.pages_file IS NULL "
+                "ORDER BY i.id"
             ),
             {"email": EMAIL},
         ).all()
+    stored = 0
+    with httpx.Client(
+        timeout=60, follow_redirects=True, headers={"User-Agent": user_agent()}
+    ) as client:
         for item_id, title, link in items:
-            if not PDF_LINK.search(link.split("?")[0]):
+            # One item at a time, so an interrupted run keeps what it stored.
+            if PDF_LINK.search(link.split("?")[0]):
+                resp = client.get(link)
+                resp.raise_for_status()
+                if not resp.content.startswith(b"%PDF-"):
+                    print(f"  not a PDF, left as a link: {title}")
+                    continue
+                with engine.begin() as conn:
+                    conn.execute(
+                        text("UPDATE items SET source_type = 'pdf', source = :key WHERE id = :id"),
+                        {"key": _store(conn, resp.content), "id": item_id},
+                    )
+                size = len(resp.content)
+            elif wikipedia.pdf_url(link):
+                data = wikipedia.fetch_pdf(link)
+                if data is None:
+                    print(f"  Wikipedia had no PDF for {title}")
+                    continue
+                with engine.begin() as conn:
+                    conn.execute(
+                        text("UPDATE items SET pages_file = :key WHERE id = :id"),
+                        {"key": _store(conn, data), "id": item_id},
+                    )
+                size = len(data)
+            else:
                 continue
-            resp = client.get(link)
-            resp.raise_for_status()
-            if not resp.content.startswith(b"%PDF-"):
-                print(f"  not a PDF, left as a link: {title}")
-                continue
-            key = f"db:{uuid.uuid4().hex}.pdf"
-            conn.execute(
-                text("INSERT INTO stored_files (key, data) VALUES (:key, :data)"),
-                {"key": key, "data": resp.content},
-            )
-            conn.execute(
-                text("UPDATE items SET source_type = 'pdf', source = :key WHERE id = :id"),
-                {"key": key, "id": item_id},
-            )
-            print(f"  stored {title} ({len(resp.content) // 1024} KB)")
+            print(f"  stored {title} ({size // 1024} KB)")
             stored += 1
     engine.dispose()
     return stored
@@ -77,7 +101,7 @@ def main() -> None:
     args = parser.parse_args()
     url = args.target or os.environ.get("DEMO_DATABASE_URL", DEFAULT_DB)
     if not keep_pdfs(url):
-        sys.exit("No linked PDFs to store: the demo's PDFs are already files.")
+        sys.exit("Nothing to store: the demo's PDFs are already kept.")
     print("Done. New demo visitors get the PDFs.")
 
 

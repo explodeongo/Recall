@@ -63,7 +63,8 @@ def _in_demo_template(key: str) -> bool:
             conn.scalar(
                 text(
                     "SELECT EXISTS (SELECT 1 FROM users u WHERE u.email = :email AND ("
-                    "EXISTS (SELECT 1 FROM items i WHERE i.user_id = u.id AND i.source = :key) OR "
+                    "EXISTS (SELECT 1 FROM items i WHERE i.user_id = u.id "
+                    "AND (i.source = :key OR i.pages_file = :key)) OR "
                     "EXISTS (SELECT 1 FROM item_images p WHERE p.user_id = u.id AND p.key = :key)))"
                 ),
                 {"email": email.strip().lower(), "key": key},

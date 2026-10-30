@@ -11,12 +11,12 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.errors import PermanentError
 from app.models import Chunk, Item, SourceType, Tag
-from app.services import images
+from app.services import files, images
 from app.services.embeddings import Embedder
 from app.services.enrich import enrich
 from app.services.llm import LLMClient, LLMError
 from app.services.text import chunk_pages, clean_pages
-from app.sources import Source, get_source
+from app.sources import Source, get_source, wikipedia
 
 __all__ = ["PermanentError", "process_item"]
 
@@ -37,9 +37,12 @@ def process_item(
     llm: LLMClient | None,
     source: Source | None = None,
     fetch_image: images.Fetch | None = None,
+    fetch_pages: images.Fetch | None = None,
 ) -> None:
     """Process one item in place. With `llm=None` the summary and tags are skipped, which the
-    retrieval evaluation uses so it can run without an API key."""
+    retrieval evaluation uses so it can run without an API key. `fetch_pages` gets a saved
+    link's printable PDF (Wikipedia's); by default only when the item is read for real, not
+    from a stand-in `source` (tests, the evaluation)."""
     settings = get_settings()
     doc = (source or get_source(item.source_type)).extract(item)
     pages = [p for p in clean_pages(doc.pages) if p.text]
@@ -96,6 +99,12 @@ def process_item(
             page_starts.setdefault(p.page, offset)
         offset += len(p.text) + 2
     images.attach(session, item, doc.images, full_text, page_starts, fetch_image or _fetch_image)
+    if fetch_pages is None and source is None:
+        fetch_pages = wikipedia.fetch_pdf
+    # Fetched once: reading the item again keeps the PDF it already has.
+    wants_pages = item.source_type == SourceType.url and item.pages_file is None
+    if wants_pages and fetch_pages and (pdf := fetch_pages(item.source)):
+        item.pages_file = files.save(pdf, ".pdf")
     if enrichment is not None:
         item.summary = enrichment.summary
         item.details = enrichment.details

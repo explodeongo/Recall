@@ -84,7 +84,8 @@ def main() -> None:
             text(
                 "SELECT 'items', id, source FROM items WHERE source_type IN ('pdf', 'file') "
                 "AND source NOT LIKE 'db:%' UNION ALL "
-                "SELECT 'item_images', id, key FROM item_images WHERE key NOT LIKE 'db:%'"
+                "SELECT 'pages', id, pages_file FROM items WHERE pages_file NOT LIKE 'db:%' "
+                "UNION ALL SELECT 'item_images', id, key FROM item_images WHERE key NOT LIKE 'db:%'"
             )
         ).all()
         for table, row_id, key in rows:
@@ -97,7 +98,11 @@ def main() -> None:
                 text("INSERT INTO stored_files (key, data) VALUES (:key, :data)"),
                 {"key": new_key, "data": path.read_bytes()},
             )
-            column = "source" if table == "items" else "key"
+            table, column = {
+                "items": ("items", "source"),
+                "pages": ("items", "pages_file"),
+                "item_images": ("item_images", "key"),
+            }[table]
             conn.execute(
                 text(f"UPDATE {table} SET {column} = :key WHERE id = :id"),
                 {"key": new_key, "id": row_id},

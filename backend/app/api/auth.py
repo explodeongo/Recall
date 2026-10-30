@@ -126,10 +126,12 @@ def delete_account(
     if not auth.verify_password(body.password, user.password_hash):
         raise HTTPException(403, "That password isn't right.")
     stored = [
-        i.source
+        i.source if i.source_type in (SourceType.pdf, SourceType.file) else i.pages_file
         for i in session.scalars(
             select(Item).where(
-                Item.user_id == user.id, Item.source_type.in_([SourceType.pdf, SourceType.file])
+                Item.user_id == user.id,
+                Item.source_type.in_([SourceType.pdf, SourceType.file])
+                | Item.pages_file.is_not(None),
             )
         )
     ]

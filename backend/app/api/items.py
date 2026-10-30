@@ -200,14 +200,13 @@ def get_item_content(item_id: int, session: SessionDep, user: CurrentUser) -> Co
 @router.get("/{item_id}/file")
 def get_item_file(item_id: int, session: SessionDep, user: CurrentUser) -> Response:
     """The original upload: PDFs open in the browser (a citation adds `#page=N`), other files
-    download."""
+    download. For a saved web page, its printable PDF (Wikipedia's), if Recall kept one."""
     item = _get_or_404(session, item_id, user.id)
-    data = (
-        files.read(item.source) if item.source_type in (SourceType.pdf, SourceType.file) else None
-    )
+    key = item.source if item.source_type in (SourceType.pdf, SourceType.file) else item.pages_file
+    data = files.read(key) if key else None
     if data is None:
         raise HTTPException(404, "This item has no stored file")
-    suffix = files.suffix(item.source)
+    suffix = files.suffix(key)
     filename = quote(f"{item.title[:100]}{suffix}")
     disposition = "inline" if suffix == ".pdf" else "attachment"
     return Response(
@@ -246,6 +245,7 @@ def set_item_tags(item_id: int, body: TagsIn, session: SessionDep, user: Current
 def delete_item(item_id: int, session: SessionDep, user: CurrentUser) -> Response:
     item = _get_or_404(session, item_id, user.id)
     stored = item.source if item.source_type in (SourceType.pdf, SourceType.file) else None
+    stored = stored or item.pages_file
     pictures = images.delete_for_item(session, item.id)
     session.delete(item)
     session.flush()

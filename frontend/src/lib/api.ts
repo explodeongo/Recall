@@ -38,6 +38,8 @@ export interface Item {
   tags_edited: boolean;
   /** The picture shown for it in lists: an article's preview, a video's thumbnail, a PDF's first page. */
   cover_url: string | null;
+  /** Whether Read can show it as pages: an uploaded PDF, or a Wikipedia article's PDF. */
+  has_pages: boolean;
   starred: boolean;
   archived: boolean;
   last_opened_at: string | null;
