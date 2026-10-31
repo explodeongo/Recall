@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUp, AtSign, FileText, Globe, Hash, History, MessageSquareText, RotateCw, Search, Square } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerText } from "@/components/AnswerText";
 import { AnswerActions, AnswerFigures, FromTheWeb, NotFound, SourcesList, SuggestedQuestions, Thinking } from "@/components/chat/AnswerParts";
@@ -58,6 +58,22 @@ export function ChatView({ chatId: initialId }: { chatId: number | null }) {
     const last = [...chat.data.messages].reverse().find((m) => m.role === "user");
     if (last?.context) setPinned({ items: last.context.items, tags: last.context.tags });
   }, [chat.data]);
+
+  // A new chat gets its address with replaceState, which keeps this component mounted, so
+  // "New chat" (a link back to /ask) lands on the same page: start over when the path returns.
+  const pathname = usePathname();
+  const lastPath = useRef(pathname);
+  useEffect(() => {
+    const was = lastPath.current;
+    lastPath.current = pathname;
+    if (pathname !== "/ask" || was === "/ask") return;
+    abort.current?.abort();
+    started.current = false;
+    restored.current = null;
+    setChatId(null);
+    setPending(null);
+    setPinned({ items: [], tags: [] });
+  }, [pathname, setPending]);
 
   // `from` overrides where this one answer may come from, e.g. the web after the library had
   // nothing; the chosen default stays as it is.
